@@ -11,7 +11,7 @@
         .loginBox { padding: 40px; background: white; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.2); text-align: center; width: 300px; }
         .loginBox input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
         .loginBox button { width: 100%; padding: 12px; background: #764ba2; border: none; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; }
-        #sidebar { width: 320px; height: 100%; background: #ffffff; border-right: 1px solid #eaeaea; padding: 25px; box-sizing: border-box; overflow-y: auto; z-index: 10; box-shadow: 2px 0 10px rgba(0,0,0,0.05); }
+        #sidebar { width: 320px; height: 100%; background: #ffffff; border-right: 1px solid #eaeaea; padding: 25px; box-sizing: border-box; overflow-y: auto; z-index: 10; box-shadow: 2px 0 10px rgba(0,0,0,0.05); display: none; }
         .user-profile { background: #f4f7ff; padding: 15px; border-radius: 10px; margin-bottom: 20px; text-align: center; color: #555; font-size: 13px; }
         #sidebar h3 { font-size: 18px; color: #444; margin-bottom: 20px; border-bottom: 2px solid #764ba2; padding-bottom: 10px; }
         #searchKeyword { width: 100%; padding: 14px; border: 2px solid #eee; border-radius: 12px; box-sizing: border-box; }
@@ -28,7 +28,7 @@
         .info-value { flex: 1; color: #333; }
         .overlay-close { cursor: pointer; font-size: 18px; opacity: 0.8; transition: 0.3s; }
         .overlay-close:hover { opacity: 1; }
-        #map { flex-grow: 1; height: 100%; }
+        #map { flex-grow: 1; height: 100%; display: none; }
     </style>
 </head>
 <body>
@@ -42,7 +42,7 @@
         </div>
     </div>
 
-    <div id="sidebar" style="display:none;">
+    <div id="sidebar">
         <div class="user-profile"><strong id="displayId">관리자</strong>님 환영합니다.</div>
         <h3>사이트 관리</h3>
         <input type="text" id="searchKeyword" placeholder="사이트명 검색..." onkeyup="showResults()">
@@ -53,45 +53,48 @@
         </div>
     </div>
 
-    <div id="map" style="display:none;"></div>
+    <div id="map"></div>
 
     <script>
         const USER_LIST = ["22062", "23004", "17105", "17115", "17183", "17189", "17260", "18145", "19049", "20027", "22017", "22025"];
         let map, geocoder, clusterer, searchMarker, customOverlay;
         let sheetData = [];
 
-        // 안전한 초기화 함수
+        // 1. 카카오맵 SDK 로드 및 초기화 확인 함수
         function initApp() {
             if (typeof kakao === 'undefined' || !kakao.maps) {
                 setTimeout(initApp, 100);
                 return;
             }
             
-            // 카카오맵 로드
             map = new kakao.maps.Map(document.getElementById('map'), { center: new kakao.maps.LatLng(35.1517, 129.0305), level: 7 });
             geocoder = new kakao.maps.services.Geocoder();
             clusterer = new kakao.maps.MarkerClusterer({ map: map, gridSize: 35, averageCenter: true, minLevel: 7 });
             searchMarker = new kakao.maps.Marker();
             loadSheetData();
         }
-
-        // 앱 구동
         initApp();
 
         function checkLogin() {
             const inputId = document.getElementById('inputId').value;
             const inputPw = document.getElementById('inputPw').value;
+            
             if (USER_LIST.includes(inputId) && inputId === inputPw) {
+                // 2. 지도 객체 생성 완료 여부 확인
+                if (!map) {
+                    alert("지도가 로딩 중입니다. 잠시만 기다려주세요.");
+                    return;
+                }
                 document.getElementById('loginOverlay').style.display = 'none';
                 document.getElementById('sidebar').style.display = 'block';
                 document.getElementById('map').style.display = 'block';
                 document.getElementById('displayId').textContent = inputId;
                 
-                if (map) {
-                    map.relayout();
-                    map.setCenter(new kakao.maps.LatLng(35.1517, 129.0305));
-                }
-            } else { alert("아이디 또는 비밀번호가 틀렸습니다."); }
+                map.relayout();
+                map.setCenter(new kakao.maps.LatLng(35.1517, 129.0305));
+            } else { 
+                alert("아이디 또는 비밀번호가 틀렸습니다."); 
+            }
         }
 
         function loadSheetData() {
