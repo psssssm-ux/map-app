@@ -57,33 +57,36 @@
 
     <script>
         const USER_LIST = ["22062", "23004", "17105", "17115", "17183", "17189", "17260", "18145", "19049", "20027", "22017", "22025"];
-        let map = null; 
+        let map = null;
         let geocoder, clusterer, searchMarker, customOverlay;
         let sheetData = [];
 
-        // 1. 카카오맵 SDK 로드 대기 및 초기화 함수
+        // 1. 카카오맵 SDK 로드 대기 후 초기화
         function initApp() {
             if (typeof kakao === 'undefined' || !kakao.maps) {
-                setTimeout(initApp, 100); // SDK 로드 확인까지 0.1초마다 재시도
+                setTimeout(initApp, 100);
                 return;
             }
             
-            map = new kakao.maps.Map(document.getElementById('map'), { center: new kakao.maps.LatLng(35.1517, 129.0305), level: 7 });
+            map = new kakao.maps.Map(document.getElementById('map'), { 
+                center: new kakao.maps.LatLng(35.1517, 129.0305), 
+                level: 7 
+            });
             geocoder = new kakao.maps.services.Geocoder();
             clusterer = new kakao.maps.MarkerClusterer({ map: map, gridSize: 35, averageCenter: true, minLevel: 7 });
             searchMarker = new kakao.maps.Marker();
             loadSheetData();
         }
-        initApp(); // 앱 초기화 실행
+        initApp();
 
         function checkLogin() {
             const inputId = document.getElementById('inputId').value;
             const inputPw = document.getElementById('inputPw').value;
             
             if (USER_LIST.includes(inputId) && inputId === inputPw) {
-                // 2. 지도 객체 생성 완료 여부 확인 (방어 코드)
+                // 지도 로드 완료 확인
                 if (!map) {
-                    alert("지도가 아직 로딩 중입니다. 잠시만 기다려주세요.");
+                    alert("지도 준비 중입니다. 잠시만 기다려주세요.");
                     return;
                 }
                 document.getElementById('loginOverlay').style.display = 'none';
@@ -91,7 +94,7 @@
                 document.getElementById('map').style.display = 'block';
                 document.getElementById('displayId').textContent = inputId;
                 
-                // 로그인 후 지도 레이아웃 재계산
+                // 지도 크기 재설정
                 map.relayout();
                 map.setCenter(new kakao.maps.LatLng(35.1517, 129.0305));
             } else { 
@@ -99,6 +102,7 @@
             }
         }
 
+        // ... (이후 loadSheetData, showOverlay, showResults, selectItem 함수는 동일하게 유지)
         function loadSheetData() {
             Papa.parse('https://docs.google.com/spreadsheets/d/e/2PACX-1vSvJ-ZEYTaOAb34GeTSO7t-xEmanJNM1rW727QNiFe4pUcscX19q6r0dWtz6dE0sC0u2wDYIO32_yo_/pub?gid=0&single=true&output=csv', {
                 download: true, header: true, complete: (results) => {
@@ -123,14 +127,12 @@
             if (customOverlay) customOverlay.setMap(null);
             const content = document.createElement('div');
             content.className = 'custom-overlay';
-            content.innerHTML = `
-                <div class="overlay-header">${item.site}<span class="overlay-close" onclick="closeOverlay()">×</span></div>
+            content.innerHTML = `<div class="overlay-header">${item.site}<span class="overlay-close" onclick="closeOverlay()">×</span></div>
                 <div class="overlay-body">
                     <div class="info-row"><div class="info-label">경비사</div><div class="info-value">${item.sec || '-'}</div></div>
                     <div class="info-row"><div class="info-label">NUM</div><div class="info-value">${item.num || '-'}</div></div>
                     <div class="info-row"><div class="info-label">ETC</div><div class="info-value">${item.etc || '-'}</div></div>
                     <div class="info-row"><div class="info-label">주차</div><div class="info-value">${item.park || '-'}</div></div>
-                    <div class="info-row"><div class="info-label" style="width:100%">주소</div></div>
                     <div style="color:#666; font-size:12px; margin-top:4px;">${item.address || '-'}</div>
                 </div>`;
             customOverlay = new kakao.maps.CustomOverlay({ position: targetMarker.getPosition(), content: content, yAnchor: 1.1 });
@@ -148,13 +150,7 @@
                 list.style.display = 'block';
                 filtered.forEach(item => {
                     let li = document.createElement('li');
-                    let binContent = item.bin2 || item.BIN2 || "";
-                    let mnContent = item.mn || item.MN || "";
-                    let extraInfo = [];
-                    if (binContent.trim() !== "") extraInfo.push(binContent.trim());
-                    if (mnContent.trim() !== "") extraInfo.push(mnContent.trim());
-                    let bracketText = extraInfo.length > 0 ? ` (${extraInfo.join(", ")})` : "";
-                    li.textContent = item.site + bracketText;
+                    li.textContent = item.site;
                     li.onclick = () => selectItem(item);
                     list.appendChild(li);
                 });
