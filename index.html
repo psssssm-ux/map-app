@@ -61,14 +61,20 @@
 
         function initApp() {
             if (typeof kakao === 'undefined' || !kakao.maps) {
-                setTimeout(initApp, 100);
+                console.log("SDK 로딩 대기 중...");
+                setTimeout(initApp, 500);
                 return;
             }
-            map = new kakao.maps.Map(document.getElementById('map'), { center: new kakao.maps.LatLng(35.1517, 129.0305), level: 7 });
-            geocoder = new kakao.maps.services.Geocoder();
-            clusterer = new kakao.maps.MarkerClusterer({ map: map, gridSize: 35, averageCenter: true, minLevel: 7 });
-            searchMarker = new kakao.maps.Marker();
-            loadSheetData();
+            try {
+                map = new kakao.maps.Map(document.getElementById('map'), { center: new kakao.maps.LatLng(35.1517, 129.0305), level: 7 });
+                geocoder = new kakao.maps.services.Geocoder();
+                clusterer = new kakao.maps.MarkerClusterer({ map: map, gridSize: 35, averageCenter: true, minLevel: 7 });
+                searchMarker = new kakao.maps.Marker();
+                console.log("지도 초기화 완료!");
+                loadSheetData();
+            } catch (e) {
+                console.error("지도 생성 중 에러 발생:", e);
+            }
         }
         initApp();
 
@@ -76,7 +82,7 @@
             const inputId = document.getElementById('inputId').value;
             const inputPw = document.getElementById('inputPw').value;
             if (USER_LIST.includes(inputId) && inputId === inputPw) {
-                if (!map) { alert("지도가 아직 로딩 중입니다."); return; }
+                if (!map) { alert("지도가 아직 로딩 중입니다. 잠시만 기다려주세요."); return; }
                 document.getElementById('loginOverlay').style.display = 'none';
                 document.getElementById('sidebar').style.display = 'block';
                 document.getElementById('map').style.display = 'block';
@@ -98,18 +104,15 @@
                                 if (status === kakao.maps.services.Status.OK) {
                                     var coords = new kakao.maps.LatLng(result[0].y, result[0].x);
                                     var marker = new kakao.maps.Marker({ position: coords });
-                                    
-                                    // 마우스 이벤트 등록
                                     kakao.maps.event.addListener(marker, 'mouseover', () => showOverlay(marker, item));
                                     kakao.maps.event.addListener(marker, 'mouseout', () => closeOverlay());
-                                    
                                     clusterer.addMarker(marker);
                                     bounds.extend(coords);
                                 }
                             });
                         }
                     });
-                    setTimeout(() => { if (sheetData.length > 0) map.setBounds(bounds); }, 1500);
+                    setTimeout(() => { if (sheetData.length > 0) map.setBounds(bounds); }, 1000);
                 }
             });
         }
