@@ -5,11 +5,13 @@
     <title>사이트 통합 지도 앱</title>
     <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=7f3387ab66fb524dbefeb77ae9f85e90&libraries=services,clusterer&autoload=false"></script>
     <style>
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; display: flex; overflow: hidden; }
-        /* 사이드바 크기 고정 */
-        #sidebar { width: 320px; min-width: 320px; height: 100%; background: #fff; border-right: 1px solid #ccc; padding: 20px; box-sizing: border-box; overflow-y: auto; }
-        #map { flex-grow: 1; height: 100%; background: #f0f0f0; }
-        #loadingMsg { color: #764ba2; font-weight: bold; margin-bottom: 10px; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; display: flex; overflow: hidden; font-family: sans-serif; }
+        #sidebar { width: 320px; min-width: 320px; height: 100%; background: #ffffff; border-right: 1px solid #eaeaea; padding: 25px; box-sizing: border-box; overflow-y: auto; z-index: 10; box-shadow: 2px 0 10px rgba(0,0,0,0.05); }
+        #map { flex-grow: 1; height: 100%; background-color: #f0f0f0; }
+        
+        #loadingMsg { color: #764ba2; font-weight: 700; font-size: 14px; margin-bottom: 15px; display: block; }
+        h3 { font-size: 18px; color: #444; margin-bottom: 20px; border-bottom: 2px solid #764ba2; padding-bottom: 10px; }
+        #searchKeyword { width: 100%; padding: 14px; border: 2px solid #eee; border-radius: 12px; box-sizing: border-box; }
     </style>
 </head>
 <body>
@@ -19,7 +21,7 @@
         </div>
         <h3>사이트 관리</h3>
         <input type="text" id="searchKeyword" placeholder="사이트명 검색...">
-        <div style="margin-top:20px;">전체 사이트: <b id="totalCount">0개</b></div>
+        <div style="margin-top:20px; font-size:13px;">전체 사이트: <b id="totalCount">0개</b></div>
     </div>
     <div id="map"></div>
 
@@ -35,37 +37,39 @@
 
         async function loadSheetData() {
             const jsonUrl = 'https://script.google.com/macros/s/AKfycbwxAh4O39J93KVy87IjPu3h17BUZJ120BwkfkESVHuorO21GXpZcJT0qLxEdJwTDM-y8Q/exec';
-            try {
-                const response = await fetch(jsonUrl);
-                const data = await response.json();
-                document.getElementById('totalCount').textContent = data.length + '개';
-                
-                // 마커 생성 부하 줄이기: 10개씩 묶어서 처리
-                let i = 0;
-                function processMarkers() {
-                    const batchSize = 10;
-                    for (let j = 0; j < batchSize && i < data.length; j++, i++) {
-                        const item = data[i];
-                        if (!item.address) continue;
-                        
+            const res = await fetch(jsonUrl);
+            const data = await res.json();
+            document.getElementById('totalCount').textContent = data.length + '개';
+
+            let count = 0;
+            data.forEach((item, index) => {
+                if (!item.address) return;
+
+                // 로컬 저장소 캐시 확인 (서버 호출 방지)
+                const cacheKey = 'loc_' + item.address;
+                const cached = localStorage.getItem(cacheKey);
+
+                if (cached) {
+                    addMarker(JSON.parse(cached), item);
+                    count++;
+                } else {
+                    setTimeout(() => {
                         geocoder.addressSearch(item.address, (result, status) => {
                             if (status === kakao.maps.services.Status.OK) {
-                                const marker = new kakao.maps.Marker({ position: new kakao.maps.LatLng(result[0].y, result[0].x) });
-                                clusterer.addMarker(marker);
+                                const pos = { lat: result[0].y, lng: result[0].x };
+                                localStorage.setItem(cacheKey, JSON.stringify(pos));
+                                addMarker(pos, item);
                             }
                         });
-                    }
-                    if (i < data.length) {
-                        document.getElementById('loadingMsg').textContent = `로드 중... ${Math.round((i/data.length)*100)}%`;
-                        setTimeout(processMarkers, 100); // 0.1초 간격으로 배치 처리
-                    } else {
-                        document.getElementById('loadingMsg').textContent = "모두 로드되었습니다.";
-                    }
+                    }, index * 100); // 0.1초 간격 순차 호출
                 }
-                processMarkers();
-            } catch (e) {
-                document.getElementById('loadingMsg').textContent = "오류 발생";
-            }
+            });
+            document.getElementById('loadingMsg').textContent = "데이터 로드 완료!";
+        }
+
+        function addMarker(pos, item) {
+            const marker = new kakao.maps.Marker({ position: new kakao.maps.LatLng(pos.lat, pos.lng) });
+            clusterer.addMarker(marker);
         }
     </script>
 </body>
