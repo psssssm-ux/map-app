@@ -3,7 +3,14 @@
 <head>
     <meta charset="utf-8">
     <title>사이트 통합 지도 앱</title>
-    <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=06e00d121f316e8021bd4dabcf7cea93&libraries=services,clusterer"></script>
+    <script>
+        (function() {
+            var script = document.createElement('script');
+            script.type = 'text/javascript';
+            script.src = 'https://dapi.kakao.com/v2/maps/sdk.js?appkey=32d0b11bf61eabc7b8dd97ee2ae53657&libraries=services,clusterer&autoload=false';
+            document.head.appendChild(script);
+        })();
+    </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <style>
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; display: flex; overflow: hidden; font-family: 'Pretendard', -apple-system, sans-serif; }
@@ -20,14 +27,12 @@
         #resultList li:hover { background-color: #f4f7ff; color: #764ba2; }
         .stats-box { margin-top: 30px; padding: 15px; border: 1px solid #eee; border-radius: 10px; background: #fafafa; }
         .stats-item { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 13px; color: #666; }
-        .custom-overlay { position: relative; bottom: 85px; border-radius: 16px; background: #ffffff; box-shadow: 0 20px 40px rgba(0,0,0,0.2); overflow: hidden; width: 260px; border: none; }
+        .custom-overlay { position: relative; bottom: 85px; border-radius: 16px; background: #ffffff; box-shadow: 0 20px 40px rgba(0,0,0,0.2); overflow: hidden; width: 260px; border: none; pointer-events: none; }
         .overlay-header { background: linear-gradient(135deg, #764ba2 0%, #667eea 100%); color: white; padding: 14px 18px; font-weight: 700; font-size: 15px; display: flex; justify-content: space-between; align-items: center; }
         .overlay-body { padding: 18px; font-size: 13px; color: #444; background: #fff; }
         .info-row { display: flex; margin-bottom: 8px; }
         .info-label { width: 60px; font-weight: 600; color: #888; }
         .info-value { flex: 1; color: #333; }
-        .overlay-close { cursor: pointer; font-size: 18px; opacity: 0.8; transition: 0.3s; }
-        .overlay-close:hover { opacity: 1; }
         #map { flex-grow: 1; height: 100%; display: none; }
     </style>
 </head>
@@ -60,25 +65,32 @@
         let map = null; 
         let geocoder, clusterer, searchMarker, customOverlay;
         let sheetData = [];
+        let isMapLoaded = false;
 
-        function initApp() {
-            if (typeof kakao === 'undefined' || !kakao.maps) {
-                setTimeout(initApp, 100);
-                return;
+        // 카카오맵 로드 확인
+        function checkKakao() {
+            if (typeof kakao !== 'undefined' && kakao.maps) {
+                kakao.maps.load(initMap);
+            } else {
+                setTimeout(checkKakao, 300);
             }
+        }
+        checkKakao();
+
+        function initMap() {
             map = new kakao.maps.Map(document.getElementById('map'), { center: new kakao.maps.LatLng(35.1517, 129.0305), level: 7 });
             geocoder = new kakao.maps.services.Geocoder();
             clusterer = new kakao.maps.MarkerClusterer({ map: map, gridSize: 35, averageCenter: true, minLevel: 7 });
             searchMarker = new kakao.maps.Marker();
+            isMapLoaded = true;
             loadSheetData();
         }
-        initApp();
 
         function checkLogin() {
             const inputId = document.getElementById('inputId').value;
             const inputPw = document.getElementById('inputPw').value;
             if (USER_LIST.includes(inputId) && inputId === inputPw) {
-                if (!map) { alert("지도가 아직 로딩 중입니다. 잠시만 기다려주세요."); return; }
+                if (!isMapLoaded) { alert("지도가 아직 로딩 중입니다. 잠시만 기다려주세요."); return; }
                 document.getElementById('loginOverlay').style.display = 'none';
                 document.getElementById('sidebar').style.display = 'block';
                 document.getElementById('map').style.display = 'block';
@@ -89,7 +101,7 @@
         }
 
         function loadSheetData() {
-            var bounds = new kakao.maps.LatLngBounds(); // 전체 마커를 포함할 범위 객체
+            var bounds = new kakao.maps.LatLngBounds();
             Papa.parse('https://docs.google.com/spreadsheets/d/e/2PACX-1vSvJ-ZEYTaOAb34GeTSO7t-xEmanJNM1rW727QNiFe4pUcscX19q6r0dWtz6dE0sC0u2wDYIO32_yo_/pub?gid=0&single=true&output=csv', {
                 download: true, header: true, complete: (results) => {
                     sheetData = results.data;
@@ -100,15 +112,15 @@
                                 if (status === kakao.maps.services.Status.OK) {
                                     var coords = new kakao.maps.LatLng(result[0].y, result[0].x);
                                     var marker = new kakao.maps.Marker({ position: coords });
-                                    kakao.maps.event.addListener(marker, 'click', () => showOverlay(marker, item));
+                                    kakao.maps.event.addListener(marker, 'mouseover', () => showOverlay(marker, item));
+                                    kakao.maps.event.addListener(marker, 'mouseout', () => closeOverlay());
                                     clusterer.addMarker(marker);
-                                    bounds.extend(coords); // 범위에 좌표 추가
+                                    bounds.extend(coords);
                                 }
                             });
                         }
                     });
-                    // 데이터 로딩 후 모든 마커가 보이게 지도 범위 설정
-                    setTimeout(() => { if (sheetData.length > 0) map.setBounds(bounds); }, 1500);
+                    setTimeout(() => { if (sheetData.length > 0) map.setBounds(bounds); }, 1000);
                 }
             });
         }
@@ -118,13 +130,12 @@
             const content = document.createElement('div');
             content.className = 'custom-overlay';
             content.innerHTML = `
-                <div class="overlay-header">${item.site}<span class="overlay-close" onclick="closeOverlay()">×</span></div>
+                <div class="overlay-header">${item.site}</div>
                 <div class="overlay-body">
                     <div class="info-row"><div class="info-label">경비사</div><div class="info-value">${item.sec || '-'}</div></div>
                     <div class="info-row"><div class="info-label">NUM</div><div class="info-value">${item.num || '-'}</div></div>
                     <div class="info-row"><div class="info-label">ETC</div><div class="info-value">${item.etc || '-'}</div></div>
                     <div class="info-row"><div class="info-label">주차</div><div class="info-value">${item.park || '-'}</div></div>
-                    <div class="info-row"><div class="info-label" style="width:100%">주소</div></div>
                     <div style="color:#666; font-size:12px; margin-top:4px;">${item.address || '-'}</div>
                 </div>`;
             customOverlay = new kakao.maps.CustomOverlay({ position: targetMarker.getPosition(), content: content, yAnchor: 1.1 });
@@ -142,13 +153,7 @@
                 list.style.display = 'block';
                 filtered.forEach(item => {
                     let li = document.createElement('li');
-                    let binContent = item.bin2 || item.BIN2 || "";
-                    let mnContent = item.mn || item.MN || "";
-                    let extraInfo = [];
-                    if (binContent.trim() !== "") extraInfo.push(binContent.trim());
-                    if (mnContent.trim() !== "") extraInfo.push(mnContent.trim());
-                    let bracketText = extraInfo.length > 0 ? ` (${extraInfo.join(", ")})` : "";
-                    li.textContent = item.site + bracketText;
+                    li.textContent = item.site;
                     li.onclick = () => selectItem(item);
                     list.appendChild(li);
                 });
