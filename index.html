@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <title>사이트 통합 지도 앱</title>
-    <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=7f3387ab66fb524dbefeb77ae9f85e90&libraries=services,clusterer"></script>
+    <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=7f3387ab66fb524dbefeb77ae9f85e90&libraries=services,clusterer&autoload=false"></script>
     <style>
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; display: flex; overflow: hidden; font-family: 'Pretendard', sans-serif; }
         #sidebar { width: 320px; height: 100%; background: #ffffff; border-right: 1px solid #eaeaea; padding: 25px; box-sizing: border-box; overflow-y: auto; z-index: 10; box-shadow: 2px 0 10px rgba(0,0,0,0.05); }
@@ -30,7 +30,6 @@
         <input type="text" id="searchKeyword" placeholder="사이트명 검색..." onkeyup="showResults()">
         <h3 id="listTitle"></h3>
         <ul id="resultList"></ul>
-        
         <div class="footer-area">
             <div>🚗 항상 안전운전 하세요</div>
             <div style="margin-top: 8px;">Copyright © 박상문 All rights reserved.</div>
@@ -43,9 +42,9 @@
         let map, geocoder, clusterer, searchMarker, customOverlay;
         let sheetData = [];
         let isLocked = false;
-        // 구글 앱스 스크립트 웹 앱 URL
         const apiUrl = "https://script.google.com/macros/s/AKfycbzmv3X3M--d0ICabv1WSw5LG5ic4X7OZ0ErTNkYQ79rVGHHMsbH-z1dKxLetop0O6Lf_w/exec";
 
+        // 카카오 지도 로드
         kakao.maps.load(() => {
             map = new kakao.maps.Map(document.getElementById('map'), { center: new kakao.maps.LatLng(35.1517, 129.0305), level: 7 });
             geocoder = new kakao.maps.services.Geocoder();
