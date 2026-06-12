@@ -50,7 +50,6 @@
         });
 
         async function loadSheetData() {
-            // Apps Script 배포 URL로 변경하세요
             const jsonUrl = 'https://script.google.com/macros/s/AKfycbwxAh4O39J93KVy87IjPu3h17BUZJ120BwkfkESVHuorO21GXpZcJT0qLxEdJwTDM-y8Q/exec';
             const progressContainer = document.getElementById('progressContainer');
             const progressBar = document.getElementById('progressBar');
@@ -62,31 +61,41 @@
                 sheetData = sheetData.filter(item => item.address);
                 document.getElementById('totalCount').textContent = sheetData.length + '개';
 
-                for (let i = 0; i < sheetData.length; i++) {
-                    const item = sheetData[i];
+                let completed = 0;
+                
+                sheetData.forEach((item, index) => {
                     const cached = localStorage.getItem('addr_' + item.address);
                     
                     if (cached) {
                         addMarkerToMap(JSON.parse(cached), item);
+                        completed++;
+                        updateProgress(completed, sheetData.length);
                     } else {
-                        await new Promise((resolve) => {
+                        // 병렬 처리를 위해 setTimeout으로 요청 분산 (서버 부하 방지)
+                        setTimeout(() => {
                             geocoder.addressSearch(item.address, (result, status) => {
                                 if (status === kakao.maps.services.Status.OK) {
                                     const pos = { lat: result[0].y, lng: result[0].x };
                                     localStorage.setItem('addr_' + item.address, JSON.stringify(pos));
                                     addMarkerToMap(pos, item);
                                 }
-                                progressBar.style.width = ((i + 1) / sheetData.length) * 100 + '%';
-                                setTimeout(resolve, 60); 
+                                completed++;
+                                updateProgress(completed, sheetData.length);
                             });
-                        });
+                        }, index * 50); // 50ms 간격으로 순차적이지만 거의 동시에 시작
                     }
-                }
+                });
             } catch (e) {
                 console.error("데이터 로드 실패:", e);
-            } finally {
                 progressContainer.style.visibility = 'hidden';
             }
+        }
+
+        function updateProgress(done, total) {
+            const progressBar = document.getElementById('progressBar');
+            const progressContainer = document.getElementById('progressContainer');
+            progressBar.style.width = (done / total) * 100 + '%';
+            if (done === total) progressContainer.style.visibility = 'hidden';
         }
 
         function addMarkerToMap(pos, item) {
