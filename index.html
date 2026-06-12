@@ -107,17 +107,27 @@
         function closeOverlay() { if (customOverlay) customOverlay.setMap(null); }
 
         function filterList() {
-            const val = document.getElementById('searchKeyword').value;
-            const list = document.getElementById('resultList');
-            if(!val) { list.style.display = 'none'; return; }
-            
-            const filtered = sheetData.filter(i => i.site && i.site.includes(val));
-            list.innerHTML = filtered.map(i => `<li onclick="goTo('${i.address}')">
-                                                <strong>${i.site}</strong><br>
-                                                <small style="color:#666">BIN2: ${i.BIN2 || '-'} / MN: ${i.MN || '-'}</small>
-                                              </li>`).join('');
-            list.style.display = filtered.length ? 'block' : 'none';
-        }
+    const val = document.getElementById('searchKeyword').value.toLowerCase(); // 대소문자 구분 없이 검색
+    const list = document.getElementById('resultList');
+    
+    if(!val) { 
+        list.style.display = 'none'; 
+        return; 
+    }
+    
+    // 사이트명, BIN2,  중 하나라도 검색어가 포함되면 필터링
+    const filtered = sheetData.filter(i => 
+        (i.site && i.site.toLowerCase().includes(val)) || 
+        (i.BIN2 && String(i.BIN2).toLowerCase().includes(val))
+    );
+
+    list.innerHTML = filtered.map(i => `<li onclick="goTo('${i.address}')">
+                                        <strong>${i.site}</strong><br>
+                                        <small style="color:#666">BIN2: ${i.BIN2 || '-'} / MN: ${i.MN || '-'}</small>
+                                      </li>`).join('');
+    
+    list.style.display = filtered.length ? 'block' : 'none';
+}
 
         function goTo(addr) {
             geocoder.addressSearch(addr, (res, status) => {
