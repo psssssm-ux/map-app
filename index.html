@@ -69,23 +69,29 @@
         }
 
         function showResults() {
-            const keyword = document.getElementById('searchKeyword').value.trim();
-            const list = document.getElementById('resultList');
-            list.innerHTML = '';
-            document.getElementById('listTitle').textContent = keyword ? '검색 결과' : '';
-            
-            if (keyword.length < 1) return;
+    const keyword = document.getElementById('searchKeyword').value.trim();
+    const list = document.getElementById('resultList');
+    list.innerHTML = '';
+    document.getElementById('listTitle').textContent = keyword ? '검색 결과' : '';
+    
+    if (keyword.length < 1) return;
 
-            // 검색 필터링 (item.site가 존재하는 경우에만 검색)
-            const filtered = sheetData.filter(item => item.site && String(item.site).includes(keyword));
-            
-            filtered.forEach(item => {
-                let li = document.createElement('li');
-                li.textContent = item.site;
-                li.onclick = () => selectItem(item);
-                list.appendChild(li);
-            });
-        }
+    // 수정된 검색 로직: 
+    // 1. item.site가 존재하고
+    // 2. String(item.site)로 강제 변환하여 문자열로 만든 뒤
+    // 3. includes를 사용합니다.
+    const filtered = sheetData.filter(item => {
+        const siteName = item.site ? String(item.site) : "";
+        return siteName.includes(keyword);
+    });
+    
+    filtered.forEach(item => {
+        let li = document.createElement('li');
+        li.textContent = item.site;
+        li.onclick = () => selectItem(item);
+        list.appendChild(li);
+    });
+}
 
         function selectItem(item) {
             geocoder.addressSearch(item.address, (res, status) => {
