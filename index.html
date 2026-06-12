@@ -5,83 +5,94 @@
     <title>사이트 통합 지도 앱</title>
     <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=7f3387ab66fb524dbefeb77ae9f85e90&libraries=services,clusterer&autoload=false"></script>
     <style>
-        /* 기본 레이아웃 고정 */
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; display: flex; overflow: hidden; font-family: sans-serif; }
         #sidebar { width: 320px; min-width: 320px; height: 100%; background: #ffffff; border-right: 1px solid #eaeaea; padding: 25px; box-sizing: border-box; overflow-y: auto; z-index: 10; box-shadow: 2px 0 10px rgba(0,0,0,0.05); }
         #map { flex-grow: 1; height: 100%; background-color: #f0f0f0; }
         
-        /* 스타일 요소 강화 */
-        #loadingMsg { color: #764ba2; font-weight: 700; font-size: 14px; margin-bottom: 15px; display: block; }
+        /* 스타일 복구 */
         h3 { font-size: 18px; color: #444; margin-bottom: 20px; border-bottom: 2px solid #764ba2; padding-bottom: 10px; }
-        #searchKeyword { width: 100%; padding: 14px; border: 2px solid #eee; border-radius: 12px; box-sizing: border-box; }
+        #searchKeyword { width: 100%; padding: 14px; border: 2px solid #eee; border-radius: 12px; box-sizing: border-box; margin-bottom: 10px; }
+        #resultList { list-style: none; padding: 0; display: none; background: #fff; border: 1px solid #eee; border-radius: 12px; }
+        #resultList li { padding: 12px; border-bottom: 1px solid #f9f9f9; cursor: pointer; font-size: 14px; }
+        
+        .custom-overlay { position: absolute; bottom: 60px; left: -130px; border-radius: 16px; background: #ffffff; box-shadow: 0 10px 20px rgba(0,0,0,0.2); width: 260px; pointer-events: none; }
+        .overlay-header { background: linear-gradient(135deg, #764ba2 0%, #667eea 100%); color: white; padding: 12px 18px; font-weight: 700; border-radius: 16px 16px 0 0; }
+        .overlay-body { padding: 15px; font-size: 13px; }
     </style>
 </head>
 <body>
     <div id="sidebar">
-        <div id="loadingWrapper">
-            <span id="loadingMsg">지도를 불러오는 중...</span>
-        </div>
         <h3>사이트 관리</h3>
-        <input type="text" id="searchKeyword" placeholder="사이트명 검색...">
+        <input type="text" id="searchKeyword" placeholder="사이트명 검색..." onkeyup="filterList()">
+        <ul id="resultList"></ul>
         <div style="margin-top:20px; font-size:13px;">전체 사이트: <b id="totalCount">0개</b></div>
     </div>
     <div id="map"></div>
 
     <script>
-        let map, geocoder, clusterer;
+        let map, geocoder, clusterer, customOverlay, sheetData = [];
 
-        // 카카오 지도 API가 완전히 로드된 후 실행
         kakao.maps.load(() => {
-            const container = document.getElementById('map');
-            const options = { center: new kakao.maps.LatLng(35.1517, 129.0305), level: 7 };
-            map = new kakao.maps.Map(container, options);
+            map = new kakao.maps.Map(document.getElementById('map'), { center: new kakao.maps.LatLng(35.1517, 129.0305), level: 7 });
             geocoder = new kakao.maps.services.Geocoder();
             clusterer = new kakao.maps.MarkerClusterer({ map: map, gridSize: 35, averageCenter: true, minLevel: 7 });
-            
-            // 지도와 클러스터러가 준비된 후 데이터 로드 시작
             loadSheetData();
         });
 
         async function loadSheetData() {
-            const jsonUrl = 'https://script.google.com/macros/s/AKfycbwxAh4O39J93KVy87IjPu3h17BUZJ120BwkfkESVHuorO21GXpZcJT0qLxEdJwTDM-y8Q/exec';
-            try {
-                const res = await fetch(jsonUrl);
-                const data = await res.json();
-                document.getElementById('totalCount').textContent = data.length + '개';
-                document.getElementById('loadingMsg').textContent = "마커 생성 중...";
+            const res = await fetch('https://script.google.com/macros/s/AKfycbwxAh4O39J93KVy87IjPu3h17BUZJ120BwkfkESVHuorO21GXpZcJT0qLxEdJwTDM-y8Q/exec');
+            sheetData = await res.json();
+            document.getElementById('totalCount').textContent = sheetData.length + '개';
 
-                data.forEach((item, index) => {
-                    if (!item.address) return;
-
-                    const cacheKey = 'loc_' + item.address;
-                    const cached = localStorage.getItem(cacheKey);
-
-                    if (cached) {
-                        createMarker(JSON.parse(cached));
-                    } else {
-                        // 너무 빠른 요청을 방지하기 위한 지연 처리
-                        setTimeout(() => {
-                            geocoder.addressSearch(item.address, (result, status) => {
-                                if (status === kakao.maps.services.Status.OK) {
-                                    const pos = { lat: result[0].y, lng: result[0].x };
-                                    localStorage.setItem(cacheKey, JSON.stringify(pos));
-                                    createMarker(pos);
-                                }
-                            });
-                        }, index * 100); 
-                    }
-                });
-                document.getElementById('loadingMsg').textContent = "로딩 완료!";
-            } catch (e) {
-                document.getElementById('loadingMsg').textContent = "데이터 오류 발생";
-            }
+            sheetData.forEach((item, index) => {
+                if (!item.address) return;
+                const cached = localStorage.getItem('loc_' + item.address);
+                if (cached) {
+                    addMarker(JSON.parse(cached), item);
+                } else {
+                    setTimeout(() => {
+                        geocoder.addressSearch(item.address, (result, status) => {
+                            if (status === kakao.maps.services.Status.OK) {
+                                const pos = { lat: result[0].y, lng: result[0].x };
+                                localStorage.setItem('loc_' + item.address, JSON.stringify(pos));
+                                addMarker(pos, item);
+                            }
+                        });
+                    }, index * 100);
+                }
+            });
         }
 
-        function createMarker(pos) {
-            const marker = new kakao.maps.Marker({
-                position: new kakao.maps.LatLng(pos.lat, pos.lng)
+        function addMarker(pos, item) {
+            const marker = new kakao.maps.Marker({ position: new kakao.maps.LatLng(pos.lat, pos.lng) });
+            kakao.maps.event.addListener(marker, 'mouseover', () => showOverlay(marker, item));
+            kakao.maps.event.addListener(marker, 'mouseout', () => closeOverlay());
+            clusterer.addMarker(marker);
+        }
+
+        function showOverlay(target, item) {
+            closeOverlay();
+            const content = document.createElement('div');
+            content.className = 'custom-overlay';
+            content.innerHTML = `<div class="overlay-header">${item.site}</div><div class="overlay-body">경비사: ${item.sec || '-'}<br>주차: ${item.park || '-'}</div>`;
+            customOverlay = new kakao.maps.CustomOverlay({ position: target.getPosition(), content: content, yAnchor: 1 });
+            customOverlay.setMap(map);
+        }
+
+        function closeOverlay() { if (customOverlay) customOverlay.setMap(null); }
+
+        function filterList() {
+            const val = document.getElementById('searchKeyword').value;
+            const list = document.getElementById('resultList');
+            const filtered = sheetData.filter(i => i.site.includes(val));
+            list.innerHTML = val ? filtered.map(i => `<li onclick="goTo('${i.address}')">${i.site}</li>`).join('') : '';
+            list.style.display = val && filtered.length ? 'block' : 'none';
+        }
+
+        function goTo(addr) {
+            geocoder.addressSearch(addr, (res, status) => {
+                if(status === 'OK') map.setCenter(new kakao.maps.LatLng(res[0].y, res[0].x));
             });
-            clusterer.addMarker(marker); // 준비된 clusterer에 안전하게 추가
         }
     </script>
 </body>
