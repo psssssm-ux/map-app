@@ -5,19 +5,35 @@
     <title>사이트 통합 지도 앱</title>
     <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=7f3387ab66fb524dbefeb77ae9f85e90&libraries=services,clusterer&autoload=false"></script>
     <style>
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; font-family: sans-serif; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; font-family: 'Pretendard', sans-serif; }
         #app-container { display: flex; width: 100%; height: 100%; }
         #sidebar { width: 320px; min-width: 320px; height: 100%; background: #ffffff; border-right: 1px solid #eaeaea; display: flex; flex-direction: column; z-index: 10; box-shadow: 2px 0 10px rgba(0,0,0,0.05); }
         #sidebarContent { padding: 25px; flex-grow: 1; overflow-y: auto; }
         #map { flex-grow: 1; height: 100%; background-color: #f0f0f0; }
         
-        .btn-common { width: 270px; display: block; margin: 10px auto; padding: 12px 0; text-align: center; border-radius: 8px; font-weight: bold; font-size: 14px; cursor: pointer; border: none; }
-        #recentList, #resultList { list-style: none; padding: 0; margin-top: 10px; display: none; background: #f9f9f9; border: 1px solid #eee; border-radius: 8px; width: 270px; margin: 0 auto; }
-        #recentList li, #resultList li { padding: 10px; border-bottom: 1px solid #eee; font-size: 13px; cursor: pointer; }
+        .btn-common { width: 270px; display: block; margin: 10px auto; padding: 14px 0; text-align: center; border-radius: 10px; font-weight: 700; font-size: 14px; cursor: pointer; border: none; transition: transform 0.2s; }
+        .btn-common:hover { transform: translateY(-2px); }
         
-        /* 오버레이 디자인 */
-        .info-box { background: #fff; border: 2px solid #764ba2; border-radius: 8px; padding: 12px; font-size: 12px; width: 180px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
-        .info-title { font-weight: bold; color: #764ba2; margin-bottom: 5px; border-bottom: 1px solid #eee; }
+        #recentList, #resultList { list-style: none; padding: 0; margin-top: 10px; display: none; background: #f9f9f9; border: 1px solid #eee; border-radius: 10px; width: 270px; margin: 0 auto; overflow: hidden; }
+        #recentList li, #resultList li { padding: 12px; border-bottom: 1px solid #eee; font-size: 13px; cursor: pointer; transition: background 0.2s; }
+        #recentList li:hover, #resultList li:hover { background: #f0edff; }
+
+        /* 고급스러운 오버레이 디자인 (Glassmorphism) */
+        .info-box { 
+            background: rgba(255, 255, 255, 0.9); 
+            backdrop-filter: blur(10px); 
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 16px; 
+            padding: 18px; 
+            font-size: 13px; 
+            width: 210px; 
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15); 
+            color: #333;
+            line-height: 1.6;
+        }
+        .info-title { font-size: 15px; font-weight: 800; color: #4a148c; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 2px solid #ede7f6; }
+        .info-item { display: flex; justify-content: space-between; margin-bottom: 4px; }
+        .info-label { color: #888; font-size: 11px; font-weight: 600; text-transform: uppercase; }
     </style>
 </head>
 <body>
@@ -37,9 +53,9 @@
                 
                 <div style="margin-top: 30px;">
                     <h3 style="font-size: 18px; color: #444; border-bottom: 2px solid #764ba2; padding-bottom: 10px;">사이트 관리</h3>
-                    <input type="text" id="searchKeyword" style="width: 270px; padding: 12px; border: 2px solid #eee; border-radius: 8px; box-sizing: border-box;" placeholder="사이트명/코너명/기번 검색...">
+                    <input type="text" id="searchKeyword" style="width: 270px; padding: 14px; border: 2px solid #eee; border-radius: 10px; box-sizing: border-box;" placeholder="사이트명/코너명/기번 검색...">
                     <ul id="resultList"></ul>
-                    <div style="margin-top:15px; font-size:13px;">전체 사이트: <b id="totalCount">0개</b></div>
+                    <div style="margin-top:15px; font-size:13px; color:#666;">전체 사이트: <b id="totalCount" style="color:#000;">0개</b></div>
                 </div>
             </div>
         </div>
@@ -57,14 +73,18 @@
             loadSheetData();
         });
 
-        // DOM 객체로 생성하여 오버레이 렌더링
+        // 개선된 오버레이 렌더링
         function renderOverlay(pos, item) {
             if (customOverlay) customOverlay.setMap(null);
-            
             const div = document.createElement('div');
             div.className = 'info-box';
-            div.innerHTML = `<div class="info-title">${item.site}</div>경비: ${item.sec}<br>주차: ${item.park}<br>코너: ${item.bin2}<br>기번: ${item.mn}`;
-            
+            div.innerHTML = `
+                <div class="info-title">${item.site}</div>
+                <div class="info-item"><span class="info-label">경비</span><span>${item.sec || '-'}</span></div>
+                <div class="info-item"><span class="info-label">주차</span><span>${item.park || '-'}</span></div>
+                <div class="info-item"><span class="info-label">코너</span><span>${item.bin2 || '-'}</span></div>
+                <div class="info-item"><span class="info-label">기번</span><span>${item.mn || '-'}</span></div>
+            `;
             customOverlay = new kakao.maps.CustomOverlay({ position: pos, content: div, yAnchor: 1.3 });
             customOverlay.setMap(map);
         }
@@ -73,68 +93,5 @@
             const val = this.value.toLowerCase();
             const list = document.getElementById('resultList');
             if(!val) { list.style.display = 'none'; return; }
-            
             const filtered = sheetData.filter(i => (i.site && i.site.toLowerCase().includes(val)) || (i.BIN2 && String(i.BIN2).toLowerCase().includes(val)) || (i.MN && String(i.MN).toLowerCase().includes(val)));
-            list.innerHTML = filtered.map(i => `<li onclick="showInfo('${i.address}', '${i.site}', '${i.sec}', '${i.park}', '${i.BIN2}', '${i.MN}')"><strong>${i.site}</strong><br><small>코너: ${i.BIN2 || '-'} / 기번: ${i.MN || '-'}</small></li>`).join('');
-            list.style.display = filtered.length ? 'block' : 'none';
-        });
-
-        function showInfo(addr, site, sec, park, bin2, mn) {
-            geocoder.addressSearch(addr, (res, status) => {
-                if(status === 'OK') {
-                    const pos = new kakao.maps.LatLng(res[0].y, res[0].x);
-                    map.setCenter(pos);
-                    map.setLevel(3);
-                    renderOverlay(pos, {site, sec, park, bin2, mn});
-                }
-            });
-        }
-
-        function addMarker(pos, item) {
-            const marker = new kakao.maps.Marker({ position: new kakao.maps.LatLng(pos.lat, pos.lng) });
-            kakao.maps.event.addListener(marker, 'mouseover', () => renderOverlay(marker.getPosition(), {site:item.site, sec:item.sec, park:item.park, bin2:item.BIN2, mn:item.MN}));
-            kakao.maps.event.addListener(marker, 'mouseout', () => { if(customOverlay) customOverlay.setMap(null); });
-            clusterer.addMarker(marker);
-        }
-
-        async function loadSheetData() {
-            const res = await fetch('https://script.google.com/macros/s/AKfycbwxAh4O39J93KVy87IjPu3h17BUZJ120BwkfkESVHuorO21GXpZcJT0qLxEdJwTDM-y8Q/exec');
-            sheetData = await res.json();
-            document.getElementById('totalCount').textContent = sheetData.length + '개';
-            sheetData.forEach((item, index) => {
-                if (!item.address) { loadedCount++; return; }
-                const cacheKey = 'loc_' + item.address;
-                const cached = localStorage.getItem(cacheKey);
-                if (cached) { addMarker(JSON.parse(cached), item); loadedCount++; updateProgress(); }
-                else { setTimeout(() => {
-                    geocoder.addressSearch(item.address, (result, status) => {
-                        if (status === kakao.maps.services.Status.OK) {
-                            const pos = { lat: result[0].y, lng: result[0].x };
-                            localStorage.setItem(cacheKey, JSON.stringify(pos));
-                            addMarker(pos, item);
-                        }
-                        loadedCount++; updateProgress();
-                    });
-                }, index * 100); }
-            });
-        }
-
-        function updateProgress() {
-            const percent = Math.round((loadedCount / sheetData.length) * 100);
-            document.getElementById('progressBar').style.width = percent + '%';
-            document.getElementById('percentText').textContent = percent + '%';
-        }
-
-        function resetMap() { map.setCenter(new kakao.maps.LatLng(35.1517, 129.0305)); map.setLevel(7); if(customOverlay) customOverlay.setMap(null); }
-        function toggleRecent() {
-            const list = document.getElementById('recentList');
-            if (list.style.display === 'block') list.style.display = 'none';
-            else {
-                const sorted = [...sheetData].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 6);
-                list.innerHTML = sorted.map(i => `<li onclick="showInfo('${i.address}', '${i.site}', '${i.sec}', '${i.park}', '${i.BIN2}', '${i.MN}')">${i.site}</li>`).join('');
-                list.style.display = 'block';
-            }
-        }
-    </script>
-</body>
-</html>
+            list.innerHTML = filtered.map(i => `<li onclick="show
