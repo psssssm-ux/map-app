@@ -6,22 +6,21 @@
     <link rel="shortcut icon" href="data:image/x-icon;," type="image/x-icon">
     <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=7f3387ab66fb524dbefeb77ae9f85e90&libraries=services,clusterer&autoload=false"></script>
     <style>
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; display: flex; overflow: hidden; font-family: 'Pretendard', -apple-system, sans-serif; }
-        #sidebar { width: 320px; height: 100%; background: #ffffff; border-right: 1px solid #eaeaea; padding: 25px; box-sizing: border-box; overflow-y: auto; z-index: 10; box-shadow: 2px 0 10px rgba(0,0,0,0.05); }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; display: flex; overflow: hidden; }
+        #sidebar { width: 320px; flex-shrink: 0; height: 100%; background: #ffffff; border-right: 1px solid #eaeaea; padding: 25px; box-sizing: border-box; overflow-y: auto; z-index: 10; }
         
-        /* 로딩바 영역 */
         #loadingWrapper { margin-bottom: 25px; }
         #loadingText { font-size: 13px; color: #764ba2; margin-bottom: 8px; font-weight: 700; display: flex; justify-content: space-between; }
         #progressContainer { width: 100%; height: 8px; background: #eee; border-radius: 4px; overflow: hidden; }
         #progressBar { width: 0%; height: 100%; background: #764ba2; transition: width 0.2s; }
         
+        #map { flex-grow: 1; height: 100%; background-color: #f0f0f0; }
+        
+        /* 나머지 스타일 동일 */
         #sidebar h3 { font-size: 18px; color: #444; margin-bottom: 20px; border-bottom: 2px solid #764ba2; padding-bottom: 10px; }
         #searchKeyword { width: 100%; padding: 14px; border: 2px solid #eee; border-radius: 12px; box-sizing: border-box; }
         #resultList { background: white; border-radius: 12px; border: 1px solid #f0f0f0; margin-top: 10px; list-style: none; padding: 0; display: none; }
         #resultList li { padding: 12px 15px; border-bottom: 1px solid #f9f9f9; cursor: pointer; font-size: 14px; }
-        #resultList li:hover { background-color: #f4f7ff; color: #764ba2; }
-        #map { flex-grow: 1; height: 100%; background-color: #f0f0f0; }
-        
         .custom-overlay { position: relative; bottom: 60px; border-radius: 16px; background: #ffffff; box-shadow: 0 10px 20px rgba(0,0,0,0.2); width: 260px; pointer-events: none; }
         .overlay-header { background: linear-gradient(135deg, #764ba2 0%, #667eea 100%); color: white; padding: 12px 18px; font-weight: 700; font-size: 14px; border-radius: 16px 16px 0 0; }
         .overlay-body { padding: 15px; font-size: 13px; color: #444; }
@@ -35,7 +34,6 @@
             <div id="loadingText"><span id="loadingMsg">데이터 로딩 중...</span><span id="percentText">0%</span></div>
             <div id="progressContainer"><div id="progressBar"></div></div>
         </div>
-        
         <h3>사이트 관리</h3>
         <input type="text" id="searchKeyword" placeholder="사이트명 검색..." onkeyup="showResults()">
         <ul id="resultList"></ul>
@@ -49,7 +47,8 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             kakao.maps.load(() => {
-                map = new kakao.maps.Map(document.getElementById('map'), { center: new kakao.maps.LatLng(35.1517, 129.0305), level: 7 });
+                const container = document.getElementById('map');
+                map = new kakao.maps.Map(container, { center: new kakao.maps.LatLng(35.1517, 129.0305), level: 7 });
                 geocoder = new kakao.maps.services.Geocoder();
                 clusterer = new kakao.maps.MarkerClusterer({ map: map, gridSize: 35, averageCenter: true, minLevel: 7 });
                 loadSheetData();
@@ -58,7 +57,6 @@
 
         async function loadSheetData() {
             const jsonUrl = 'https://script.google.com/macros/s/AKfycbwxAh4O39J93KVy87IjPu3h17BUZJ120BwkfkESVHuorO21GXpZcJT0qLxEdJwTDM-y8Q/exec';
-            
             try {
                 const response = await fetch(jsonUrl);
                 sheetData = await response.json();
@@ -83,21 +81,31 @@
                                 completed++;
                                 updateProgress(completed, sheetData.length);
                             });
-                        }, index * 50);
+                        }, index * 100); // 간격 조정
                     }
                 });
             } catch (e) {
-                document.getElementById('loadingMsg').textContent = "로드 실패";
+                console.error("데이터 로드 오류:", e);
+                const msg = document.getElementById('loadingMsg');
+                if(msg) msg.textContent = "로드 실패";
             }
         }
 
         function updateProgress(done, total) {
+            const bar = document.getElementById('progressBar');
+            const txt = document.getElementById('percentText');
+            const msg = document.getElementById('loadingMsg');
             const percent = Math.round((done / total) * 100);
-            document.getElementById('progressBar').style.width = percent + '%';
-            document.getElementById('percentText').textContent = percent + '%';
+            
+            if(bar) bar.style.width = percent + '%';
+            if(txt) txt.textContent = percent + '%';
+            
             if (done >= total) {
-                document.getElementById('loadingMsg').textContent = "로딩 완료";
-                setTimeout(() => { document.getElementById('loadingWrapper').style.display = 'none'; }, 1000);
+                if(msg) msg.textContent = "로딩 완료";
+                setTimeout(() => { 
+                    const lw = document.getElementById('loadingWrapper');
+                    if(lw) lw.style.display = 'none'; 
+                }, 1000);
             }
         }
 
@@ -111,6 +119,7 @@
         function showResults() {
             const keyword = document.getElementById('searchKeyword').value.trim();
             const list = document.getElementById('resultList');
+            if (!list) return;
             if (keyword.length < 1) { list.style.display = 'none'; return; }
             list.innerHTML = '';
             const filtered = sheetData.filter(item => {
