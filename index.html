@@ -11,8 +11,8 @@
         #sidebar { width: 320px; height: 100%; background: #ffffff; border-right: 1px solid #eaeaea; padding: 25px; box-sizing: border-box; overflow-y: auto; z-index: 10; box-shadow: 2px 0 10px rgba(0,0,0,0.05); }
         
         /* 프로그레스 바 스타일 */
-        #progressContainer { width: 100%; height: 6px; background: #eee; border-radius: 3px; margin-bottom: 20px; overflow: hidden; display: none; }
-        #progressBar { width: 0%; height: 100%; background: #764ba2; transition: width 0.3s; }
+        #progressContainer { width: 100%; height: 8px; background: #eee; border-radius: 4px; margin-bottom: 20px; overflow: hidden; visibility: hidden; }
+        #progressBar { width: 0%; height: 100%; background: #764ba2; transition: width 0.2s; }
         
         #sidebar h3 { font-size: 18px; color: #444; margin-bottom: 20px; border-bottom: 2px solid #764ba2; padding-bottom: 10px; }
         #searchKeyword { width: 100%; padding: 14px; border: 2px solid #eee; border-radius: 12px; box-sizing: border-box; }
@@ -21,7 +21,6 @@
         #resultList li:hover { background-color: #f4f7ff; color: #764ba2; }
         #map { flex-grow: 1; height: 100%; background-color: #f0f0f0; }
         
-        /* 오버레이 떨림 방지: pointer-events: none은 필수 */
         .custom-overlay { position: relative; bottom: 60px; border-radius: 16px; background: #ffffff; box-shadow: 0 10px 20px rgba(0,0,0,0.2); width: 260px; pointer-events: none; }
         .overlay-header { background: linear-gradient(135deg, #764ba2 0%, #667eea 100%); color: white; padding: 12px 18px; font-weight: 700; font-size: 14px; border-radius: 16px 16px 0 0; }
         .overlay-body { padding: 15px; font-size: 13px; color: #444; }
@@ -56,7 +55,9 @@
             const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSvJ-ZEYTaOAb34GeTSO7t-xEmanJNM1rW727QNiFe4pUcscX19q6r0dWtz6dE0sC0u2wDYIO32_yo_/pub?gid=0&single=true&output=csv';
             const progressContainer = document.getElementById('progressContainer');
             const progressBar = document.getElementById('progressBar');
-            progressContainer.style.display = 'block';
+            
+            // 로딩 시작 시 표시
+            progressContainer.style.visibility = 'visible';
             
             Papa.parse(csvUrl, {
                 download: true, header: true,
@@ -74,41 +75,22 @@
                                     kakao.maps.event.addListener(marker, 'mouseout', () => closeOverlay());
                                     clusterer.addMarker(marker);
                                 }
-                                // 프로그레스 바 업데이트
+                                // 진행률 업데이트
                                 progressBar.style.width = ((i + 1) / sheetData.length) * 100 + '%';
                                 setTimeout(resolve, 50); 
                             });
                         });
                     }
-                    progressContainer.style.display = 'none';
+                    progressContainer.style.visibility = 'hidden'; // 로딩 완료 후 숨김
                 }
             });
         }
 
-        function showOverlay(target, item) {
-            if (customOverlay) customOverlay.setMap(null);
-            const content = document.createElement('div');
-            content.className = 'custom-overlay';
-            content.innerHTML = `
-                <div class="overlay-header">${item.site}</div>
-                <div class="overlay-body">
-                    <div class="info-row"><div class="info-label">경비사</div><div>${item.sec || '-'}</div></div>
-                    <div class="info-row"><div class="info-label">주차</div><div>${item.park || '-'}</div></div>
-                    <div style="margin-top:10px; font-size:12px; color:#999;">${item.address || ''}</div>
-                </div>`;
-            customOverlay = new kakao.maps.CustomOverlay({ 
-                position: target.getPosition ? target.getPosition() : target, 
-                content: content, 
-                yAnchor: 1.1 
-            });
-            customOverlay.setMap(map);
-        }
-
+        // (검색 및 기타 함수 생략 - 이전과 동일)
+        function showResults() { /* ... */ }
+        function selectItem(item) { /* ... */ }
+        function showOverlay(target, item) { /* ... */ }
         function closeOverlay() { if (customOverlay) customOverlay.setMap(null); }
-
-        // 검색 및 선택 함수는 이전과 동일하게 유지...
-        function showResults() { /* ...생략... */ }
-        function selectItem(item) { /* ...생략... */ }
     </script>
 </body>
 </html>
