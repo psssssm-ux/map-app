@@ -75,3 +75,90 @@
                         completed++;
                         updateProgress(completed, sheetData.length);
                     } else {
+                        setTimeout(() => {
+                            geocoder.addressSearch(item.address, (result, status) => {
+                                if (status === kakao.maps.services.Status.OK) {
+                                    const pos = { lat: result[0].y, lng: result[0].x };
+                                    localStorage.setItem('addr_' + item.address, JSON.stringify(pos));
+                                    addMarkerToMap(pos, item);
+                                }
+                                completed++;
+                                updateProgress(completed, sheetData.length);
+                            });
+                        }, index * 50);
+                    }
+                });
+            } catch (e) {
+                console.error("데이터 로드 실패:", e);
+                loadingWrapper.style.display = 'none';
+            }
+        }
+
+        function updateProgress(done, total) {
+            const percent = Math.round((done / total) * 100);
+            document.getElementById('progressBar').style.width = percent + '%';
+            document.getElementById('percentText').textContent = percent + '%';
+            if (done >= total) document.getElementById('loadingWrapper').style.display = 'none';
+        }
+
+        function addMarkerToMap(pos, item) {
+            const marker = new kakao.maps.Marker({ position: new kakao.maps.LatLng(pos.lat, pos.lng) });
+            kakao.maps.event.addListener(marker, 'mouseover', () => showOverlay(marker, item));
+            kakao.maps.event.addListener(marker, 'mouseout', () => closeOverlay());
+            clusterer.addMarker(marker);
+        }
+
+        function showResults() {
+            const keyword = document.getElementById('searchKeyword').value.trim();
+            const list = document.getElementById('resultList');
+            if (keyword.length < 1) { list.style.display = 'none'; return; }
+            list.innerHTML = '';
+            const filtered = sheetData.filter(item => {
+                const siteName = item.site ? String(item.site) : "";
+                return siteName.includes(keyword);
+            });
+            filtered.forEach(item => {
+                let li = document.createElement('li');
+                li.textContent = item.site;
+                li.onclick = () => selectItem(item);
+                list.appendChild(li);
+            });
+            list.style.display = filtered.length > 0 ? 'block' : 'none';
+        }
+
+        function selectItem(item) {
+            document.getElementById('searchKeyword').value = item.site;
+            document.getElementById('resultList').style.display = 'none';
+            geocoder.addressSearch(item.address, (result, status) => {
+                if (status === kakao.maps.services.Status.OK) {
+                    const coords = new kakao.maps.LatLng(result[0].y, result[0].x);
+                    map.setCenter(coords);
+                    map.setLevel(3);
+                    showOverlay({getPosition: () => coords}, item);
+                }
+            });
+        }
+
+        function showOverlay(target, item) {
+            if (customOverlay) customOverlay.setMap(null);
+            const content = document.createElement('div');
+            content.className = 'custom-overlay';
+            content.innerHTML = `
+                <div class="overlay-header">${item.site}</div>
+                <div class="overlay-body">
+                    <div class="info-row"><div class="info-label">경비사</div><div>${item.sec || '-'}</div></div>
+                    <div class="info-row"><div class="info-label">주차</div><div>${item.park || '-'}</div></div>
+                    <div style="margin-top:10px; font-size:12px; color:#999;">${item.address || ''}</div>
+                </div>`;
+            customOverlay = new kakao.maps.CustomOverlay({ 
+                position: target.getPosition ? target.getPosition() : target, 
+                content: content, 
+                yAnchor: 1.1 
+            });
+            customOverlay.setMap(map);
+        }
+
+        function closeOverlay() { if (customOverlay) customOverlay.setMap(null); }
+    </script>
+</body>
+</html>
