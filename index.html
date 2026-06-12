@@ -23,18 +23,15 @@
     </style>
 </head>
 <body>
-    <div id="sidebar">
-        <div class="menu-area">
-        <button class="menu-btn" onclick="location.reload()">지도 초기화</button>
-        <button class="menu-btn" onclick="showRecentUpdates()">최근 수정된 사이트</button>
+<div id="sidebar">
+    <div style="margin-bottom: 20px;">
+        <button class="menu-btn" onclick="location.reload()" style="display: block; width: 100%; margin-bottom: 10px;">지도 초기화</button>
+        <button class="menu-btn" onclick="showRecentUpdates()" style="display: block; width: 100%;">최근 수정된 사이트</button>
     </div>
-    
     <input type="text" id="searchKeyword" placeholder="사이트명 검색..." onkeyup="showResults()">
     <h3 id="listTitle"></h3>
     <ul id="resultList"></ul>
-    </div>
-    <div id="map"></div>
-
+</div>
     <script>
         let map, geocoder, clusterer, customOverlay;
         let sheetData = [];
