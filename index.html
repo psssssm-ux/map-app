@@ -17,7 +17,7 @@
         .footer-area { margin-top: 40px; padding-bottom: 20px; text-align: center; color: #aaa; font-size: 11px; }
         #map { flex-grow: 1; height: 100%; background-color: #f0f0f0; }
         
-        /* 중요: 마우스 떨림 방지를 위해 pointer-events: none 추가 */
+        /* 중요: pointer-events: none을 사용하여 마우스 떨림 방지 */
         .custom-overlay { position: absolute; bottom: 40px; left: -130px; border-radius: 16px; background: #ffffff; box-shadow: 0 20px 40px rgba(0,0,0,0.2); width: max-content; min-width: 260px; max-width: 450px; border: none; pointer-events: none; }
         .overlay-header { background: linear-gradient(135deg, #764ba2 0%, #667eea 100%); color: white; padding: 12px 20px; font-weight: 700; font-size: 15px; border-radius: 16px 16px 0 0; }
         .overlay-body { padding: 15px 20px; font-size: 13px; color: #444; border-radius: 0 0 16px 16px; line-height: 1.6; }
@@ -55,9 +55,11 @@
                         geocoder.addressSearch(item.address, (result, status) => {
                             if (status === kakao.maps.services.Status.OK) {
                                 var marker = new kakao.maps.Marker({ position: new kakao.maps.LatLng(result[0].y, result[0].x) });
-                                // 마우스 이벤트 등록
+                                
+                                // [수정] mouseover/mouseout 이벤트로 정보창 제어
                                 kakao.maps.event.addListener(marker, 'mouseover', () => showOverlay(marker, item));
                                 kakao.maps.event.addListener(marker, 'mouseout', () => { if(customOverlay) customOverlay.setMap(null); });
+                                
                                 clusterer.addMarker(marker);
                             }
                         });
@@ -66,7 +68,8 @@
             } catch(e) { console.error("데이터 로드 실패:", e); }
         }
 
-        function showOverlay(targetMarker, item) {
+        // 검색 및 선택 시 정보창 표시 로직 통합
+        function showOverlay(target, item) {
             if (customOverlay) customOverlay.setMap(null);
             const content = document.createElement('div');
             content.className = 'custom-overlay';
@@ -76,9 +79,14 @@
                     <b>코너명:</b> ${item.BIN2 || '-'}<br>
                     <b>경비사:</b> ${item.sec || '-'}<br>
                     <b>전화:</b> ${item.phone || '-'}<br>
+                    <b>기타:</b> ${item.etc || '-'}<br>
+                    <b>주차:</b> ${item.park || '-'}<br>
                     <b>주소:</b> ${item.address || '-'}
                 </div>`;
-            customOverlay = new kakao.maps.CustomOverlay({ position: targetMarker.getPosition(), content: content, yAnchor: 1.2 });
+            
+            // target이 마커이면 위치를 직접 가져오고, 검색 결과 좌표면 넘겨받은 좌표 사용
+            const position = target.getPosition ? target.getPosition() : target;
+            customOverlay = new kakao.maps.CustomOverlay({ position: position, content: content, yAnchor: 1.2 });
             customOverlay.setMap(map);
         }
 
@@ -102,6 +110,7 @@
                     var coords = new kakao.maps.LatLng(res[0].y, res[0].x);
                     map.setCenter(coords);
                     map.setLevel(3);
+                    showOverlay(coords, item); // 검색 시에도 동일한 showOverlay 호출
                 }
             });
         }
