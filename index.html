@@ -59,7 +59,7 @@
         });
 
         function loadSheetData() {
-            const csvUrl = 'https://script.google.com/macros/s/AKfycbz74bMpLzxq9qUZFs0SHdo1yfcLz34SpXQmF3csz-Geu_ORWmuSQDDFpBCypAfpRMoX9A/exec';
+            const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSvJ-ZEYTaOAb34GeTSO7t-xEmanJNM1rW727QNiFe4pUcscX19q6r0dWtz6dE0sC0u2wDYIO32_yo_/pub?gid=0&single=true&output=csv';
             Papa.parse(csvUrl, {
                 download: true, header: true,
                 complete: (results) => {
