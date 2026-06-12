@@ -9,7 +9,8 @@
         #sidebar { width: 320px; min-width: 320px; height: 100%; background: #ffffff; border-right: 1px solid #eaeaea; padding: 25px; box-sizing: border-box; overflow-y: auto; z-index: 10; box-shadow: 2px 0 10px rgba(0,0,0,0.05); }
         #map { flex-grow: 1; height: 100%; background-color: #f0f0f0; }
         
-        /* 스타일 복구 */
+        /* 기능 스타일 */
+        #loadingMsg { color: #764ba2; font-weight: 700; font-size: 14px; margin-bottom: 15px; display: block; }
         h3 { font-size: 18px; color: #444; margin-bottom: 20px; border-bottom: 2px solid #764ba2; padding-bottom: 10px; }
         #searchKeyword { width: 100%; padding: 14px; border: 2px solid #eee; border-radius: 12px; box-sizing: border-box; margin-bottom: 10px; }
         #resultList { list-style: none; padding: 0; display: none; background: #fff; border: 1px solid #eee; border-radius: 12px; }
@@ -22,6 +23,7 @@
 </head>
 <body>
     <div id="sidebar">
+        <div id="loadingWrapper"><span id="loadingMsg">데이터 로드 중...</span></div>
         <h3>사이트 관리</h3>
         <input type="text" id="searchKeyword" placeholder="사이트명 검색..." onkeyup="filterList()">
         <ul id="resultList"></ul>
@@ -46,7 +48,9 @@
 
             sheetData.forEach((item, index) => {
                 if (!item.address) return;
-                const cached = localStorage.getItem('loc_' + item.address);
+                const cacheKey = 'loc_' + item.address;
+                const cached = localStorage.getItem(cacheKey);
+
                 if (cached) {
                     addMarker(JSON.parse(cached), item);
                 } else {
@@ -54,13 +58,14 @@
                         geocoder.addressSearch(item.address, (result, status) => {
                             if (status === kakao.maps.services.Status.OK) {
                                 const pos = { lat: result[0].y, lng: result[0].x };
-                                localStorage.setItem('loc_' + item.address, JSON.stringify(pos));
+                                localStorage.setItem(cacheKey, JSON.stringify(pos));
                                 addMarker(pos, item);
                             }
                         });
                     }, index * 100);
                 }
             });
+            document.getElementById('loadingMsg').textContent = "모두 로드되었습니다.";
         }
 
         function addMarker(pos, item) {
@@ -84,14 +89,18 @@
         function filterList() {
             const val = document.getElementById('searchKeyword').value;
             const list = document.getElementById('resultList');
-            const filtered = sheetData.filter(i => i.site.includes(val));
-            list.innerHTML = val ? filtered.map(i => `<li onclick="goTo('${i.address}')">${i.site}</li>`).join('') : '';
+            const filtered = val ? sheetData.filter(i => i.site.includes(val)) : [];
+            list.innerHTML = filtered.map(i => `<li onclick="goTo('${i.address}')">${i.site}</li>`).join('');
             list.style.display = val && filtered.length ? 'block' : 'none';
         }
 
         function goTo(addr) {
             geocoder.addressSearch(addr, (res, status) => {
-                if(status === 'OK') map.setCenter(new kakao.maps.LatLng(res[0].y, res[0].x));
+                if(status === 'OK') {
+                    const pos = new kakao.maps.LatLng(res[0].y, res[0].x);
+                    map.setCenter(pos);
+                    map.setLevel(3);
+                }
             });
         }
     </script>
