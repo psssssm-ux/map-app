@@ -3,7 +3,14 @@
 <head>
     <meta charset="utf-8">
     <title>사이트 통합 지도 앱</title>
-    <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=7f3387ab66fb524dbefeb77ae9f85e90&libraries=services,clusterer"></script>
+    <script>
+        (function() {
+            var script = document.createElement('script');
+            script.type = 'text/javascript';
+            script.src = 'https://dapi.kakao.com/v2/maps/sdk.js?appkey=7f3387ab66fb524dbefeb77ae9f85e90&libraries=services,clusterer&autoload=false';
+            document.head.appendChild(script);
+        })();
+    </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <style>
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; display: flex; overflow: hidden; font-family: 'Pretendard', -apple-system, sans-serif; }
@@ -58,31 +65,32 @@
         let map = null; 
         let geocoder, clusterer, searchMarker, customOverlay;
         let sheetData = [];
+        let isMapLoaded = false;
 
-        function initApp() {
-            if (typeof kakao === 'undefined' || !kakao.maps) {
-                console.log("SDK 로딩 대기 중...");
-                setTimeout(initApp, 500);
-                return;
-            }
-            try {
-                map = new kakao.maps.Map(document.getElementById('map'), { center: new kakao.maps.LatLng(35.1517, 129.0305), level: 7 });
-                geocoder = new kakao.maps.services.Geocoder();
-                clusterer = new kakao.maps.MarkerClusterer({ map: map, gridSize: 35, averageCenter: true, minLevel: 7 });
-                searchMarker = new kakao.maps.Marker();
-                console.log("지도 초기화 완료!");
-                loadSheetData();
-            } catch (e) {
-                console.error("지도 생성 중 에러 발생:", e);
+        // 카카오맵 로드 확인
+        function checkKakao() {
+            if (typeof kakao !== 'undefined' && kakao.maps) {
+                kakao.maps.load(initMap);
+            } else {
+                setTimeout(checkKakao, 300);
             }
         }
-        initApp();
+        checkKakao();
+
+        function initMap() {
+            map = new kakao.maps.Map(document.getElementById('map'), { center: new kakao.maps.LatLng(35.1517, 129.0305), level: 7 });
+            geocoder = new kakao.maps.services.Geocoder();
+            clusterer = new kakao.maps.MarkerClusterer({ map: map, gridSize: 35, averageCenter: true, minLevel: 7 });
+            searchMarker = new kakao.maps.Marker();
+            isMapLoaded = true;
+            loadSheetData();
+        }
 
         function checkLogin() {
             const inputId = document.getElementById('inputId').value;
             const inputPw = document.getElementById('inputPw').value;
             if (USER_LIST.includes(inputId) && inputId === inputPw) {
-                if (!map) { alert("지도가 아직 로딩 중입니다. 잠시만 기다려주세요."); return; }
+                if (!isMapLoaded) { alert("지도가 아직 로딩 중입니다. 잠시만 기다려주세요."); return; }
                 document.getElementById('loginOverlay').style.display = 'none';
                 document.getElementById('sidebar').style.display = 'block';
                 document.getElementById('map').style.display = 'block';
