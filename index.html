@@ -3,32 +3,17 @@
 <head>
     <meta charset="utf-8">
     <title>사이트 통합 지도 앱</title>
-    <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=7f3387ab66fb524dbefeb77ae9f85e90&libraries=services,clusterer"></script>
+    <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=7f3387ab66fb524dbefeb77ae9f85e90&libraries=services,clusterer&autoload=true"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <style>
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; display: flex; overflow: hidden; font-family: 'Pretendard', -apple-system, sans-serif; }
-        #loginOverlay { position: fixed; top:0; left:0; width:100%; height:100%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); z-index:9999; display:flex; justify-content:center; align-items:center; }
-        .loginBox { padding: 40px; background: white; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.2); text-align: center; width: 300px; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; display: flex; overflow: hidden; font-family: sans-serif; }
+        #loginOverlay { position: fixed; top:0; left:0; width:100%; height:100%; background: #764ba2; z-index:9999; display:flex; justify-content:center; align-items:center; }
+        .loginBox { padding: 40px; background: white; border-radius: 20px; text-align: center; width: 300px; }
         .loginBox input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
-        .loginBox button { width: 100%; padding: 12px; background: #764ba2; border: none; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; }
-        #sidebar { width: 320px; height: 100%; background: #ffffff; border-right: 1px solid #eaeaea; padding: 25px; box-sizing: border-box; overflow-y: auto; z-index: 10; box-shadow: 2px 0 10px rgba(0,0,0,0.05); }
-        .user-profile { background: #f4f7ff; padding: 15px; border-radius: 10px; margin-bottom: 20px; text-align: center; color: #555; font-size: 13px; }
-        #sidebar h3 { font-size: 18px; color: #444; margin-bottom: 20px; border-bottom: 2px solid #764ba2; padding-bottom: 10px; }
-        #searchKeyword { width: 100%; padding: 14px; border: 2px solid #eee; border-radius: 12px; box-sizing: border-box; }
-        #resultList { background: white; border-radius: 12px; border: 1px solid #f0f0f0; margin-top: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); list-style: none; padding: 0; }
-        #resultList li { padding: 12px 15px; border-bottom: 1px solid #f9f9f9; cursor: pointer; }
-        #resultList li:hover { background-color: #f4f7ff; color: #764ba2; }
-        .stats-box { margin-top: 30px; padding: 15px; border: 1px solid #eee; border-radius: 10px; background: #fafafa; }
-        .stats-item { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 13px; color: #666; }
-        .custom-overlay { position: relative; bottom: 85px; border-radius: 16px; background: #ffffff; box-shadow: 0 20px 40px rgba(0,0,0,0.2); overflow: hidden; width: 260px; border: none; }
-        .overlay-header { background: linear-gradient(135deg, #764ba2 0%, #667eea 100%); color: white; padding: 14px 18px; font-weight: 700; font-size: 15px; display: flex; justify-content: space-between; align-items: center; }
-        .overlay-body { padding: 18px; font-size: 13px; color: #444; background: #fff; }
-        .info-row { display: flex; margin-bottom: 8px; }
-        .info-label { width: 60px; font-weight: 600; color: #888; }
-        .info-value { flex: 1; color: #333; }
-        .overlay-close { cursor: pointer; font-size: 18px; opacity: 0.8; transition: 0.3s; }
-        .overlay-close:hover { opacity: 1; }
-        #map { flex-grow: 1; height: 100%; }
+        .loginBox button { width: 100%; padding: 12px; background: #764ba2; border: none; border-radius: 8px; color: white; cursor: pointer; }
+        #sidebar { width: 320px; height: 100%; background: #fff; border-right: 1px solid #ddd; padding: 20px; display: none; }
+        #map { flex-grow: 1; height: 100%; display: none; }
+        .custom-overlay { background: white; padding: 10px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.3); font-size: 12px; pointer-events: none; }
     </style>
 </head>
 <body>
@@ -36,75 +21,63 @@
     <div id="loginOverlay">
         <div class="loginBox">
             <h3>관리자 로그인</h3>
-            <input type="text" id="inputId" placeholder="ID"><br>
-            <input type="password" id="inputPw" placeholder="PASSWORD"><br>
-            <button onclick="checkLogin()">로그인</button>
+            <input type="text" id="inputId" placeholder="ID">
+            <input type="password" id="inputPw" placeholder="PASSWORD">
+            <button onclick="handleLogin()">로그인</button>
         </div>
     </div>
 
-    <div id="sidebar" style="display:none;">
-        <div class="user-profile"><strong id="displayId">관리자</strong>님 환영합니다.</div>
+    <div id="sidebar">
         <h3>사이트 관리</h3>
-        <input type="text" id="searchKeyword" placeholder="사이트명 검색..." onkeyup="showResults()">
+        <input type="text" id="searchKeyword" placeholder="검색..." onkeyup="showResults()">
         <ul id="resultList"></ul>
-        <div class="stats-box">
-            <div class="stats-item"><span>전체 사이트</span> <b id="totalCount">0개</b></div>
-            <div class="stats-item"><span>운영 상태</span> <b style="color:#764ba2">Active</b></div>
-        </div>
+        <div id="totalCount"></div>
     </div>
 
-    <div id="map" style="display:none;"></div>
+    <div id="map"></div>
 
     <script>
         const USER_LIST = ["22062", "23004", "17105", "17115", "17183", "17189", "17260", "18145", "19049", "20027", "22017", "22025"];
-        let map, geocoder, clusterer, searchMarker, customOverlay;
-        let sheetData = [];
+        let map, geocoder, clusterer, searchMarker, customOverlay, sheetData;
 
-        // 안전한 초기화 함수
-        function initApp() {
-            if (typeof kakao === 'undefined' || !kakao.maps) {
-                setTimeout(initApp, 100);
-                return;
-            }
+        function handleLogin() {
+            const inputId = document.getElementById('inputId').value;
+            const inputPw = document.getElementById('inputPw').value;
             
-            // 카카오맵 로드
-            map = new kakao.maps.Map(document.getElementById('map'), { center: new kakao.maps.LatLng(35.1517, 129.0305), level: 7 });
+            if (USER_LIST.includes(inputId) && inputId === inputPw) {
+                document.getElementById('loginOverlay').style.display = 'none';
+                document.getElementById('sidebar').style.display = 'block';
+                document.getElementById('map').style.display = 'block';
+                
+                // 로그인 직후에만 지도 생성
+                initMap();
+            } else {
+                alert("로그인 실패");
+            }
+        }
+
+        function initMap() {
+            const container = document.getElementById('map');
+            map = new kakao.maps.Map(container, { center: new kakao.maps.LatLng(35.1517, 129.0305), level: 7 });
             geocoder = new kakao.maps.services.Geocoder();
             clusterer = new kakao.maps.MarkerClusterer({ map: map, gridSize: 35, averageCenter: true, minLevel: 7 });
             searchMarker = new kakao.maps.Marker();
             loadSheetData();
         }
 
-        // 앱 구동
-        initApp();
-
-        function checkLogin() {
-            const inputId = document.getElementById('inputId').value;
-            const inputPw = document.getElementById('inputPw').value;
-            if (USER_LIST.includes(inputId) && inputId === inputPw) {
-                document.getElementById('loginOverlay').style.display = 'none';
-                document.getElementById('sidebar').style.display = 'block';
-                document.getElementById('map').style.display = 'block';
-                document.getElementById('displayId').textContent = inputId;
-                
-                if (map) {
-                    map.relayout();
-                    map.setCenter(new kakao.maps.LatLng(35.1517, 129.0305));
-                }
-            } else { alert("아이디 또는 비밀번호가 틀렸습니다."); }
-        }
-
         function loadSheetData() {
             Papa.parse('https://docs.google.com/spreadsheets/d/e/2PACX-1vSvJ-ZEYTaOAb34GeTSO7t-xEmanJNM1rW727QNiFe4pUcscX19q6r0dWtz6dE0sC0u2wDYIO32_yo_/pub?gid=0&single=true&output=csv', {
                 download: true, header: true, complete: (results) => {
                     sheetData = results.data;
-                    document.getElementById('totalCount').textContent = sheetData.length + '개';
+                    document.getElementById('totalCount').textContent = "전체: " + sheetData.length + "개";
                     sheetData.forEach(item => {
                         if(item.address) {
                             geocoder.addressSearch(item.address, (result, status) => {
                                 if (status === kakao.maps.services.Status.OK) {
-                                    var marker = new kakao.maps.Marker({ position: new kakao.maps.LatLng(result[0].y, result[0].x) });
-                                    kakao.maps.event.addListener(marker, 'click', () => showOverlay(marker, item));
+                                    var coords = new kakao.maps.LatLng(result[0].y, result[0].x);
+                                    var marker = new kakao.maps.Marker({ position: coords });
+                                    kakao.maps.event.addListener(marker, 'mouseover', () => showOverlay(marker, item));
+                                    kakao.maps.event.addListener(marker, 'mouseout', () => closeOverlay());
                                     clusterer.addMarker(marker);
                                 }
                             });
@@ -114,59 +87,36 @@
             });
         }
 
-        function showOverlay(targetMarker, item) {
+        function showOverlay(marker, item) {
             if (customOverlay) customOverlay.setMap(null);
             const content = document.createElement('div');
             content.className = 'custom-overlay';
-            content.innerHTML = `
-                <div class="overlay-header">${item.site}<span class="overlay-close" onclick="closeOverlay()">×</span></div>
-                <div class="overlay-body">
-                    <div class="info-row"><div class="info-label">경비사</div><div class="info-value">${item.sec || '-'}</div></div>
-                    <div class="info-row"><div class="info-label">NUM</div><div class="info-value">${item.num || '-'}</div></div>
-                    <div class="info-row"><div class="info-label">ETC</div><div class="info-value">${item.etc || '-'}</div></div>
-                    <div class="info-row"><div class="info-label">주차</div><div class="info-value">${item.park || '-'}</div></div>
-                    <div class="info-row"><div class="info-label" style="width:100%">주소</div></div>
-                    <div style="color:#666; font-size:12px; margin-top:4px;">${item.address || '-'}</div>
-                </div>`;
-            customOverlay = new kakao.maps.CustomOverlay({ position: targetMarker.getPosition(), content: content, yAnchor: 1.1 });
+            content.innerHTML = `<strong>${item.site}</strong><br>${item.address}`;
+            customOverlay = new kakao.maps.CustomOverlay({ position: marker.getPosition(), content: content, yAnchor: 1.5 });
             customOverlay.setMap(map);
         }
+
         function closeOverlay() { if (customOverlay) customOverlay.setMap(null); }
 
         function showResults() {
             const keyword = document.getElementById('searchKeyword').value;
             const list = document.getElementById('resultList');
             list.innerHTML = '';
-            if (keyword.length < 1) { list.style.display = 'none'; return; }
-            const filtered = sheetData.filter(item => item.site && item.site.includes(keyword));
-            if (filtered.length > 0) {
-                list.style.display = 'block';
-                filtered.forEach(item => {
-                    let li = document.createElement('li');
-                    let binContent = item.bin2 || item.BIN2 || "";
-                    let mnContent = item.mn || item.MN || "";
-                    let extraInfo = [];
-                    if (binContent.trim() !== "") extraInfo.push(binContent.trim());
-                    if (mnContent.trim() !== "") extraInfo.push(mnContent.trim());
-                    let bracketText = extraInfo.length > 0 ? ` (${extraInfo.join(", ")})` : "";
-                    li.textContent = item.site + bracketText;
-                    li.onclick = () => selectItem(item);
-                    list.appendChild(li);
-                });
-            } else { list.style.display = 'none'; }
+            if (keyword.length < 1) return;
+            sheetData.filter(item => item.site.includes(keyword)).forEach(item => {
+                let li = document.createElement('li');
+                li.textContent = item.site;
+                li.onclick = () => selectItem(item);
+                list.appendChild(li);
+            });
         }
 
         function selectItem(item) {
-            document.getElementById('searchKeyword').value = item.site;
-            document.getElementById('resultList').style.display = 'none';
             geocoder.addressSearch(item.address, (res, status) => {
                 if (status === kakao.maps.services.Status.OK) {
-                    var coords = new kakao.maps.LatLng(res[0].y, res[0].x);
-                    searchMarker.setPosition(coords);
-                    searchMarker.setMap(map);
-                    map.setLevel(3);
+                    let coords = new kakao.maps.LatLng(res[0].y, res[0].x);
                     map.setCenter(coords);
-                    showOverlay(searchMarker, item);
+                    map.setLevel(3);
                 }
             });
         }
