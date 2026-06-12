@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <title>사이트 통합 지도 앱</title>
-    <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=06e00d121f316e8021bd4dabcf7cea93&libraries=services,clusterer"></script>
+    <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=32d0b11bf61eabc7b8dd97ee2ae53657&libraries=services,clusterer"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <style>
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; display: flex; overflow: hidden; font-family: 'Pretendard', -apple-system, sans-serif; }
@@ -61,45 +61,35 @@
         let geocoder, clusterer, searchMarker, customOverlay;
         let sheetData = [];
 
-        // 1. 카카오맵 SDK 로드 대기 및 초기화 함수
         function initApp() {
             if (typeof kakao === 'undefined' || !kakao.maps) {
-                setTimeout(initApp, 100); // SDK 로드 확인까지 0.1초마다 재시도
+                setTimeout(initApp, 100);
                 return;
             }
-            
             map = new kakao.maps.Map(document.getElementById('map'), { center: new kakao.maps.LatLng(35.1517, 129.0305), level: 7 });
             geocoder = new kakao.maps.services.Geocoder();
             clusterer = new kakao.maps.MarkerClusterer({ map: map, gridSize: 35, averageCenter: true, minLevel: 7 });
             searchMarker = new kakao.maps.Marker();
             loadSheetData();
         }
-        initApp(); // 앱 초기화 실행
+        initApp();
 
         function checkLogin() {
             const inputId = document.getElementById('inputId').value;
             const inputPw = document.getElementById('inputPw').value;
-            
             if (USER_LIST.includes(inputId) && inputId === inputPw) {
-                // 2. 지도 객체 생성 완료 여부 확인 (방어 코드)
-                if (!map) {
-                    alert("지도가 아직 로딩 중입니다. 잠시만 기다려주세요.");
-                    return;
-                }
+                if (!map) { alert("지도가 아직 로딩 중입니다. 잠시만 기다려주세요."); return; }
                 document.getElementById('loginOverlay').style.display = 'none';
                 document.getElementById('sidebar').style.display = 'block';
                 document.getElementById('map').style.display = 'block';
                 document.getElementById('displayId').textContent = inputId;
-                
-                // 로그인 후 지도 레이아웃 재계산
                 map.relayout();
                 map.setCenter(new kakao.maps.LatLng(35.1517, 129.0305));
-            } else { 
-                alert("아이디 또는 비밀번호가 틀렸습니다."); 
-            }
+            } else { alert("아이디 또는 비밀번호가 틀렸습니다."); }
         }
 
         function loadSheetData() {
+            var bounds = new kakao.maps.LatLngBounds(); // 전체 마커를 포함할 범위 객체
             Papa.parse('https://docs.google.com/spreadsheets/d/e/2PACX-1vSvJ-ZEYTaOAb34GeTSO7t-xEmanJNM1rW727QNiFe4pUcscX19q6r0dWtz6dE0sC0u2wDYIO32_yo_/pub?gid=0&single=true&output=csv', {
                 download: true, header: true, complete: (results) => {
                     sheetData = results.data;
@@ -108,13 +98,17 @@
                         if(item.address) {
                             geocoder.addressSearch(item.address, (result, status) => {
                                 if (status === kakao.maps.services.Status.OK) {
-                                    var marker = new kakao.maps.Marker({ position: new kakao.maps.LatLng(result[0].y, result[0].x) });
+                                    var coords = new kakao.maps.LatLng(result[0].y, result[0].x);
+                                    var marker = new kakao.maps.Marker({ position: coords });
                                     kakao.maps.event.addListener(marker, 'click', () => showOverlay(marker, item));
                                     clusterer.addMarker(marker);
+                                    bounds.extend(coords); // 범위에 좌표 추가
                                 }
                             });
                         }
                     });
+                    // 데이터 로딩 후 모든 마커가 보이게 지도 범위 설정
+                    setTimeout(() => { if (sheetData.length > 0) map.setBounds(bounds); }, 1500);
                 }
             });
         }
