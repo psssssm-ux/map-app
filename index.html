@@ -30,6 +30,7 @@
         <input type="text" id="searchKeyword" placeholder="사이트명 검색..." onkeyup="showResults()">
         <h3 id="listTitle"></h3>
         <ul id="resultList"></ul>
+        
         <div class="footer-area">
             <div>🚗 항상 안전운전 하세요</div>
             <div style="margin-top: 8px;">Copyright © 박상문 All rights reserved.</div>
@@ -42,7 +43,7 @@
         let map, geocoder, clusterer, searchMarker, customOverlay;
         let sheetData = [];
         let isLocked = false;
-        // 여기에 배포된 웹 앱 URL을 넣으세요
+        // 구글 앱스 스크립트 웹 앱 URL
         const apiUrl = "https://script.google.com/macros/s/AKfycbzN7tOBfquTZT_H1bSME5xmpqpuCQo2VcS_jpG6X51lq0NEGMjoo8HS-SyH509d4jAuqQ/exec";
 
         kakao.maps.load(() => {
