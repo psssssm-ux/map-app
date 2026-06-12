@@ -93,7 +93,7 @@
             closeOverlay();
             const content = document.createElement('div');
             content.className = 'custom-overlay';
-            // 요청하신 용어로 변경 (BIN2 -> 코너명, MN -> 기번)
+            // 표시명 변경: BIN2 -> 코너명, MN -> 기번
             content.innerHTML = `<div class="overlay-header">${item.site}</div>
                                  <div class="overlay-body">
                                     경비사: ${item.sec || '-'}<br>주차: ${item.park || '-'}<br>
@@ -116,6 +116,7 @@
                 (i.MN && String(i.MN).toLowerCase().includes(val))
             );
 
+            // 리스트 표시명 변경: 코너명, 기번
             list.innerHTML = filtered.map(i => `<li onclick="goTo('${i.address}')">
                                                 <strong>${i.site}</strong><br>
                                                 <small style="color:#666">코너명: ${i.BIN2 || '-'} / 기번: ${i.MN || '-'}</small>
