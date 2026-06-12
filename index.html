@@ -105,21 +105,32 @@
             clusterer.addMarker(marker);
         }
 
-        function showResults() {
-            const keyword = document.getElementById('searchKeyword').value.trim();
-            const list = document.getElementById('resultList');
-            if (keyword.length < 1) { list.style.display = 'none'; return; }
-            list.innerHTML = '';
-            const filtered = sheetData.filter(item => item.site && item.site.includes(keyword));
-            filtered.forEach(item => {
-                let li = document.createElement('li');
-                li.textContent = item.site;
-                li.onclick = () => selectItem(item);
-                list.appendChild(li);
-            });
-            list.style.display = filtered.length > 0 ? 'block' : 'none';
-        }
-
+        ffunction showResults() {
+    const keyword = document.getElementById('searchKeyword').value.trim();
+    const list = document.getElementById('resultList');
+    
+    if (keyword.length < 1) { 
+        list.style.display = 'none'; 
+        return; 
+    }
+    
+    list.innerHTML = '';
+    
+    // 안전한 필터링 로직: String()으로 감싸서 무조건 문자열로 변환 후 비교
+    const filtered = sheetData.filter(item => {
+        const siteName = item.site ? String(item.site) : "";
+        return siteName.includes(keyword);
+    });
+    
+    filtered.forEach(item => {
+        let li = document.createElement('li');
+        li.textContent = item.site;
+        li.onclick = () => selectItem(item);
+        list.appendChild(li);
+    });
+    
+    list.style.display = filtered.length > 0 ? 'block' : 'none';
+}
         function selectItem(item) {
             document.getElementById('searchKeyword').value = item.site;
             document.getElementById('resultList').style.display = 'none';
