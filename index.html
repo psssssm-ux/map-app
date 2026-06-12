@@ -41,10 +41,9 @@
     <script>
         let map, geocoder, clusterer, searchMarker, customOverlay;
         let sheetData = [];
-        let isLocked = false;
+        // 아래에 새로 배포한 URL을 붙여넣으세요
         const apiUrl = "https://script.google.com/macros/s/AKfycbyWk1r7yP62TBF--mpqNQlWMaFoIB-lk1wloDusyY65lnObWZpoaOEQjZ4Hf0TRPs8Suw/exec";
 
-        // 카카오 지도 로드
         kakao.maps.load(() => {
             map = new kakao.maps.Map(document.getElementById('map'), { center: new kakao.maps.LatLng(35.1517, 129.0305), level: 7 });
             geocoder = new kakao.maps.services.Geocoder();
@@ -56,6 +55,7 @@
         async function fetchSheetData() {
             try {
                 const response = await fetch(apiUrl);
+                if (!response.ok) throw new Error("HTTP 오류");
                 sheetData = await response.json();
                 clusterer.clear();
                 sheetData.forEach(item => {
@@ -97,7 +97,6 @@
         }
 
         function showOverlay(targetMarker, item, lock = false) {
-            isLocked = lock;
             if (customOverlay) customOverlay.setMap(null);
             const content = document.createElement('div');
             content.className = 'custom-overlay';
