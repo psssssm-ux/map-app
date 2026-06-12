@@ -12,7 +12,7 @@
         .user-profile { background: #f4f7ff; padding: 15px; border-radius: 10px; margin-bottom: 20px; text-align: center; color: #555; font-size: 13px; }
         #sidebar h3 { font-size: 18px; color: #444; margin-bottom: 20px; border-bottom: 2px solid #764ba2; padding-bottom: 10px; }
         #searchKeyword { width: 100%; padding: 14px; border: 2px solid #eee; border-radius: 12px; box-sizing: border-box; }
-        #resultList { background: white; border-radius: 12px; border: 1px solid #f0f0f0; margin-top: 10px; list-style: none; padding: 0; }
+        #resultList { background: white; border-radius: 12px; border: 1px solid #f0f0f0; margin-top: 10px; list-style: none; padding: 0; display: none; }
         #resultList li { padding: 12px 15px; border-bottom: 1px solid #f9f9f9; cursor: pointer; font-size: 14px; }
         #resultList li:hover { background-color: #f4f7ff; color: #764ba2; }
         #map { flex-grow: 1; height: 100%; background-color: #f0f0f0; }
@@ -29,7 +29,7 @@
         <h3>사이트 관리</h3>
         <input type="text" id="searchKeyword" placeholder="사이트명 검색..." onkeyup="showResults()">
         <ul id="resultList"></ul>
-        <div class="stats-box" style="margin-top:20px; font-size:13px;">전체 사이트: <b id="totalCount">0개</b></div>
+        <div style="margin-top:20px; font-size:13px;">전체 사이트: <b id="totalCount">0개</b></div>
     </div>
     <div id="map"></div>
 
@@ -47,44 +47,72 @@
         });
 
         async function loadSheetData() {
-    const csvUrl = 'https://docs.google.com/spreadsheets/d/e/.../pub?gid=0&single=true&output=csv';
-    
-    Papa.parse(csvUrl, {
-        download: true, header: true,
-        complete: async (results) => {
-            sheetData = results.data.filter(item => item.address);
-            document.getElementById('totalCount').textContent = sheetData.length + '개';
+            const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSvJ-ZEYTaOAb34GeTSO7t-xEmanJNM1rW727QNiFe4pUcscX19q6r0dWtz6dE0sC0u2wDYIO32_yo_/pub?gid=0&single=true&output=csv';
+            
+            Papa.parse(csvUrl, {
+                download: true, header: true,
+                complete: async (results) => {
+                    sheetData = results.data.filter(item => item.address);
+                    document.getElementById('totalCount').textContent = sheetData.length + '개';
 
-            for (const item of sheetData) {
-                // 주소 검색을 하나씩 순차적으로 수행 (서버 부하 감소)
-                await new Promise((resolve) => {
-                    geocoder.addressSearch(item.address, (result, status) => {
-                        if (status === kakao.maps.services.Status.OK) {
-                            const marker = new kakao.maps.Marker({ position: new kakao.maps.LatLng(result[0].y, result[0].x) });
-                            kakao.maps.event.addListener(marker, 'mouseover', () => showOverlay(marker, item));
-                            kakao.maps.event.addListener(marker, 'mouseout', () => closeOverlay());
-                            clusterer.addMarker(marker);
-                        }
-                        // 검색 간격 확보를 위한 딜레이 (필요 시 50ms 추가)
-                        setTimeout(resolve, 50); 
-                    });
-                });
-            }
+                    for (const item of sheetData) {
+                        await new Promise((resolve) => {
+                            geocoder.addressSearch(item.address, (result, status) => {
+                                if (status === kakao.maps.services.Status.OK) {
+                                    const marker = new kakao.maps.Marker({ position: new kakao.maps.LatLng(result[0].y, result[0].x) });
+                                    kakao.maps.event.addListener(marker, 'mouseover', () => showOverlay(marker, item));
+                                    kakao.maps.event.addListener(marker, 'mouseout', () => closeOverlay());
+                                    clusterer.addMarker(marker);
+                                }
+                                setTimeout(resolve, 50); 
+                            });
+                        });
+                    }
+                }
+            });
         }
-    });
-}
 
-        function showOverlay(marker, item) {
+        function showResults() {
+            const keyword = document.getElementById('searchKeyword').value.trim();
+            const list = document.getElementById('resultList');
+            if (keyword.length < 1) { list.style.display = 'none'; return; }
+            
+            list.innerHTML = '';
+            const filtered = sheetData.filter(item => item.site && item.site.includes(keyword));
+            filtered.forEach(item => {
+                let li = document.createElement('li');
+                li.textContent = item.site;
+                li.onclick = () => selectItem(item);
+                list.appendChild(li);
+            });
+            list.style.display = filtered.length > 0 ? 'block' : 'none';
+        }
+
+        function selectItem(item) {
+            document.getElementById('searchKeyword').value = item.site;
+            document.getElementById('resultList').style.display = 'none';
+            geocoder.addressSearch(item.address, (result, status) => {
+                if (status === kakao.maps.services.Status.OK) {
+                    const coords = new kakao.maps.LatLng(result[0].y, result[0].x);
+                    map.setCenter(coords);
+                    map.setLevel(3);
+                    showOverlay({getPosition: () => coords}, item);
+                }
+            });
+        }
+
+        function showOverlay(target, item) {
             if (customOverlay) customOverlay.setMap(null);
             const content = document.createElement('div');
             content.className = 'custom-overlay';
-            content.innerHTML = `<div class="overlay-header">${item.site}</div>
+            content.innerHTML = `
+                <div class="overlay-header">${item.site}</div>
                 <div class="overlay-body">
                     <div class="info-row"><div class="info-label">경비사</div><div>${item.sec || '-'}</div></div>
                     <div class="info-row"><div class="info-label">주차</div><div>${item.park || '-'}</div></div>
                     <div style="margin-top:10px; font-size:12px; color:#999;">${item.address || ''}</div>
                 </div>`;
-            customOverlay = new kakao.maps.CustomOverlay({ position: marker.getPosition(), content: content, yAnchor: 1.1 });
+            customOverlay = new kakao.maps.CustomOverlay({ position: target.getPosition(), content: content, yAnchor: 1.1 });
             customOverlay.setMap(map);
         }
 
