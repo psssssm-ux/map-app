@@ -11,9 +11,9 @@
         #sidebarContent { padding: 25px; flex-grow: 1; overflow-y: auto; }
         #map { flex-grow: 1; height: 100%; background-color: #f0f0f0; }
         
-        .btn-common { width: 270px; box-sizing: border-box; display: block; margin: 10px auto; padding: 12px 0; text-align: center; border-radius: 8px; font-weight: bold; font-size: 14px; cursor: pointer; border: none; }
-        #recentList { list-style: none; padding: 0; margin-top: 10px; display: none; background: #f9f9f9; border: 1px solid #eee; border-radius: 8px; width: 270px; margin: 0 auto; }
-        #recentList li { padding: 10px; border-bottom: 1px solid #eee; font-size: 13px; cursor: pointer; }
+        .btn-common { width: 270px; display: block; margin: 10px auto; padding: 12px 0; text-align: center; border-radius: 8px; font-weight: bold; font-size: 14px; cursor: pointer; border: none; }
+        #recentList, #resultList { list-style: none; padding: 0; margin-top: 10px; display: none; background: #f9f9f9; border: 1px solid #eee; border-radius: 8px; width: 270px; margin: 0 auto; }
+        #recentList li, #resultList li { padding: 10px; border-bottom: 1px solid #eee; font-size: 13px; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -33,8 +33,8 @@
                 
                 <div style="margin-top: 30px;">
                     <h3 style="font-size: 18px; color: #444; border-bottom: 2px solid #764ba2; padding-bottom: 10px;">사이트 관리</h3>
-                    <input type="text" id="searchKeyword" style="width: 270px; padding: 12px; border: 2px solid #eee; border-radius: 8px; box-sizing: border-box;" placeholder="사이트명/코너명/기번 검색..." onkeyup="filterList()">
-                    <ul id="resultList" style="list-style:none; padding:0; margin-top:10px; display:none; background:#fff; border:1px solid #eee; border-radius:12px; width:270px;"></ul>
+                    <input type="text" id="searchKeyword" style="width: 270px; padding: 12px; border: 2px solid #eee; border-radius: 8px; box-sizing: border-box;" placeholder="사이트명/코너명/기번 검색...">
+                    <ul id="resultList"></ul>
                     <div style="margin-top:15px; font-size:13px;">전체 사이트: <b id="totalCount">0개</b></div>
                 </div>
             </div>
@@ -51,6 +51,24 @@
             geocoder = new kakao.maps.services.Geocoder();
             clusterer = new kakao.maps.MarkerClusterer({ map: map, gridSize: 35, averageCenter: true, minLevel: 7 });
             loadSheetData();
+        });
+
+        // 검색 이벤트 리스너 추가
+        document.getElementById('searchKeyword').addEventListener('keyup', function() {
+            const val = this.value.toLowerCase();
+            const list = document.getElementById('resultList');
+            if(!val) { list.style.display = 'none'; return; }
+            
+            const filtered = sheetData.filter(i => 
+                (i.site && i.site.toLowerCase().includes(val)) || 
+                (i.BIN2 && String(i.BIN2).toLowerCase().includes(val)) || 
+                (i.MN && String(i.MN).toLowerCase().includes(val))
+            );
+            
+            list.innerHTML = filtered.map(i => 
+                `<li onclick="goTo('${i.address}')"><strong>${i.site}</strong><br><small>코너: ${i.BIN2 || '-'} / 기번: ${i.MN || '-'}</small></li>`
+            ).join('');
+            list.style.display = filtered.length ? 'block' : 'none';
         });
 
         async function loadSheetData() {
@@ -80,8 +98,11 @@
         function updateProgress() {
             loadedCount++;
             const percent = Math.round((loadedCount / sheetData.length) * 100);
-            document.getElementById('progressBar').style.width = percent + '%';
-            document.getElementById('percentText').textContent = percent + '%';
+            const progressBar = document.getElementById('progressBar');
+            if(progressBar) {
+                progressBar.style.width = percent + '%';
+                document.getElementById('percentText').textContent = percent + '%';
+            }
         }
 
         function addMarker(pos, item) {
@@ -89,18 +110,17 @@
             clusterer.addMarker(marker);
         }
 
-        // 검색 및 이동 함수 복구
-        function filterList() {
-            const val = document.getElementById('searchKeyword').value.toLowerCase();
-            const list = document.getElementById('resultList');
-            if(!val) { list.style.display = 'none'; return; }
-            const filtered = sheetData.filter(i => (i.site && i.site.toLowerCase().includes(val)) || (i.BIN2 && String(i.BIN2).toLowerCase().includes(val)) || (i.MN && String(i.MN).toLowerCase().includes(val)));
-            list.innerHTML = filtered.map(i => `<li style="padding:10px; border-bottom:1px solid #eee; cursor:pointer;" onclick="goTo('${i.address}')"><strong>${i.site}</strong><br><small>코너: ${i.BIN2 || '-'} / 기번: ${i.MN || '-'}</small></li>`).join('');
-            list.style.display = filtered.length ? 'block' : 'none';
+        function goTo(addr) { 
+            geocoder.addressSearch(addr, (res, status) => { 
+                if(status === 'OK') { 
+                    map.setCenter(new kakao.maps.LatLng(res[0].y, res[0].x)); 
+                    map.setLevel(3); 
+                } 
+            }); 
         }
-
-        function goTo(addr) { geocoder.addressSearch(addr, (res, status) => { if(status === 'OK') { map.setCenter(new kakao.maps.LatLng(res[0].y, res[0].x)); map.setLevel(3); } }); }
+        
         function resetMap() { map.setCenter(new kakao.maps.LatLng(35.1517, 129.0305)); map.setLevel(7); }
+        
         function toggleRecent() {
             const list = document.getElementById('recentList');
             if (list.style.display === 'block') list.style.display = 'none';
