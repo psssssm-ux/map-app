@@ -87,20 +87,21 @@
             });
         }
 
-        function toggleRecent() {
-            const list = document.getElementById('recentList');
-            if (list.style.display === 'block') {
-                list.style.display = 'none';
-            } else {
-                // 날짜순 정렬 후 최신 6개 site명만 출력
-                const sorted = [...sheetData]
-                    .sort((a, b) => new Date(b.date) - new Date(a.date))
-                    .slice(0, 6);
-                
-                list.innerHTML = sorted.map(i => `<li onclick="goTo('${i.address}')">${i.site}</li>`).join('');
-                list.style.display = 'block';
-            }
-        }
+    function toggleRecent() {
+    const list = document.getElementById('recentList');
+    if (list.style.display === 'block') {
+        list.style.display = 'none';
+    } else {
+        // 날짜순 정렬 후 최신 6개 site명만 출력하도록 수정
+        const sorted = [...sheetData]
+            .sort((a, b) => new Date(b.date) - new Date(a.date))
+            .slice(0, 6);
+        
+        // ${i.site}만 남기고 나머지 날짜 표시 부분 제거
+        list.innerHTML = sorted.map(i => `<li onclick="goTo('${i.address}')">${i.site}</li>`).join('');
+        list.style.display = 'block';
+    }
+}
 
         function updateProgress(loaded, total) {
             const percent = Math.round((loaded / total) * 100);
