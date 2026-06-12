@@ -9,7 +9,6 @@
         #sidebar { width: 320px; min-width: 320px; height: 100%; background: #ffffff; border-right: 1px solid #eaeaea; padding: 25px; box-sizing: border-box; overflow-y: auto; z-index: 10; box-shadow: 2px 0 10px rgba(0,0,0,0.05); }
         #map { flex-grow: 1; height: 100%; background-color: #f0f0f0; }
         
-        /* 프로그레스 바 스타일 */
         #loadingWrapper { margin-bottom: 20px; }
         #progressContainer { width: 100%; height: 8px; background: #eee; border-radius: 4px; overflow: hidden; margin-top: 5px; }
         #progressBar { width: 0%; height: 100%; background: #764ba2; transition: width 0.2s; }
@@ -22,7 +21,7 @@
         
         .custom-overlay { position: absolute; bottom: 60px; left: -130px; border-radius: 16px; background: #ffffff; box-shadow: 0 10px 20px rgba(0,0,0,0.2); width: 260px; pointer-events: none; }
         .overlay-header { background: linear-gradient(135deg, #764ba2 0%, #667eea 100%); color: white; padding: 12px 18px; font-weight: 700; border-radius: 16px 16px 0 0; }
-        .overlay-body { padding: 15px; font-size: 13px; }
+        .overlay-body { padding: 15px; font-size: 13px; line-height: 1.6; }
     </style>
 </head>
 <body>
@@ -32,7 +31,7 @@
             <div id="progressContainer"><div id="progressBar"></div></div>
         </div>
         <h3>사이트 관리</h3>
-        <input type="text" id="searchKeyword" placeholder="사이트명 검색..." onkeyup="filterList()">
+        <input type="text" id="searchKeyword" placeholder="사이트명/코너명/기번 검색..." onkeyup="filterList()">
         <ul id="resultList"></ul>
         <div style="margin-top:20px; font-size:13px;">전체 사이트: <b id="totalCount">0개</b></div>
     </div>
@@ -94,11 +93,11 @@
             closeOverlay();
             const content = document.createElement('div');
             content.className = 'custom-overlay';
-            // 표시 정보 상세화 (BIN2, MN 포함)
+            // 요청하신 용어로 변경 (BIN2 -> 코너명, MN -> 기번)
             content.innerHTML = `<div class="overlay-header">${item.site}</div>
                                  <div class="overlay-body">
                                     경비사: ${item.sec || '-'}<br>주차: ${item.park || '-'}<br>
-                                    BIN2: ${item.BIN2 || '-'}<br>MN: ${item.MN || '-'}
+                                    코너명: ${item.BIN2 || '-'}<br>기번: ${item.MN || '-'}
                                  </div>`;
             customOverlay = new kakao.maps.CustomOverlay({ position: target.getPosition(), content: content, yAnchor: 1 });
             customOverlay.setMap(map);
@@ -107,27 +106,22 @@
         function closeOverlay() { if (customOverlay) customOverlay.setMap(null); }
 
         function filterList() {
-    const val = document.getElementById('searchKeyword').value.toLowerCase(); // 대소문자 구분 없이 검색
-    const list = document.getElementById('resultList');
-    
-    if(!val) { 
-        list.style.display = 'none'; 
-        return; 
-    }
-    
-    // 사이트명, BIN2,  중 하나라도 검색어가 포함되면 필터링
-    const filtered = sheetData.filter(i => 
-        (i.site && i.site.toLowerCase().includes(val)) || 
-        (i.BIN2 && String(i.BIN2).toLowerCase().includes(val))
-    );
+            const val = document.getElementById('searchKeyword').value.toLowerCase();
+            const list = document.getElementById('resultList');
+            if(!val) { list.style.display = 'none'; return; }
+            
+            const filtered = sheetData.filter(i => 
+                (i.site && i.site.toLowerCase().includes(val)) || 
+                (i.BIN2 && String(i.BIN2).toLowerCase().includes(val)) || 
+                (i.MN && String(i.MN).toLowerCase().includes(val))
+            );
 
-    list.innerHTML = filtered.map(i => `<li onclick="goTo('${i.address}')">
-                                        <strong>${i.site}</strong><br>
-                                        <small style="color:#666">BIN2: ${i.BIN2 || '-'} / MN: ${i.MN || '-'}</small>
-                                      </li>`).join('');
-    
-    list.style.display = filtered.length ? 'block' : 'none';
-}
+            list.innerHTML = filtered.map(i => `<li onclick="goTo('${i.address}')">
+                                                <strong>${i.site}</strong><br>
+                                                <small style="color:#666">코너명: ${i.BIN2 || '-'} / 기번: ${i.MN || '-'}</small>
+                                              </li>`).join('');
+            list.style.display = filtered.length ? 'block' : 'none';
+        }
 
         function goTo(addr) {
             geocoder.addressSearch(addr, (res, status) => {
