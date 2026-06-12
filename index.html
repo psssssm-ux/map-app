@@ -3,17 +3,24 @@
 <head>
     <meta charset="utf-8">
     <title>사이트 통합 지도 앱</title>
-    <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=7f3387ab66fb524dbefeb77ae9f85e90&libraries=services,clusterer&autoload=true"></script>
+    <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=32d0b11bf61eabc7b8dd97ee2ae53657&libraries=services,clusterer&autoload=true"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <style>
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; display: flex; overflow: hidden; font-family: sans-serif; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; display: flex; overflow: hidden; font-family: 'Pretendard', sans-serif; }
         #loginOverlay { position: fixed; top:0; left:0; width:100%; height:100%; background: #764ba2; z-index:9999; display:flex; justify-content:center; align-items:center; }
         .loginBox { padding: 40px; background: white; border-radius: 20px; text-align: center; width: 300px; }
         .loginBox input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
         .loginBox button { width: 100%; padding: 12px; background: #764ba2; border: none; border-radius: 8px; color: white; cursor: pointer; }
-        #sidebar { width: 320px; height: 100%; background: #fff; border-right: 1px solid #ddd; padding: 20px; display: none; }
+        #sidebar { width: 320px; height: 100%; background: #fff; border-right: 1px solid #ddd; padding: 20px; display: none; overflow-y: auto; }
         #map { flex-grow: 1; height: 100%; display: none; }
-        .custom-overlay { background: white; padding: 10px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.3); font-size: 12px; pointer-events: none; }
+        
+        /* 오버레이 스타일 */
+        .custom-overlay { position: relative; bottom: 85px; border-radius: 16px; background: #ffffff; box-shadow: 0 20px 40px rgba(0,0,0,0.2); overflow: hidden; width: 260px; border: none; pointer-events: none; }
+        .overlay-header { background: linear-gradient(135deg, #764ba2 0%, #667eea 100%); color: white; padding: 14px 18px; font-weight: 700; font-size: 15px; }
+        .overlay-body { padding: 18px; font-size: 13px; color: #444; background: #fff; }
+        .info-row { display: flex; margin-bottom: 8px; }
+        .info-label { width: 60px; font-weight: 600; color: #888; }
+        .info-value { flex: 1; color: #333; }
     </style>
 </head>
 <body>
@@ -29,39 +36,32 @@
 
     <div id="sidebar">
         <h3>사이트 관리</h3>
-        <input type="text" id="searchKeyword" placeholder="검색..." onkeyup="showResults()">
+        <input type="text" id="searchKeyword" placeholder="사이트명 검색..." onkeyup="showResults()">
         <ul id="resultList"></ul>
-        <div id="totalCount"></div>
+        <div id="totalCount" style="margin-top:20px; color:#666;"></div>
     </div>
 
     <div id="map"></div>
 
     <script>
         const USER_LIST = ["22062", "23004", "17105", "17115", "17183", "17189", "17260", "18145", "19049", "20027", "22017", "22025"];
-        let map, geocoder, clusterer, searchMarker, customOverlay, sheetData;
+        let map, geocoder, clusterer, customOverlay, sheetData;
 
         function handleLogin() {
             const inputId = document.getElementById('inputId').value;
             const inputPw = document.getElementById('inputPw').value;
-            
             if (USER_LIST.includes(inputId) && inputId === inputPw) {
                 document.getElementById('loginOverlay').style.display = 'none';
                 document.getElementById('sidebar').style.display = 'block';
                 document.getElementById('map').style.display = 'block';
-                
-                // 로그인 직후에만 지도 생성
                 initMap();
-            } else {
-                alert("로그인 실패");
-            }
+            } else { alert("로그인 실패"); }
         }
 
         function initMap() {
-            const container = document.getElementById('map');
-            map = new kakao.maps.Map(container, { center: new kakao.maps.LatLng(35.1517, 129.0305), level: 7 });
+            map = new kakao.maps.Map(document.getElementById('map'), { center: new kakao.maps.LatLng(35.1517, 129.0305), level: 7 });
             geocoder = new kakao.maps.services.Geocoder();
             clusterer = new kakao.maps.MarkerClusterer({ map: map, gridSize: 35, averageCenter: true, minLevel: 7 });
-            searchMarker = new kakao.maps.Marker();
             loadSheetData();
         }
 
@@ -76,8 +76,11 @@
                                 if (status === kakao.maps.services.Status.OK) {
                                     var coords = new kakao.maps.LatLng(result[0].y, result[0].x);
                                     var marker = new kakao.maps.Marker({ position: coords });
+                                    
+                                    // 마커 이벤트 추가
                                     kakao.maps.event.addListener(marker, 'mouseover', () => showOverlay(marker, item));
                                     kakao.maps.event.addListener(marker, 'mouseout', () => closeOverlay());
+                                    
                                     clusterer.addMarker(marker);
                                 }
                             });
@@ -87,12 +90,20 @@
             });
         }
 
-        function showOverlay(marker, item) {
-            if (customOverlay) customOverlay.setMap(null);
+        function showOverlay(targetMarker, item) {
+            closeOverlay(); // 기존 오버레이 삭제
             const content = document.createElement('div');
             content.className = 'custom-overlay';
-            content.innerHTML = `<strong>${item.site}</strong><br>${item.address}`;
-            customOverlay = new kakao.maps.CustomOverlay({ position: marker.getPosition(), content: content, yAnchor: 1.5 });
+            content.innerHTML = `
+                <div class="overlay-header">${item.site}</div>
+                <div class="overlay-body">
+                    <div class="info-row"><div class="info-label">경비사</div><div class="info-value">${item.sec || '-'}</div></div>
+                    <div class="info-row"><div class="info-label">NUM</div><div class="info-value">${item.num || '-'}</div></div>
+                    <div class="info-row"><div class="info-label">ETC</div><div class="info-value">${item.etc || '-'}</div></div>
+                    <div class="info-row"><div class="info-label">주차</div><div class="info-value">${item.park || '-'}</div></div>
+                    <div style="color:#666; font-size:12px; margin-top:4px;">${item.address || '-'}</div>
+                </div>`;
+            customOverlay = new kakao.maps.CustomOverlay({ position: targetMarker.getPosition(), content: content, yAnchor: 1.1 });
             customOverlay.setMap(map);
         }
 
@@ -106,6 +117,7 @@
             sheetData.filter(item => item.site.includes(keyword)).forEach(item => {
                 let li = document.createElement('li');
                 li.textContent = item.site;
+                li.style.cursor = "pointer";
                 li.onclick = () => selectItem(item);
                 list.appendChild(li);
             });
