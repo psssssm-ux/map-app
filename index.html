@@ -9,12 +9,16 @@
         #sidebar { width: 320px; min-width: 320px; height: 100%; background: #ffffff; border-right: 1px solid #eaeaea; padding: 25px; box-sizing: border-box; overflow-y: auto; z-index: 10; box-shadow: 2px 0 10px rgba(0,0,0,0.05); }
         #map { flex-grow: 1; height: 100%; background-color: #f0f0f0; }
         
-        /* 기능 스타일 */
-        #loadingMsg { color: #764ba2; font-weight: 700; font-size: 14px; margin-bottom: 15px; display: block; }
+        /* 프로그레스 바 스타일 */
+        #loadingWrapper { margin-bottom: 20px; }
+        #progressContainer { width: 100%; height: 8px; background: #eee; border-radius: 4px; overflow: hidden; margin-top: 5px; }
+        #progressBar { width: 0%; height: 100%; background: #764ba2; transition: width 0.2s; }
+        
         h3 { font-size: 18px; color: #444; margin-bottom: 20px; border-bottom: 2px solid #764ba2; padding-bottom: 10px; }
-        #searchKeyword { width: 100%; padding: 14px; border: 2px solid #eee; border-radius: 12px; box-sizing: border-box; margin-bottom: 10px; }
-        #resultList { list-style: none; padding: 0; display: none; background: #fff; border: 1px solid #eee; border-radius: 12px; }
-        #resultList li { padding: 12px; border-bottom: 1px solid #f9f9f9; cursor: pointer; font-size: 14px; }
+        #searchKeyword { width: 100%; padding: 14px; border: 2px solid #eee; border-radius: 12px; box-sizing: border-box; }
+        #resultList { list-style: none; padding: 0; margin-top: 10px; display: none; background: #fff; border: 1px solid #eee; border-radius: 12px; }
+        #resultList li { padding: 12px; border-bottom: 1px solid #f9f9f9; cursor: pointer; font-size: 13px; }
+        #resultList li:hover { background: #f4f7ff; }
         
         .custom-overlay { position: absolute; bottom: 60px; left: -130px; border-radius: 16px; background: #ffffff; box-shadow: 0 10px 20px rgba(0,0,0,0.2); width: 260px; pointer-events: none; }
         .overlay-header { background: linear-gradient(135deg, #764ba2 0%, #667eea 100%); color: white; padding: 12px 18px; font-weight: 700; border-radius: 16px 16px 0 0; }
@@ -23,7 +27,10 @@
 </head>
 <body>
     <div id="sidebar">
-        <div id="loadingWrapper"><span id="loadingMsg">데이터 로드 중...</span></div>
+        <div id="loadingWrapper">
+            <div style="font-size:13px; font-weight:bold; color:#764ba2;">데이터 로딩 중... <span id="percentText">0%</span></div>
+            <div id="progressContainer"><div id="progressBar"></div></div>
+        </div>
         <h3>사이트 관리</h3>
         <input type="text" id="searchKeyword" placeholder="사이트명 검색..." onkeyup="filterList()">
         <ul id="resultList"></ul>
@@ -46,6 +53,7 @@
             sheetData = await res.json();
             document.getElementById('totalCount').textContent = sheetData.length + '개';
 
+            let loaded = 0;
             sheetData.forEach((item, index) => {
                 if (!item.address) return;
                 const cacheKey = 'loc_' + item.address;
@@ -53,6 +61,7 @@
 
                 if (cached) {
                     addMarker(JSON.parse(cached), item);
+                    updateProgress(++loaded, sheetData.length);
                 } else {
                     setTimeout(() => {
                         geocoder.addressSearch(item.address, (result, status) => {
@@ -61,11 +70,17 @@
                                 localStorage.setItem(cacheKey, JSON.stringify(pos));
                                 addMarker(pos, item);
                             }
+                            updateProgress(++loaded, sheetData.length);
                         });
                     }, index * 100);
                 }
             });
-            document.getElementById('loadingMsg').textContent = "모두 로드되었습니다.";
+        }
+
+        function updateProgress(loaded, total) {
+            const percent = Math.round((loaded / total) * 100);
+            document.getElementById('progressBar').style.width = percent + '%';
+            document.getElementById('percentText').textContent = percent + '%';
         }
 
         function addMarker(pos, item) {
@@ -79,7 +94,12 @@
             closeOverlay();
             const content = document.createElement('div');
             content.className = 'custom-overlay';
-            content.innerHTML = `<div class="overlay-header">${item.site}</div><div class="overlay-body">경비사: ${item.sec || '-'}<br>주차: ${item.park || '-'}</div>`;
+            // 표시 정보 상세화 (BIN2, MN 포함)
+            content.innerHTML = `<div class="overlay-header">${item.site}</div>
+                                 <div class="overlay-body">
+                                    경비사: ${item.sec || '-'}<br>주차: ${item.park || '-'}<br>
+                                    BIN2: ${item.BIN2 || '-'}<br>MN: ${item.MN || '-'}
+                                 </div>`;
             customOverlay = new kakao.maps.CustomOverlay({ position: target.getPosition(), content: content, yAnchor: 1 });
             customOverlay.setMap(map);
         }
@@ -89,16 +109,20 @@
         function filterList() {
             const val = document.getElementById('searchKeyword').value;
             const list = document.getElementById('resultList');
-            const filtered = val ? sheetData.filter(i => i.site.includes(val)) : [];
-            list.innerHTML = filtered.map(i => `<li onclick="goTo('${i.address}')">${i.site}</li>`).join('');
-            list.style.display = val && filtered.length ? 'block' : 'none';
+            if(!val) { list.style.display = 'none'; return; }
+            
+            const filtered = sheetData.filter(i => i.site && i.site.includes(val));
+            list.innerHTML = filtered.map(i => `<li onclick="goTo('${i.address}')">
+                                                <strong>${i.site}</strong><br>
+                                                <small style="color:#666">BIN2: ${i.BIN2 || '-'} / MN: ${i.MN || '-'}</small>
+                                              </li>`).join('');
+            list.style.display = filtered.length ? 'block' : 'none';
         }
 
         function goTo(addr) {
             geocoder.addressSearch(addr, (res, status) => {
                 if(status === 'OK') {
-                    const pos = new kakao.maps.LatLng(res[0].y, res[0].x);
-                    map.setCenter(pos);
+                    map.setCenter(new kakao.maps.LatLng(res[0].y, res[0].x));
                     map.setLevel(3);
                 }
             });
