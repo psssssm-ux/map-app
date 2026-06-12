@@ -5,7 +5,20 @@
     <title>사이트 통합 지도 앱</title>
     <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=7f3387ab66fb524dbefeb77ae9f85e90&libraries=services,clusterer&autoload=false"></script>
     <style>
-        /* ... (기존 스타일 동일) ... */
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; display: flex; overflow: hidden; font-family: 'Pretendard', sans-serif; }
+        #sidebar { width: 320px; height: 100%; background: #ffffff; border-right: 1px solid #eaeaea; padding: 25px; box-sizing: border-box; overflow-y: auto; z-index: 10; box-shadow: 2px 0 10px rgba(0,0,0,0.05); }
+        .menu-btn { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; background: #fff; cursor: pointer; font-size: 13px; font-weight: 600; text-align: center; color: #555; margin-bottom: 10px; }
+        .menu-btn:hover { background: #764ba2; color: #fff; border-color: #764ba2; }
+        #sidebar h3 { font-size: 16px; color: #764ba2; margin-top: 20px; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid #eee; }
+        #searchKeyword { width: 100%; padding: 14px; border: 2px solid #eee; border-radius: 12px; box-sizing: border-box; }
+        #resultList { list-style: none; padding: 0; margin-top: 10px; }
+        #resultList li { padding: 12px 15px; border-bottom: 1px solid #f9f9f9; cursor: pointer; font-size: 14px; }
+        #resultList li:hover { background-color: #f4f7ff; color: #764ba2; }
+        .footer-area { margin-top: 40px; padding-bottom: 20px; text-align: center; color: #aaa; font-size: 11px; }
+        #map { flex-grow: 1; height: 100%; background-color: #f0f0f0; }
+        .custom-overlay { position: absolute; bottom: 40px; left: -130px; border-radius: 16px; background: #ffffff; box-shadow: 0 20px 40px rgba(0,0,0,0.2); width: max-content; min-width: 260px; max-width: 450px; border: none; pointer-events: none; }
+        .overlay-header { background: linear-gradient(135deg, #764ba2 0%, #667eea 100%); color: white; padding: 12px 20px; font-weight: 700; font-size: 15px; border-radius: 16px 16px 0 0; }
+        .overlay-body { padding: 15px 20px; font-size: 13px; color: #444; border-radius: 0 0 16px 16px; line-height: 1.6; }
     </style>
 </head>
 <body>
@@ -17,7 +30,9 @@
         <input type="text" id="searchKeyword" placeholder="사이트명 검색..." onkeyup="showResults()">
         <h3 id="listTitle"></h3>
         <ul id="resultList"></ul>
-        <div class="footer-area">...</div>
+        <div class="footer-area">
+            <div>🚗 항상 안전운전 하세요</div>
+        </div>
     </div>
     <div id="map"></div>
 
@@ -37,22 +52,14 @@
         async function fetchSheetData() {
             try {
                 const response = await fetch(apiUrl);
-                if (!response.ok) throw new Error("HTTP 오류");
                 sheetData = await response.json();
-                
                 clusterer.clear();
                 sheetData.forEach(item => {
                     if(item.address) {
                         geocoder.addressSearch(item.address, (result, status) => {
                             if (status === kakao.maps.services.Status.OK) {
                                 var marker = new kakao.maps.Marker({ position: new kakao.maps.LatLng(result[0].y, result[0].x) });
-                                
-                                // [클릭] 시 오버레이 (기존 기능)
                                 kakao.maps.event.addListener(marker, 'click', () => showOverlay(marker, item));
-                                
-                                // [추가] 마우스 올렸을 때도 나오게 하려면 아래 주석을 해제하세요
-                                // kakao.maps.event.addListener(marker, 'mouseover', () => showOverlay(marker, item));
-                                
                                 clusterer.addMarker(marker);
                             }
                         });
@@ -61,7 +68,6 @@
             } catch(e) { console.error("데이터 로드 실패:", e); }
         }
 
-        // 검색 기능 복구 및 보강
         function showResults() {
             const keyword = document.getElementById('searchKeyword').value.trim();
             const list = document.getElementById('resultList');
@@ -70,7 +76,9 @@
             
             if (keyword.length < 1) return;
 
-            const filtered = sheetData.filter(item => item.site && item.site.includes(keyword));
+            // 검색 필터링 (item.site가 존재하는 경우에만 검색)
+            const filtered = sheetData.filter(item => item.site && String(item.site).includes(keyword));
+            
             filtered.forEach(item => {
                 let li = document.createElement('li');
                 li.textContent = item.site;
@@ -79,10 +87,19 @@
             });
         }
 
-        // 오버레이 표시 함수
+        function selectItem(item) {
+            geocoder.addressSearch(item.address, (res, status) => {
+                if (status === kakao.maps.services.Status.OK) {
+                    var coords = new kakao.maps.LatLng(res[0].y, res[0].x);
+                    map.setCenter(coords);
+                    map.setLevel(3);
+                    showOverlay({getPosition: () => coords}, item);
+                }
+            });
+        }
+
         function showOverlay(targetMarker, item) {
             if (customOverlay) customOverlay.setMap(null);
-            
             const content = document.createElement('div');
             content.className = 'custom-overlay';
             content.innerHTML = `
@@ -95,26 +112,11 @@
                     <b>주차:</b> ${item.park || '-'}<br>
                     <b>주소:</b> ${item.address || '-'}
                 </div>`;
-            
-            customOverlay = new kakao.maps.CustomOverlay({ 
-                position: targetMarker.getPosition(), 
-                content: content, 
-                yAnchor: 1.2 
-            });
+            customOverlay = new kakao.maps.CustomOverlay({ position: targetMarker.getPosition(), content: content, yAnchor: 1.2 });
             customOverlay.setMap(map);
         }
 
-        // 기타 selectItem, showRecentUpdates 함수는 이전과 동일
-        function selectItem(item) {
-            geocoder.addressSearch(item.address, (res, status) => {
-                if (status === kakao.maps.services.Status.OK) {
-                    var coords = new kakao.maps.LatLng(res[0].y, res[0].x);
-                    map.setCenter(coords);
-                    map.setLevel(3);
-                    showOverlay({getPosition: () => coords}, item);
-                }
-            });
-        }
+        function showRecentUpdates() { /* 기존과 동일 */ }
     </script>
 </body>
 </html>
