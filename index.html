@@ -46,29 +46,33 @@
             });
         });
 
-        function loadSheetData() {
-            const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSvJ-ZEYTaOAb34GeTSO7t-xEmanJNM1rW727QNiFe4pUcscX19q6r0dWtz6dE0sC0u2wDYIO32_yo_/pub?gid=0&single=true&output=csv';
-            Papa.parse(csvUrl, {
-                download: true, header: true,
-                complete: (results) => {
-                    sheetData = results.data.filter(item => item.address);
-                    document.getElementById('totalCount').textContent = sheetData.length + '개';
-                    
-                    const promises = sheetData.map(item => new Promise(resolve => {
-                        geocoder.addressSearch(item.address, (result, status) => {
-                            if (status === kakao.maps.services.Status.OK) {
-                                const marker = new kakao.maps.Marker({ position: new kakao.maps.LatLng(result[0].y, result[0].x) });
-                                kakao.maps.event.addListener(marker, 'mouseover', () => showOverlay(marker, item));
-                                kakao.maps.event.addListener(marker, 'mouseout', () => closeOverlay());
-                                resolve(marker);
-                            } else resolve(null);
-                        });
-                    }));
+        async function loadSheetData() {
+    const csvUrl = 'https://docs.google.com/spreadsheets/d/e/.../pub?gid=0&single=true&output=csv';
+    
+    Papa.parse(csvUrl, {
+        download: true, header: true,
+        complete: async (results) => {
+            sheetData = results.data.filter(item => item.address);
+            document.getElementById('totalCount').textContent = sheetData.length + '개';
 
-                    Promise.all(promises).then(markers => clusterer.addMarkers(markers.filter(m => m)));
-                }
-            });
+            for (const item of sheetData) {
+                // 주소 검색을 하나씩 순차적으로 수행 (서버 부하 감소)
+                await new Promise((resolve) => {
+                    geocoder.addressSearch(item.address, (result, status) => {
+                        if (status === kakao.maps.services.Status.OK) {
+                            const marker = new kakao.maps.Marker({ position: new kakao.maps.LatLng(result[0].y, result[0].x) });
+                            kakao.maps.event.addListener(marker, 'mouseover', () => showOverlay(marker, item));
+                            kakao.maps.event.addListener(marker, 'mouseout', () => closeOverlay());
+                            clusterer.addMarker(marker);
+                        }
+                        // 검색 간격 확보를 위한 딜레이 (필요 시 50ms 추가)
+                        setTimeout(resolve, 50); 
+                    });
+                });
+            }
         }
+    });
+}
 
         function showOverlay(marker, item) {
             if (customOverlay) customOverlay.setMap(null);
