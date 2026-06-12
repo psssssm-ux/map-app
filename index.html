@@ -14,6 +14,9 @@
         .btn-common { width: 100%; max-width: 270px; display: block; margin: 0 auto 10px auto; padding: 14px 0; text-align: center; border-radius: 10px; font-weight: 700; font-size: 14px; cursor: pointer; border: none; transition: transform 0.2s; }
         .btn-common:hover { transform: translateY(-2px); }
         
+        /* 현재 위치 툴팁 스타일 */
+        .my-location-tooltip { padding: 5px 10px; background: #ff4757; color: white; border-radius: 5px; font-size: 12px; font-weight: bold; white-space: nowrap; }
+
         #recentList, #resultList { list-style: none; padding: 0; margin-top: 10px; display: none; background: #f9f9f9; border: 1px solid #eee; border-radius: 10px; width: 270px; margin: 0 auto; overflow: hidden; }
         #recentList li, #resultList li { padding: 12px; border-bottom: 1px solid #eee; font-size: 13px; cursor: pointer; }
 
@@ -53,7 +56,8 @@
     <script>
         let map, geocoder, clusterer, customOverlay, sheetData = [];
         let loadedCount = 0;
-        let currentLocationMarker = null; // 현재 위치 마커 변수
+        let currentLocationMarker = null; 
+        let myLocOverlay = null;
 
         function initMap() {
             const container = document.getElementById('map');
@@ -66,48 +70,50 @@
         kakao.maps.load(initMap);
 
         function moveToMyLocation() {
-    if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition((position) => {
-            const locPosition = new kakao.maps.LatLng(position.coords.latitude, position.coords.longitude);
-            
-            // 1. 기존 마커 제거
-            if (currentLocationMarker) currentLocationMarker.setMap(null);
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition((position) => {
+                    const locPosition = new kakao.maps.LatLng(position.coords.latitude, position.coords.longitude);
+                    
+                    if (currentLocationMarker) currentLocationMarker.setMap(null);
+                    if (myLocOverlay) myLocOverlay.setMap(null);
 
-            // 2. 카카오 지도 기본 마커 이미지를 활용한 빨간색 마커 생성
-            // 'marker_red'와 같은 별도 이미지 URL 대신, 마커 이미지를 생성하는 기본 방식 사용
-            currentLocationMarker = new kakao.maps.Marker({
-                map: map,
-                position: locPosition
-                // 별도의 이미지를 설정하지 않으면 기본 마커가 뜨며, 
-                // 특정 색상을 원하신다면 아래 이미지 객체 생성 방식을 사용하세요.
-            });
+                    // 빨간색 마커 이미지 생성
+                    const imageSrc = 'https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/marker_red.png';
+                    const imageSize = new kakao.maps.Size(64, 69);
+                    const markerImage = new kakao.maps.MarkerImage(imageSrc, imageSize);
 
-            // 3. 지도 중심 이동 및 레벨 설정
-            map.setCenter(locPosition);
-            map.setLevel(3);
-            
-        }, (err) => { 
-            console.error(err);
-            alert("위치 정보를 가져올 수 없습니다. 권한을 확인해주세요."); 
-        });
-    } else { 
-        alert("이 브라우저에서는 위치 기능을 지원하지 않습니다."); 
-    }
-}
+                    currentLocationMarker = new kakao.maps.Marker({
+                        map: map,
+                        position: locPosition,
+                        image: markerImage
+                    });
+
+                    // 마우스 이벤트: 오버 시 툴팁
+                    kakao.maps.event.addListener(currentLocationMarker, 'mouseover', () => {
+                        myLocOverlay = new kakao.maps.CustomOverlay({
+                            content: '<div class="my-location-tooltip">현재 위치입니다.</div>',
+                            position: locPosition,
+                            yAnchor: 2
+                        });
+                        myLocOverlay.setMap(map);
+                    });
+
+                    // 마우스 이벤트: 아웃 시 툴팁 제거
+                    kakao.maps.event.addListener(currentLocationMarker, 'mouseout', () => {
+                        if (myLocOverlay) myLocOverlay.setMap(null);
+                    });
+
+                    map.setCenter(locPosition);
+                    map.setLevel(3);
+                }, (err) => { console.error(err); alert("위치 정보를 가져올 수 없습니다."); });
+            } else { alert("위치 기능을 지원하지 않습니다."); }
+        }
 
         function renderOverlay(pos, item) {
             if (customOverlay) customOverlay.setMap(null);
             const div = document.createElement('div');
             div.className = 'info-box';
-            div.innerHTML = `
-                <div class="info-title">${item.site}</div>
-                <div class="info-item"><span class="info-label">경비</span><span>${item.sec || '-'}</span></div>
-                <div class="info-item"><span class="info-label">주차</span><span>${item.park || '-'}</span></div>
-                <div class="info-item"><span class="info-label">코너</span><span>${item.bin2 || '-'}</span></div>
-                <div class="info-item"><span class="info-label">기번</span><span>${item.mn || '-'}</span></div>
-                <div class="info-item"><span class="info-label">연락</span><span>${item.phone || '-'}</span></div>
-                <div class="info-item"><span class="info-label">비고</span><span>${item.etc || '-'}</span></div>
-            `;
+            div.innerHTML = `<div class="info-title">${item.site}</div><div class="info-item"><span class="info-label">경비</span><span>${item.sec || '-'}</span></div><div class="info-item"><span class="info-label">주차</span><span>${item.park || '-'}</span></div><div class="info-item"><span class="info-label">코너</span><span>${item.bin2 || '-'}</span></div><div class="info-item"><span class="info-label">기번</span><span>${item.mn || '-'}</span></div><div class="info-item"><span class="info-label">연락</span><span>${item.phone || '-'}</span></div><div class="info-item"><span class="info-label">비고</span><span>${item.etc || '-'}</span></div>`;
             customOverlay = new kakao.maps.CustomOverlay({ position: pos, content: div, yAnchor: 1.3 });
             customOverlay.setMap(map);
         }
