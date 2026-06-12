@@ -6,14 +6,18 @@
     <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=7f3387ab66fb524dbefeb77ae9f85e90&libraries=services,clusterer&autoload=false"></script>
     <style>
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; display: flex; overflow: hidden; font-family: sans-serif; }
-        #sidebar { width: 320px; min-width: 320px; height: 100%; background: #ffffff; border-right: 1px solid #eaeaea; padding: 25px; box-sizing: border-box; overflow-y: auto; z-index: 10; box-shadow: 2px 0 10px rgba(0,0,0,0.05); }
+        
+        /* 사이드바 수정: 상단 메뉴는 고정, 하단은 스크롤 */
+        #sidebar { width: 320px; min-width: 320px; height: 100%; background: #ffffff; border-right: 1px solid #eaeaea; box-sizing: border-box; display: flex; flex-direction: column; z-index: 10; box-shadow: 2px 0 10px rgba(0,0,0,0.05); }
+        #sidebarContent { padding: 25px; overflow-y: auto; flex-grow: 1; }
+        
         #map { flex-grow: 1; height: 100%; background-color: #f0f0f0; }
         
-        /* 추가된 메뉴 스타일 */
-        #recentMenu { margin-top: 20px; cursor: pointer; color: #764ba2; font-weight: bold; font-size: 15px; border: 1px solid #764ba2; padding: 10px; border-radius: 8px; text-align: center; }
-        #recentList { list-style: none; padding: 0; margin-top: 10px; display: none; background: #f9f9f9; border-radius: 8px; }
-        #recentList li { padding: 10px; border-bottom: 1px solid #eee; font-size: 13px; cursor: pointer; }
-        #recentList li:hover { background: #eef; }
+        /* 메뉴 버튼 및 리스트 스타일 */
+        #recentMenu { margin-bottom: 10px; cursor: pointer; color: #ffffff; background-color: #764ba2; font-weight: bold; font-size: 14px; padding: 12px; border-radius: 8px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        #recentList { list-style: none; padding: 0; margin: 0 0 20px 0; display: none; background: #f4f4f4; border-radius: 8px; }
+        #recentList li { padding: 10px; border-bottom: 1px solid #ddd; font-size: 13px; cursor: pointer; }
+        #recentList li:hover { background: #e0e0ff; }
 
         #loadingWrapper { margin-bottom: 20px; }
         #progressContainer { width: 100%; height: 8px; background: #eee; border-radius: 4px; overflow: hidden; margin-top: 5px; }
@@ -31,23 +35,25 @@
 </head>
 <body>
     <div id="sidebar">
-        <div id="loadingWrapper">
-            <div style="font-size:13px; font-weight:bold; color:#764ba2;">데이터 로딩 중... <span id="percentText">0%</span></div>
-            <div id="progressContainer"><div id="progressBar"></div></div>
-        </div>
-        <h3>사이트 관리</h3>
-        
-        <div id="recentMenu" onclick="toggleRecent()">최근 수정된 사이트 LIST ▼</div>
-        <ul id="recentList"></ul>
+        <div id="sidebarContent">
+            <div id="loadingWrapper">
+                <div style="font-size:13px; font-weight:bold; color:#764ba2;">데이터 로딩 중... <span id="percentText">0%</span></div>
+                <div id="progressContainer"><div id="progressBar"></div></div>
+            </div>
 
-        <div style="margin: 20px 0;"></div>
-        <input type="text" id="searchKeyword" placeholder="사이트명/코너명/기번 검색..." onkeyup="filterList()">
-        <ul id="resultList"></ul>
-        <div style="margin-top:20px; font-size:13px;">전체 사이트: <b id="totalCount">0개</b></div>
+            <div id="recentMenu" onclick="toggleRecent()">최근 수정된 사이트 LIST ▼</div>
+            <ul id="recentList"></ul>
+
+            <h3>사이트 관리</h3>
+            <input type="text" id="searchKeyword" placeholder="사이트명/코너명/기번 검색..." onkeyup="filterList()">
+            <ul id="resultList"></ul>
+            <div style="margin-top:20px; font-size:13px;">전체 사이트: <b id="totalCount">0개</b></div>
+        </div>
     </div>
     <div id="map"></div>
 
     <script>
+        // (기존 자바스크립트 로직 동일)
         let map, geocoder, clusterer, customOverlay, sheetData = [];
 
         kakao.maps.load(() => {
@@ -86,13 +92,11 @@
             });
         }
 
-        // 최근 수정된 사이트 리스트 토글 및 데이터 정렬
         function toggleRecent() {
             const list = document.getElementById('recentList');
             if (list.style.display === 'block') {
                 list.style.display = 'none';
             } else {
-                // date 기준 내림차순 정렬 후 상위 6개 추출
                 const sorted = [...sheetData].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 6);
                 list.innerHTML = sorted.map(i => `<li onclick="goTo('${i.address}')">${i.site} <small>(${i.date})</small></li>`).join('');
                 list.style.display = 'block';
