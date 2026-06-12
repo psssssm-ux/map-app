@@ -7,30 +7,11 @@
     <style>
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; font-family: sans-serif; }
         #app-container { display: flex; width: 100%; height: 100%; }
-        
-        #sidebar { 
-            width: 320px; min-width: 320px; height: 100%; background: #ffffff; 
-            border-right: 1px solid #eaeaea; display: flex; flex-direction: column; 
-            z-index: 10; box-shadow: 2px 0 10px rgba(0,0,0,0.05);
-        }
+        #sidebar { width: 320px; min-width: 320px; height: 100%; background: #ffffff; border-right: 1px solid #eaeaea; display: flex; flex-direction: column; z-index: 10; box-shadow: 2px 0 10px rgba(0,0,0,0.05); }
         #sidebarContent { padding: 25px; flex-grow: 1; overflow-y: auto; }
-        
-        /* 버튼 가로길이 강제 통일 */
-        .btn-common { 
-            width: 270px; /* 320px 사이드바에서 패딩 25px*2 제외한 너비 */
-            box-sizing: border-box; 
-            display: block; 
-            margin: 10px auto; /* 중앙 정렬 */
-            padding: 12px 0; 
-            text-align: center; 
-            border-radius: 8px; 
-            font-weight: bold; 
-            font-size: 14px; 
-            cursor: pointer; 
-            border: none;
-        }
         #map { flex-grow: 1; height: 100%; background-color: #f0f0f0; }
         
+        .btn-common { width: 270px; box-sizing: border-box; display: block; margin: 10px auto; padding: 12px 0; text-align: center; border-radius: 8px; font-weight: bold; font-size: 14px; cursor: pointer; border: none; }
         #recentList { list-style: none; padding: 0; margin-top: 10px; display: none; background: #f9f9f9; border: 1px solid #eee; border-radius: 8px; width: 270px; margin: 0 auto; }
         #recentList li { padding: 10px; border-bottom: 1px solid #eee; font-size: 13px; cursor: pointer; }
     </style>
@@ -53,7 +34,7 @@
                 <div style="margin-top: 30px;">
                     <h3 style="font-size: 18px; color: #444; border-bottom: 2px solid #764ba2; padding-bottom: 10px;">사이트 관리</h3>
                     <input type="text" id="searchKeyword" style="width: 270px; padding: 12px; border: 2px solid #eee; border-radius: 8px; box-sizing: border-box;" placeholder="사이트명/코너명/기번 검색..." onkeyup="filterList()">
-                    <ul id="resultList" style="list-style:none; padding:0; margin-top:10px; display:none; background:#fff; border:1px solid #eee; border-radius:12px;"></ul>
+                    <ul id="resultList" style="list-style:none; padding:0; margin-top:10px; display:none; background:#fff; border:1px solid #eee; border-radius:12px; width:270px;"></ul>
                     <div style="margin-top:15px; font-size:13px;">전체 사이트: <b id="totalCount">0개</b></div>
                 </div>
             </div>
@@ -82,21 +63,17 @@
                 const cacheKey = 'loc_' + item.address;
                 const cached = localStorage.getItem(cacheKey);
                 
-                if (cached) {
-                    addMarker(JSON.parse(cached), item);
-                    updateProgress();
-                } else {
-                    setTimeout(() => {
-                        geocoder.addressSearch(item.address, (result, status) => {
-                            if (status === kakao.maps.services.Status.OK) {
-                                const pos = { lat: result[0].y, lng: result[0].x };
-                                localStorage.setItem(cacheKey, JSON.stringify(pos));
-                                addMarker(pos, item);
-                            }
-                            updateProgress();
-                        });
-                    }, index * 100);
-                }
+                if (cached) { addMarker(JSON.parse(cached), item); updateProgress(); }
+                else { setTimeout(() => {
+                    geocoder.addressSearch(item.address, (result, status) => {
+                        if (status === kakao.maps.services.Status.OK) {
+                            const pos = { lat: result[0].y, lng: result[0].x };
+                            localStorage.setItem(cacheKey, JSON.stringify(pos));
+                            addMarker(pos, item);
+                        }
+                        updateProgress();
+                    });
+                }, index * 100); }
             });
         }
 
@@ -112,6 +89,17 @@
             clusterer.addMarker(marker);
         }
 
+        // 검색 및 이동 함수 복구
+        function filterList() {
+            const val = document.getElementById('searchKeyword').value.toLowerCase();
+            const list = document.getElementById('resultList');
+            if(!val) { list.style.display = 'none'; return; }
+            const filtered = sheetData.filter(i => (i.site && i.site.toLowerCase().includes(val)) || (i.BIN2 && String(i.BIN2).toLowerCase().includes(val)) || (i.MN && String(i.MN).toLowerCase().includes(val)));
+            list.innerHTML = filtered.map(i => `<li style="padding:10px; border-bottom:1px solid #eee; cursor:pointer;" onclick="goTo('${i.address}')"><strong>${i.site}</strong><br><small>코너: ${i.BIN2 || '-'} / 기번: ${i.MN || '-'}</small></li>`).join('');
+            list.style.display = filtered.length ? 'block' : 'none';
+        }
+
+        function goTo(addr) { geocoder.addressSearch(addr, (res, status) => { if(status === 'OK') { map.setCenter(new kakao.maps.LatLng(res[0].y, res[0].x)); map.setLevel(3); } }); }
         function resetMap() { map.setCenter(new kakao.maps.LatLng(35.1517, 129.0305)); map.setLevel(7); }
         function toggleRecent() {
             const list = document.getElementById('recentList');
