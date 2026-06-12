@@ -3,171 +3,56 @@
 <head>
     <meta charset="utf-8">
     <title>사이트 통합 지도 앱</title>
-    <link rel="shortcut icon" href="data:image/x-icon;," type="image/x-icon">
     <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=7f3387ab66fb524dbefeb77ae9f85e90&libraries=services,clusterer&autoload=false"></script>
     <style>
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; display: flex; overflow: hidden; }
-        #sidebar { width: 320px; flex-shrink: 0; height: 100%; background: #ffffff; border-right: 1px solid #eaeaea; padding: 25px; box-sizing: border-box; overflow-y: auto; z-index: 10; }
-        
-        #loadingWrapper { margin-bottom: 25px; }
-        #loadingText { font-size: 13px; color: #764ba2; margin-bottom: 8px; font-weight: 700; display: flex; justify-content: space-between; }
-        #progressContainer { width: 100%; height: 8px; background: #eee; border-radius: 4px; overflow: hidden; }
-        #progressBar { width: 0%; height: 100%; background: #764ba2; transition: width 0.2s; }
-        
-        #map { flex-grow: 1; height: 100%; background-color: #f0f0f0; }
-        
-        /* 나머지 스타일 동일 */
-        #sidebar h3 { font-size: 18px; color: #444; margin-bottom: 20px; border-bottom: 2px solid #764ba2; padding-bottom: 10px; }
-        #searchKeyword { width: 100%; padding: 14px; border: 2px solid #eee; border-radius: 12px; box-sizing: border-box; }
-        #resultList { background: white; border-radius: 12px; border: 1px solid #f0f0f0; margin-top: 10px; list-style: none; padding: 0; display: none; }
-        #resultList li { padding: 12px 15px; border-bottom: 1px solid #f9f9f9; cursor: pointer; font-size: 14px; }
-        .custom-overlay { position: relative; bottom: 60px; border-radius: 16px; background: #ffffff; box-shadow: 0 10px 20px rgba(0,0,0,0.2); width: 260px; pointer-events: none; }
-        .overlay-header { background: linear-gradient(135deg, #764ba2 0%, #667eea 100%); color: white; padding: 12px 18px; font-weight: 700; font-size: 14px; border-radius: 16px 16px 0 0; }
-        .overlay-body { padding: 15px; font-size: 13px; color: #444; }
-        .info-row { display: flex; margin-bottom: 5px; }
-        .info-label { width: 60px; font-weight: 600; color: #888; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; display: flex; }
+        #sidebar { width: 320px; height: 100%; background: #fff; border-right: 1px solid #ccc; padding: 20px; box-sizing: border-box; overflow-y: auto; }
+        #map { flex-grow: 1; height: 100%; background: #f0f0f0; }
+        #loadingMsg { color: blue; font-weight: bold; margin-bottom: 10px; display: block; }
     </style>
 </head>
 <body>
     <div id="sidebar">
         <div id="loadingWrapper">
-            <div id="loadingText"><span id="loadingMsg">데이터 로딩 중...</span><span id="percentText">0%</span></div>
-            <div id="progressContainer"><div id="progressBar"></div></div>
+            <span id="loadingMsg">데이터 불러오는 중...</span>
         </div>
         <h3>사이트 관리</h3>
-        <input type="text" id="searchKeyword" placeholder="사이트명 검색..." onkeyup="showResults()">
-        <ul id="resultList"></ul>
-        <div style="margin-top:20px; font-size:13px;">전체 사이트: <b id="totalCount">0개</b></div>
+        <input type="text" id="searchKeyword" placeholder="사이트명 검색...">
+        <div style="margin-top:20px;">전체 사이트: <b id="totalCount">0개</b></div>
     </div>
     <div id="map"></div>
 
     <script>
-        let map, geocoder, clusterer, customOverlay;
-        let sheetData = [];
+        let map, geocoder, clusterer;
 
-        document.addEventListener('DOMContentLoaded', () => {
+        // 1. 초기화 실행 확인
+        window.onload = function() {
             kakao.maps.load(() => {
                 const container = document.getElementById('map');
                 map = new kakao.maps.Map(container, { center: new kakao.maps.LatLng(35.1517, 129.0305), level: 7 });
                 geocoder = new kakao.maps.services.Geocoder();
                 clusterer = new kakao.maps.MarkerClusterer({ map: map, gridSize: 35, averageCenter: true, minLevel: 7 });
+                
+                // 데이터 로드 호출
                 loadSheetData();
             });
-        });
+        };
 
         async function loadSheetData() {
             const jsonUrl = 'https://script.google.com/macros/s/AKfycbwxAh4O39J93KVy87IjPu3h17BUZJ120BwkfkESVHuorO21GXpZcJT0qLxEdJwTDM-y8Q/exec';
             try {
                 const response = await fetch(jsonUrl);
-                sheetData = await response.json();
-                sheetData = sheetData.filter(item => item.address);
-                document.getElementById('totalCount').textContent = sheetData.length + '개';
-
-                let completed = 0;
-                sheetData.forEach((item, index) => {
-                    const cached = localStorage.getItem('addr_' + item.address);
-                    if (cached) {
-                        addMarkerToMap(JSON.parse(cached), item);
-                        completed++;
-                        updateProgress(completed, sheetData.length);
-                    } else {
-                        setTimeout(() => {
-                            geocoder.addressSearch(item.address, (result, status) => {
-                                if (status === kakao.maps.services.Status.OK) {
-                                    const pos = { lat: result[0].y, lng: result[0].x };
-                                    localStorage.setItem('addr_' + item.address, JSON.stringify(pos));
-                                    addMarkerToMap(pos, item);
-                                }
-                                completed++;
-                                updateProgress(completed, sheetData.length);
-                            });
-                        }, index * 100); // 간격 조정
-                    }
-                });
+                const data = await response.json();
+                
+                document.getElementById('totalCount').textContent = data.length + '개';
+                document.getElementById('loadingMsg').textContent = "데이터 로드 완료!";
+                
+                // 데이터 확인용 로그
+                console.log("데이터 개수:", data.length);
             } catch (e) {
-                console.error("데이터 로드 오류:", e);
-                const msg = document.getElementById('loadingMsg');
-                if(msg) msg.textContent = "로드 실패";
+                document.getElementById('loadingMsg').textContent = "에러 발생: " + e.message;
             }
         }
-
-        function updateProgress(done, total) {
-            const bar = document.getElementById('progressBar');
-            const txt = document.getElementById('percentText');
-            const msg = document.getElementById('loadingMsg');
-            const percent = Math.round((done / total) * 100);
-            
-            if(bar) bar.style.width = percent + '%';
-            if(txt) txt.textContent = percent + '%';
-            
-            if (done >= total) {
-                if(msg) msg.textContent = "로딩 완료";
-                setTimeout(() => { 
-                    const lw = document.getElementById('loadingWrapper');
-                    if(lw) lw.style.display = 'none'; 
-                }, 1000);
-            }
-        }
-
-        function addMarkerToMap(pos, item) {
-            const marker = new kakao.maps.Marker({ position: new kakao.maps.LatLng(pos.lat, pos.lng) });
-            kakao.maps.event.addListener(marker, 'mouseover', () => showOverlay(marker, item));
-            kakao.maps.event.addListener(marker, 'mouseout', () => closeOverlay());
-            clusterer.addMarker(marker);
-        }
-
-        function showResults() {
-            const keyword = document.getElementById('searchKeyword').value.trim();
-            const list = document.getElementById('resultList');
-            if (!list) return;
-            if (keyword.length < 1) { list.style.display = 'none'; return; }
-            list.innerHTML = '';
-            const filtered = sheetData.filter(item => {
-                const siteName = item.site ? String(item.site) : "";
-                return siteName.includes(keyword);
-            });
-            filtered.forEach(item => {
-                let li = document.createElement('li');
-                li.textContent = item.site;
-                li.onclick = () => selectItem(item);
-                list.appendChild(li);
-            });
-            list.style.display = filtered.length > 0 ? 'block' : 'none';
-        }
-
-        function selectItem(item) {
-            document.getElementById('searchKeyword').value = item.site;
-            document.getElementById('resultList').style.display = 'none';
-            geocoder.addressSearch(item.address, (result, status) => {
-                if (status === kakao.maps.services.Status.OK) {
-                    const coords = new kakao.maps.LatLng(result[0].y, result[0].x);
-                    map.setCenter(coords);
-                    map.setLevel(3);
-                    showOverlay({getPosition: () => coords}, item);
-                }
-            });
-        }
-
-        function showOverlay(target, item) {
-            if (customOverlay) customOverlay.setMap(null);
-            const content = document.createElement('div');
-            content.className = 'custom-overlay';
-            content.innerHTML = `
-                <div class="overlay-header">${item.site}</div>
-                <div class="overlay-body">
-                    <div class="info-row"><div class="info-label">경비사</div><div>${item.sec || '-'}</div></div>
-                    <div class="info-row"><div class="info-label">주차</div><div>${item.park || '-'}</div></div>
-                    <div style="margin-top:10px; font-size:12px; color:#999;">${item.address || ''}</div>
-                </div>`;
-            customOverlay = new kakao.maps.CustomOverlay({ 
-                position: target.getPosition ? target.getPosition() : target, 
-                content: content, 
-                yAnchor: 1.1 
-            });
-            customOverlay.setMap(map);
-        }
-
-        function closeOverlay() { if (customOverlay) customOverlay.setMap(null); }
     </script>
 </body>
 </html>
