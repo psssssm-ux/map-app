@@ -10,7 +10,173 @@
         /* 전체 컨테이너를 상대 위치로 */
         #app-container { position: relative; width: 100vw; height: 100vh; }
         
-        /* 사이드바는 왼쪽 고정 */
+        /* 사이드바는 왼쪽 고정 */<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="utf-8">
+    <title>사이트 통합 지도 앱</title>
+    <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=7f3387ab66fb524dbefeb77ae9f85e90&libraries=services,clusterer&autoload=false"></script>
+    <style>
+        /* 1. 레이아웃 초기화 및 전체 화면 설정 */
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; font-family: 'Pretendard', sans-serif; }
+        
+        /* 2. 전체 부모 컨테이너 */
+        #app-container { display: flex; width: 100vw; height: 100vh; }
+        
+        /* 3. 고정 사이드바 */
+        #sidebar { width: 320px; min-width: 320px; height: 100vh; background: #ffffff; border-right: 1px solid #eaeaea; z-index: 10; box-shadow: 2px 0 10px rgba(0,0,0,0.05); display: flex; flex-direction: column; overflow-y: auto; }
+        #sidebarContent { padding: 25px; }
+        
+        /* 4. 지도 컨테이너 (나머지 공간을 모두 차지하도록 flex-grow 설정) */
+        #map { flex-grow: 1; height: 100vh; background-color: #f0f0f0; }
+        
+        .btn-common { width: 100%; max-width: 270px; display: block; margin: 0 auto 10px auto; padding: 14px 0; text-align: center; border-radius: 10px; font-weight: 700; font-size: 14px; cursor: pointer; border: none; transition: transform 0.2s; }
+        .btn-common:hover { transform: translateY(-2px); }
+        
+        #recentList, #resultList { list-style: none; padding: 0; margin-top: 10px; display: none; background: #f9f9f9; border: 1px solid #eee; border-radius: 10px; width: 270px; margin: 0 auto; overflow: hidden; }
+        #recentList li, #resultList li { padding: 12px; border-bottom: 1px solid #eee; font-size: 13px; cursor: pointer; }
+
+        .info-box { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border: 1px solid rgba(0,0,0,0.1); border-radius: 16px; padding: 16px; font-size: 13px; min-width: 180px; max-width: 300px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15); line-height: 1.6; }
+        .info-title { font-size: 15px; font-weight: 800; color: #4a148c; margin-bottom: 8px; padding-bottom: 8px; border-bottom: 2px solid #ede7f6; }
+        .info-item { display: flex; gap: 10px; }
+        .info-label { color: #888; font-weight: 600; min-width: 35px; }
+    </style>
+</head>
+<body>
+    <div id="app-container">
+        <div id="sidebar">
+            <div id="sidebarContent">
+                <div id="loadingWrapper" style="margin-bottom: 20px;">
+                    <div style="font-size:13px; font-weight:bold; color:#764ba2;">데이터 로딩 중... <span id="percentText">0%</span></div>
+                    <div style="width: 100%; height: 8px; background: #eee; border-radius: 4px; overflow: hidden; margin-top: 5px;">
+                        <div id="progressBar" style="width: 0%; height: 100%; background: #764ba2; transition: width 0.3s;"></div>
+                    </div>
+                </div>
+
+                <div class="btn-common" style="background-color: #ff9f43; color: #fff;" onclick="moveToMyLocation()">📍 현재 위치로 이동</div>
+                <div class="btn-common" style="background-color: #667eea; color: #fff;" onclick="resetMap()">지도 위치 초기화 🔄</div>
+                <div class="btn-common" style="background-color: #764ba2; color: #fff;" onclick="toggleRecent()">최근 수정된 사이트 LIST ▼</div>
+                <ul id="recentList"></ul>
+                
+                <div style="margin-top: 30px;">
+                    <h3 style="font-size: 18px; color: #444; border-bottom: 2px solid #764ba2; padding-bottom: 10px;">사이트 관리</h3>
+                    <input type="text" id="searchKeyword" style="width: 270px; padding: 14px; border: 2px solid #eee; border-radius: 10px; box-sizing: border-box;" placeholder="사이트명/코너명/기번 검색...">
+                    <ul id="resultList"></ul>
+                    <div style="margin-top:15px; font-size:13px; color:#666;">전체 사이트: <b id="totalCount" style="color:#000;">0개</b></div>
+                </div>
+            </div>
+        </div>
+        <div id="map"></div>
+    </div>
+
+    <script>
+        let map, geocoder, clusterer, customOverlay, sheetData = [];
+        let loadedCount = 0;
+
+        function initMap() {
+            const container = document.getElementById('map');
+            map = new kakao.maps.Map(container, { center: new kakao.maps.LatLng(35.1517, 129.0305), level: 7 });
+            geocoder = new kakao.maps.services.Geocoder();
+            clusterer = new kakao.maps.MarkerClusterer({ map: map, gridSize: 35, averageCenter: true, minLevel: 7 });
+            loadSheetData();
+        }
+
+        kakao.maps.load(initMap);
+
+        function moveToMyLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition((position) => {
+                    const locPosition = new kakao.maps.LatLng(position.coords.latitude, position.coords.longitude);
+                    map.setCenter(locPosition);
+                    map.setLevel(3);
+                }, () => { alert("위치 정보를 가져올 수 없습니다."); });
+            } else { alert("위치 기능을 지원하지 않습니다."); }
+        }
+
+        function renderOverlay(pos, item) {
+            if (customOverlay) customOverlay.setMap(null);
+            const div = document.createElement('div');
+            div.className = 'info-box';
+            div.innerHTML = `
+                <div class="info-title">${item.site}</div>
+                <div class="info-item"><span class="info-label">경비</span><span>${item.sec || '-'}</span></div>
+                <div class="info-item"><span class="info-label">주차</span><span>${item.park || '-'}</span></div>
+                <div class="info-item"><span class="info-label">코너</span><span>${item.bin2 || '-'}</span></div>
+                <div class="info-item"><span class="info-label">기번</span><span>${item.mn || '-'}</span></div>
+                <div class="info-item"><span class="info-label">연락</span><span>${item.phone || '-'}</span></div>
+                <div class="info-item"><span class="info-label">비고</span><span>${item.etc || '-'}</span></div>
+            `;
+            customOverlay = new kakao.maps.CustomOverlay({ position: pos, content: div, yAnchor: 1.3 });
+            customOverlay.setMap(map);
+        }
+
+        function addMarker(pos, item) {
+            const marker = new kakao.maps.Marker({ position: new kakao.maps.LatLng(pos.lat, pos.lng) });
+            kakao.maps.event.addListener(marker, 'mouseover', () => renderOverlay(marker.getPosition(), {site:item.site, sec:item.sec, park:item.park, bin2:item.BIN2, mn:item.MN, phone:item.phone, etc:item.etc}));
+            kakao.maps.event.addListener(marker, 'mouseout', () => { if(customOverlay) customOverlay.setMap(null); });
+            clusterer.addMarker(marker);
+        }
+
+        document.getElementById('searchKeyword').addEventListener('keyup', function() {
+            const val = this.value.toLowerCase();
+            const list = document.getElementById('resultList');
+            if(!val) { list.style.display = 'none'; return; }
+            const filtered = sheetData.filter(i => (i.site && i.site.toLowerCase().includes(val)) || (i.BIN2 && String(i.BIN2).toLowerCase().includes(val)) || (i.MN && String(i.MN).toLowerCase().includes(val)));
+            list.innerHTML = filtered.map(i => `<li onclick="showInfo('${i.address}', '${i.site}', '${i.sec}', '${i.park}', '${i.BIN2}', '${i.MN}', '${i.etc || ''}', '${i.phone || ''}')"><strong>${i.site}</strong><br><small style="color:#888">코너: ${i.BIN2 || '-'} / 기번: ${i.MN || '-'}</small></li>`).join('');
+            list.style.display = filtered.length ? 'block' : 'none';
+        });
+
+        function showInfo(addr, site, sec, park, bin2, mn, etc, phone) {
+            geocoder.addressSearch(addr, (res, status) => {
+                if(status === 'OK') {
+                    const pos = new kakao.maps.LatLng(res[0].y, res[0].x);
+                    map.setCenter(pos); map.setLevel(3);
+                    renderOverlay(pos, {site, sec, park, bin2, mn, etc, phone});
+                }
+            });
+        }
+
+        async function loadSheetData() {
+            const res = await fetch('https://script.google.com/macros/s/AKfycbwxAh4O39J93KVy87IjPu3h17BUZJ120BwkfkESVHuorO21GXpZcJT0qLxEdJwTDM-y8Q/exec');
+            sheetData = await res.json();
+            document.getElementById('totalCount').textContent = sheetData.length + '개';
+            sheetData.forEach((item, index) => {
+                if (!item.address) { loadedCount++; return; }
+                const cacheKey = 'loc_' + item.address;
+                const cached = localStorage.getItem(cacheKey);
+                if (cached) { addMarker(JSON.parse(cached), item); loadedCount++; updateProgress(); }
+                else { setTimeout(() => {
+                    geocoder.addressSearch(item.address, (result, status) => {
+                        if (status === kakao.maps.services.Status.OK) {
+                            const pos = { lat: result[0].y, lng: result[0].x };
+                            localStorage.setItem(cacheKey, JSON.stringify(pos));
+                            addMarker(pos, item);
+                        }
+                        loadedCount++; updateProgress();
+                    });
+                }, index * 100); }
+            });
+        }
+
+        function updateProgress() {
+            const percent = Math.round((loadedCount / sheetData.length) * 100);
+            document.getElementById('progressBar').style.width = percent + '%';
+            document.getElementById('percentText').textContent = percent + '%';
+        }
+
+        function resetMap() { map.setCenter(new kakao.maps.LatLng(35.1517, 129.0305)); map.setLevel(7); if(customOverlay) customOverlay.setMap(null); }
+        function toggleRecent() {
+            const list = document.getElementById('recentList');
+            if (list.style.display === 'block') list.style.display = 'none';
+            else {
+                const sorted = [...sheetData].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 6);
+                list.innerHTML = sorted.map(i => `<li onclick="showInfo('${i.address}', '${i.site}', '${i.sec}', '${i.park}', '${i.BIN2}', '${i.MN}', '${i.etc || ''}', '${i.phone || ''}')">${i.site}</li>`).join('');
+                list.style.display = 'block';
+            }
+        }
+    </script>
+</body>
+</html>
         #sidebar { position: absolute; left: 0; top: 0; width: 320px; height: 100%; background: #ffffff; border-right: 1px solid #eaeaea; z-index: 10; box-shadow: 2px 0 10px rgba(0,0,0,0.05); display: flex; flex-direction: column; }
         #sidebarContent { padding: 25px; flex-grow: 1; overflow-y: auto; }
         
