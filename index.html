@@ -78,6 +78,15 @@
             customOverlay.setMap(map);
         }
 
+        function addMarker(pos, item) {
+            const marker = new kakao.maps.Marker({ position: new kakao.maps.LatLng(pos.lat, pos.lng) });
+            // 여기서 수정됨
+            kakao.maps.event.addListener(marker, 'mouseover', () => renderOverlay(marker.getPosition(), {site:item.site, sec:item.sec, park:item.park, bin2:item.BIN2, mn:item.MN, phone:item.phone, etc:item.etc}));
+            kakao.maps.event.addListener(marker, 'mouseout', () => { if(customOverlay) customOverlay.setMap(null); });
+            clusterer.addMarker(marker);
+        }
+
+        // 나머지 함수들은 동일...
         document.getElementById('searchKeyword').addEventListener('keyup', function() {
             const val = this.value.toLowerCase();
             const list = document.getElementById('resultList');
@@ -95,13 +104,6 @@
                     renderOverlay(pos, {site, sec, park, bin2, mn, etc, phone});
                 }
             });
-        }
-
-        function addMarker(pos, item) {
-            const marker = new kakao.maps.Marker({ position: new kakao.maps.LatLng(pos.lat, pos.lng) });
-            kakao.maps.event.addListener(marker, 'mouseover', () => renderOverlay(marker.getPosition(), {site:item.site, sec:item.sec, park:item.park, bin2:item.BIN2, mn:item.MN, etc:item.etc, phone:item.phone}));
-            kakao.maps.event.addListener(marker, 'mouseout', () => { if(customOverlay) customOverlay.setMap(null); });
-            clusterer.addMarker(marker);
         }
 
         async function loadSheetData() {
