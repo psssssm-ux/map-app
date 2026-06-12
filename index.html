@@ -67,12 +67,12 @@
             div.className = 'info-box';
             div.innerHTML = `
                 <div class="info-title">${item.site}</div>
-                <div class="info-item"><span class="info-label">경비</span><span>${item.sec || '-'}</span></div>
-                <div class="info-item"><span class="info-label">주차</span><span>${item.park || '-'}</span></div>
-                <div class="info-item"><span class="info-label">코너</span><span>${item.bin2 || '-'}</span></div>
-                <div class="info-item"><span class="info-label">기번</span><span>${item.mn || '-'}</span></div>
-                <div class="info-item"><span class="info-label">연락</span><span>${item.phone || '-'}</span></div>
-                <div class="info-item"><span class="info-label">비고</span><span>${item.etc || '-'}</span></div>
+                <div class="info-item"><span class="info-label">경비업체</span><span>${item.sec || '-'}</span></div>
+                <div class="info-item"><span class="info-label">주차위치</span><span>${item.park || '-'}</span></div>
+                <div class="info-item"><span class="info-label">코너이름</span><span>${item.bin2 || '-'}</span></div>
+                <div class="info-item"><span class="info-label">기   번</span><span>${item.mn || '-'}</span></div>
+                <div class="info-item"><span class="info-label">연락처</span><span>${item.phone || '-'}</span></div>
+                <div class="info-item"><span class="info-label">비 고</span><span>${item.etc || '-'}</span></div>
             `;
             customOverlay = new kakao.maps.CustomOverlay({ position: pos, content: div, yAnchor: 1.3 });
             customOverlay.setMap(map);
