@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <title>사이트 통합 지도 앱</title>
-    <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=b3c7bdf3a37ed2613966593d61fc3d46&libraries=services,clusterer&autoload=false"></script>
+    <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=7f3387ab66fb524dbefeb77ae9f85e90&libraries=services,clusterer&autoload=false"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <style>
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; display: flex; overflow: hidden; font-family: 'Pretendard', -apple-system, sans-serif; }
@@ -59,7 +59,7 @@
         });
 
         function loadSheetData() {
-            const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSvJ-ZEYTaOAb34GeTSO7t-xEmanJNM1rW727QNiFe4pUcscX19q6r0dWtz6dE0sC0u2wDYIO32_yo_/pub?gid=0&single=true&output=csv';
+            const csvUrl = 'https://script.google.com/macros/s/AKfycbz74bMpLzxq9qUZFs0SHdo1yfcLz34SpXQmF3csz-Geu_ORWmuSQDDFpBCypAfpRMoX9A/exec';
             Papa.parse(csvUrl, {
                 download: true, header: true,
                 complete: (results) => {
