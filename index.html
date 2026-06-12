@@ -7,11 +7,8 @@
     <style>
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; font-family: 'Pretendard', sans-serif; }
         #app-container { display: flex; width: 100vw; height: 100vh; }
-        
         #sidebar { width: 320px; min-width: 320px; height: 100%; background: #ffffff; border-right: 1px solid #eaeaea; display: flex; flex-direction: column; z-index: 10; box-shadow: 2px 0 10px rgba(0,0,0,0.05); }
         #sidebarContent { padding: 25px; flex-grow: 1; overflow-y: auto; }
-        
-        /* 지도가 보이지 않는 문제를 해결하기 위한 강제 설정 */
         #map { flex-grow: 1; width: 100%; height: 100%; background-color: #f0f0f0; position: relative; }
         
         .btn-common { width: 270px; display: block; margin: 10px auto; padding: 14px 0; text-align: center; border-radius: 10px; font-weight: 700; font-size: 14px; cursor: pointer; border: none; transition: transform 0.2s; }
@@ -21,7 +18,7 @@
         .info-box { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border: 1px solid rgba(0,0,0,0.1); border-radius: 16px; padding: 16px; font-size: 13px; min-width: 180px; max-width: 300px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15); line-height: 1.6; }
         .info-title { font-size: 15px; font-weight: 800; color: #4a148c; margin-bottom: 8px; padding-bottom: 8px; border-bottom: 2px solid #ede7f6; }
         .info-item { display: flex; gap: 10px; }
-        .info-label { color: #888; font-weight: 600; min-width: 30px; }
+        .info-label { color: #888; font-weight: 600; min-width: 35px; }
     </style>
 </head>
 <body>
@@ -64,7 +61,6 @@
 
         kakao.maps.load(initMap);
 
-        // 오버레이 생성 로직
         function renderOverlay(pos, item) {
             if (customOverlay) customOverlay.setMap(null);
             const div = document.createElement('div');
@@ -75,6 +71,7 @@
                 <div class="info-item"><span class="info-label">주차</span><span>${item.park || '-'}</span></div>
                 <div class="info-item"><span class="info-label">코너</span><span>${item.bin2 || '-'}</span></div>
                 <div class="info-item"><span class="info-label">기번</span><span>${item.mn || '-'}</span></div>
+                <div class="info-item"><span class="info-label">연락</span><span>${item.phone || '-'}</span></div>
                 <div class="info-item"><span class="info-label">비고</span><span>${item.etc || '-'}</span></div>
             `;
             customOverlay = new kakao.maps.CustomOverlay({ position: pos, content: div, yAnchor: 1.3 });
@@ -86,23 +83,23 @@
             const list = document.getElementById('resultList');
             if(!val) { list.style.display = 'none'; return; }
             const filtered = sheetData.filter(i => (i.site && i.site.toLowerCase().includes(val)) || (i.BIN2 && String(i.BIN2).toLowerCase().includes(val)) || (i.MN && String(i.MN).toLowerCase().includes(val)));
-            list.innerHTML = filtered.map(i => `<li onclick="showInfo('${i.address}', '${i.site}', '${i.sec}', '${i.park}', '${i.BIN2}', '${i.MN}', '${i.etc || ''}')"><strong>${i.site}</strong><br><small style="color:#888">코너: ${i.BIN2 || '-'} / 기번: ${i.MN || '-'}</small></li>`).join('');
+            list.innerHTML = filtered.map(i => `<li onclick="showInfo('${i.address}', '${i.site}', '${i.sec}', '${i.park}', '${i.BIN2}', '${i.MN}', '${i.etc || ''}', '${i.phone || ''}')"><strong>${i.site}</strong><br><small style="color:#888">코너: ${i.BIN2 || '-'} / 기번: ${i.MN || '-'}</small></li>`).join('');
             list.style.display = filtered.length ? 'block' : 'none';
         });
 
-        function showInfo(addr, site, sec, park, bin2, mn, etc) {
+        function showInfo(addr, site, sec, park, bin2, mn, etc, phone) {
             geocoder.addressSearch(addr, (res, status) => {
                 if(status === 'OK') {
                     const pos = new kakao.maps.LatLng(res[0].y, res[0].x);
                     map.setCenter(pos); map.setLevel(3);
-                    renderOverlay(pos, {site, sec, park, bin2, mn, etc});
+                    renderOverlay(pos, {site, sec, park, bin2, mn, etc, phone});
                 }
             });
         }
 
         function addMarker(pos, item) {
             const marker = new kakao.maps.Marker({ position: new kakao.maps.LatLng(pos.lat, pos.lng) });
-            kakao.maps.event.addListener(marker, 'mouseover', () => renderOverlay(marker.getPosition(), {site:item.site, sec:item.sec, park:item.park, bin2:item.BIN2, mn:item.MN, etc:item.etc}));
+            kakao.maps.event.addListener(marker, 'mouseover', () => renderOverlay(marker.getPosition(), {site:item.site, sec:item.sec, park:item.park, bin2:item.BIN2, mn:item.MN, etc:item.etc, phone:item.phone}));
             kakao.maps.event.addListener(marker, 'mouseout', () => { if(customOverlay) customOverlay.setMap(null); });
             clusterer.addMarker(marker);
         }
@@ -141,7 +138,7 @@
             if (list.style.display === 'block') list.style.display = 'none';
             else {
                 const sorted = [...sheetData].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 6);
-                list.innerHTML = sorted.map(i => `<li onclick="showInfo('${i.address}', '${i.site}', '${i.sec}', '${i.park}', '${i.BIN2}', '${i.MN}', '${i.etc || ''}')">${i.site}</li>`).join('');
+                list.innerHTML = sorted.map(i => `<li onclick="showInfo('${i.address}', '${i.site}', '${i.sec}', '${i.park}', '${i.BIN2}', '${i.MN}', '${i.etc || ''}', '${i.phone || ''}')">${i.site}</li>`).join('');
                 list.style.display = 'block';
             }
         }
