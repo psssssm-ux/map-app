@@ -9,6 +9,12 @@
         #sidebar { width: 320px; min-width: 320px; height: 100%; background: #ffffff; border-right: 1px solid #eaeaea; padding: 25px; box-sizing: border-box; overflow-y: auto; z-index: 10; box-shadow: 2px 0 10px rgba(0,0,0,0.05); }
         #map { flex-grow: 1; height: 100%; background-color: #f0f0f0; }
         
+        /* 추가된 메뉴 스타일 */
+        #recentMenu { margin-top: 20px; cursor: pointer; color: #764ba2; font-weight: bold; font-size: 15px; border: 1px solid #764ba2; padding: 10px; border-radius: 8px; text-align: center; }
+        #recentList { list-style: none; padding: 0; margin-top: 10px; display: none; background: #f9f9f9; border-radius: 8px; }
+        #recentList li { padding: 10px; border-bottom: 1px solid #eee; font-size: 13px; cursor: pointer; }
+        #recentList li:hover { background: #eef; }
+
         #loadingWrapper { margin-bottom: 20px; }
         #progressContainer { width: 100%; height: 8px; background: #eee; border-radius: 4px; overflow: hidden; margin-top: 5px; }
         #progressBar { width: 0%; height: 100%; background: #764ba2; transition: width 0.2s; }
@@ -17,7 +23,6 @@
         #searchKeyword { width: 100%; padding: 14px; border: 2px solid #eee; border-radius: 12px; box-sizing: border-box; }
         #resultList { list-style: none; padding: 0; margin-top: 10px; display: none; background: #fff; border: 1px solid #eee; border-radius: 12px; }
         #resultList li { padding: 12px; border-bottom: 1px solid #f9f9f9; cursor: pointer; font-size: 13px; }
-        #resultList li:hover { background: #f4f7ff; }
         
         .custom-overlay { position: absolute; bottom: 60px; left: -130px; border-radius: 16px; background: #ffffff; box-shadow: 0 10px 20px rgba(0,0,0,0.2); width: 260px; pointer-events: none; }
         .overlay-header { background: linear-gradient(135deg, #764ba2 0%, #667eea 100%); color: white; padding: 12px 18px; font-weight: 700; border-radius: 16px 16px 0 0; }
@@ -31,6 +36,11 @@
             <div id="progressContainer"><div id="progressBar"></div></div>
         </div>
         <h3>사이트 관리</h3>
+        
+        <div id="recentMenu" onclick="toggleRecent()">최근 수정된 사이트 LIST ▼</div>
+        <ul id="recentList"></ul>
+
+        <div style="margin: 20px 0;"></div>
         <input type="text" id="searchKeyword" placeholder="사이트명/코너명/기번 검색..." onkeyup="filterList()">
         <ul id="resultList"></ul>
         <div style="margin-top:20px; font-size:13px;">전체 사이트: <b id="totalCount">0개</b></div>
@@ -76,6 +86,19 @@
             });
         }
 
+        // 최근 수정된 사이트 리스트 토글 및 데이터 정렬
+        function toggleRecent() {
+            const list = document.getElementById('recentList');
+            if (list.style.display === 'block') {
+                list.style.display = 'none';
+            } else {
+                // date 기준 내림차순 정렬 후 상위 6개 추출
+                const sorted = [...sheetData].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 6);
+                list.innerHTML = sorted.map(i => `<li onclick="goTo('${i.address}')">${i.site} <small>(${i.date})</small></li>`).join('');
+                list.style.display = 'block';
+            }
+        }
+
         function updateProgress(loaded, total) {
             const percent = Math.round((loaded / total) * 100);
             document.getElementById('progressBar').style.width = percent + '%';
@@ -93,7 +116,6 @@
             closeOverlay();
             const content = document.createElement('div');
             content.className = 'custom-overlay';
-            // 표시명 변경: BIN2 -> 코너명, MN -> 기번
             content.innerHTML = `<div class="overlay-header">${item.site}</div>
                                  <div class="overlay-body">
                                     경비사: ${item.sec || '-'}<br>주차: ${item.park || '-'}<br>
@@ -116,7 +138,6 @@
                 (i.MN && String(i.MN).toLowerCase().includes(val))
             );
 
-            // 리스트 표시명 변경: 코너명, 기번
             list.innerHTML = filtered.map(i => `<li onclick="goTo('${i.address}')">
                                                 <strong>${i.site}</strong><br>
                                                 <small style="color:#666">코너명: ${i.BIN2 || '-'} / 기번: ${i.MN || '-'}</small>
