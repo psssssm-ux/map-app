@@ -6,18 +6,34 @@
     <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=7f3387ab66fb524dbefeb77ae9f85e90&libraries=services,clusterer&autoload=false"></script>
     <style>
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; display: flex; overflow: hidden; font-family: sans-serif; }
-        #sidebar { width: 320px; min-width: 320px; height: 100%; background: #ffffff; border-right: 1px solid #eaeaea; display: flex; flex-direction: column; z-index: 10; box-shadow: 2px 0 10px rgba(0,0,0,0.05); }
-        #sidebarContent { padding: 25px; flex-grow: 1; display: flex; flex-direction: column; overflow-y: auto; }
+        
+        /* 사이드바 고정 */
+        #sidebar { 
+            width: 320px; min-width: 320px; height: 100%; background: #ffffff; 
+            border-right: 1px solid #eaeaea; display: flex; flex-direction: column; 
+            z-index: 10; box-shadow: 2px 0 10px rgba(0,0,0,0.05);
+        }
+        
+        /* 내용 영역: flex-grow로 남은 공간 차지, overflow-y로 내부 스크롤 */
+        #sidebarContent { padding: 25px; flex-grow: 1; overflow-y: auto; }
+        
+        /* 푸터 영역: 사이드바의 맨 밑에 고정 */
+        #footer { 
+            padding: 20px; 
+            text-align: center; 
+            border-top: 1px solid #f0f0f0; 
+            background: #fafafa;
+            flex-shrink: 0; /* 푸터는 찌그러지지 않게 설정 */
+        }
+
         #map { flex-grow: 1; height: 100%; background-color: #f0f0f0; }
         
+        /* 기타 스타일 유지 */
         #resetBtn { width: 100%; margin-bottom: 20px; cursor: pointer; color: #fff; background-color: #667eea; font-weight: bold; font-size: 14px; padding: 12px; border-radius: 8px; text-align: center; border: none; }
-        #resetBtn:hover { background-color: #5a67d8; }
-        
         #recentMenu { margin-bottom: 10px; cursor: pointer; color: #ffffff; background-color: #764ba2; font-weight: bold; font-size: 14px; padding: 12px; border-radius: 8px; text-align: center; }
         #recentList { list-style: none; padding: 0; margin: 0 0 20px 0; display: none; background: #f9f9f9; border: 1px solid #eee; border-radius: 8px; }
         #recentList li { padding: 10px; border-bottom: 1px solid #eee; font-size: 13px; cursor: pointer; }
-        #recentList li:hover { background: #e0e0ff; color: #764ba2; font-weight: bold; }
-
+        
         #loadingWrapper { margin-bottom: 20px; }
         #progressContainer { width: 100%; height: 8px; background: #eee; border-radius: 4px; overflow: hidden; margin-top: 5px; }
         #progressBar { width: 0%; height: 100%; background: #764ba2; transition: width 0.2s; }
@@ -27,17 +43,9 @@
         #resultList { list-style: none; padding: 0; margin-top: 10px; display: none; background: #fff; border: 1px solid #eee; border-radius: 12px; }
         #resultList li { padding: 12px; border-bottom: 1px solid #f9f9f9; cursor: pointer; font-size: 13px; }
 
-        /* 전문적인 푸터 디자인 */
-        #footer { 
-            margin-top: auto; 
-            padding: 20px 0; 
-            text-align: center; 
-            border-top: 1px solid #f0f0f0; 
-            background: #fafafa;
-        }
         .copyright { font-size: 11px; color: #bbb; margin-bottom: 8px; }
-        .creator { font-size: 15px; font-weight: 700; color: #333; margin-bottom: 4px; letter-spacing: 0.5px; }
-        .idea { font-size: 11px; color: #777; text-transform: uppercase; letter-spacing: 0.8px; }
+        .creator { font-size: 15px; font-weight: 700; color: #333; margin-bottom: 4px; }
+        .idea { font-size: 11px; color: #777; text-transform: uppercase; }
     </style>
 </head>
 <body>
@@ -54,17 +62,18 @@
             <input type="text" id="searchKeyword" placeholder="사이트명/코너명/기번 검색..." onkeyup="filterList()">
             <ul id="resultList"></ul>
             <div style="margin-top:20px; font-size:13px;">전체 사이트: <b id="totalCount">0개</b></div>
-            
-            <div id="footer">
-                <div class="copyright">© 2026. All rights reserved.</div>
-                <div class="creator">Developed by 박상문</div>
-                <div class="idea">Designed & Planned by 김민우</div>
-            </div>
+        </div>
+        
+        <div id="footer">
+            <div class="copyright">© 2026. All rights reserved.</div>
+            <div class="creator">Developed by 박상문</div>
+            <div class="idea">Designed & Planned by 김민우</div>
         </div>
     </div>
     <div id="map"></div>
 
     <script>
+        // (스크립트 부분은 동일)
         let map, geocoder, clusterer, customOverlay, sheetData = [];
         kakao.maps.load(() => {
             map = new kakao.maps.Map(document.getElementById('map'), { center: new kakao.maps.LatLng(35.1517, 129.0305), level: 7 });
@@ -77,13 +86,12 @@
             const res = await fetch('https://script.google.com/macros/s/AKfycbwxAh4O39J93KVy87IjPu3h17BUZJ120BwkfkESVHuorO21GXpZcJT0qLxEdJwTDM-y8Q/exec');
             sheetData = await res.json();
             document.getElementById('totalCount').textContent = sheetData.length + '개';
-            let loaded = 0;
             sheetData.forEach((item, index) => {
                 if (!item.address) return;
                 const cacheKey = 'loc_' + item.address;
                 const cached = localStorage.getItem(cacheKey);
-                if (cached) { addMarker(JSON.parse(cached), item); updateProgress(++loaded, sheetData.length); }
-                else { setTimeout(() => { geocoder.addressSearch(item.address, (result, status) => { if (status === kakao.maps.services.Status.OK) { const pos = { lat: result[0].y, lng: result[0].x }; localStorage.setItem(cacheKey, JSON.stringify(pos)); addMarker(pos, item); } updateProgress(++loaded, sheetData.length); }); }, index * 100); }
+                if (cached) addMarker(JSON.parse(cached), item);
+                else { setTimeout(() => { geocoder.addressSearch(item.address, (result, status) => { if (status === kakao.maps.services.Status.OK) { const pos = { lat: result[0].y, lng: result[0].x }; localStorage.setItem(cacheKey, JSON.stringify(pos)); addMarker(pos, item); } }); }, index * 100); }
             });
         }
         function toggleRecent() {
@@ -95,7 +103,6 @@
                 list.style.display = 'block';
             }
         }
-        function updateProgress(loaded, total) { const percent = Math.round((loaded / total) * 100); document.getElementById('progressBar').style.width = percent + '%'; document.getElementById('percentText').textContent = percent + '%'; }
         function addMarker(pos, item) {
             const marker = new kakao.maps.Marker({ position: new kakao.maps.LatLng(pos.lat, pos.lng) });
             kakao.maps.event.addListener(marker, 'mouseover', () => showOverlay(marker, item));
