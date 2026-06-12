@@ -9,7 +9,10 @@
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; display: flex; overflow: hidden; font-family: 'Pretendard', -apple-system, sans-serif; }
         #sidebar { width: 320px; height: 100%; background: #ffffff; border-right: 1px solid #eaeaea; padding: 25px; box-sizing: border-box; overflow-y: auto; z-index: 10; box-shadow: 2px 0 10px rgba(0,0,0,0.05); }
         
-        #progressContainer { width: 100%; height: 8px; background: #eee; border-radius: 4px; margin-bottom: 20px; overflow: hidden; visibility: hidden; }
+        /* 로딩바 영역 수정 */
+        #loadingWrapper { margin-bottom: 20px; visibility: hidden; }
+        #loadingText { font-size: 12px; color: #764ba2; margin-bottom: 5px; font-weight: 600; display: flex; justify-content: space-between; }
+        #progressContainer { width: 100%; height: 8px; background: #eee; border-radius: 4px; overflow: hidden; }
         #progressBar { width: 0%; height: 100%; background: #764ba2; transition: width 0.2s; }
         
         #sidebar h3 { font-size: 18px; color: #444; margin-bottom: 20px; border-bottom: 2px solid #764ba2; padding-bottom: 10px; }
@@ -28,7 +31,10 @@
 </head>
 <body>
     <div id="sidebar">
-        <div id="progressContainer"><div id="progressBar"></div></div>
+        <div id="loadingWrapper">
+            <div id="loadingText"><span>로딩 중...</span><span id="percentText">0%</span></div>
+            <div id="progressContainer"><div id="progressBar"></div></div>
+        </div>
         <h3>사이트 관리</h3>
         <input type="text" id="searchKeyword" placeholder="사이트명 검색..." onkeyup="showResults()">
         <ul id="resultList"></ul>
@@ -51,9 +57,8 @@
 
         async function loadSheetData() {
             const jsonUrl = 'https://script.google.com/macros/s/AKfycbwxAh4O39J93KVy87IjPu3h17BUZJ120BwkfkESVHuorO21GXpZcJT0qLxEdJwTDM-y8Q/exec';
-            const progressContainer = document.getElementById('progressContainer');
-            const progressBar = document.getElementById('progressBar');
-            progressContainer.style.visibility = 'visible';
+            const loadingWrapper = document.getElementById('loadingWrapper');
+            loadingWrapper.style.visibility = 'visible';
             
             try {
                 const response = await fetch(jsonUrl);
@@ -62,16 +67,13 @@
                 document.getElementById('totalCount').textContent = sheetData.length + '개';
 
                 let completed = 0;
-                
                 sheetData.forEach((item, index) => {
                     const cached = localStorage.getItem('addr_' + item.address);
-                    
                     if (cached) {
                         addMarkerToMap(JSON.parse(cached), item);
                         completed++;
                         updateProgress(completed, sheetData.length);
                     } else {
-                        // 병렬 처리를 위해 setTimeout으로 요청 분산 (서버 부하 방지)
                         setTimeout(() => {
                             geocoder.addressSearch(item.address, (result, status) => {
                                 if (status === kakao.maps.services.Status.OK) {
@@ -82,20 +84,20 @@
                                 completed++;
                                 updateProgress(completed, sheetData.length);
                             });
-                        }, index * 50); // 50ms 간격으로 순차적이지만 거의 동시에 시작
+                        }, index * 50);
                     }
                 });
             } catch (e) {
                 console.error("데이터 로드 실패:", e);
-                progressContainer.style.visibility = 'hidden';
+                loadingWrapper.style.visibility = 'hidden';
             }
         }
 
         function updateProgress(done, total) {
-            const progressBar = document.getElementById('progressBar');
-            const progressContainer = document.getElementById('progressContainer');
-            progressBar.style.width = (done / total) * 100 + '%';
-            if (done === total) progressContainer.style.visibility = 'hidden';
+            const percent = Math.round((done / total) * 100);
+            document.getElementById('progressBar').style.width = percent + '%';
+            document.getElementById('percentText').textContent = percent + '%';
+            if (done === total) document.getElementById('loadingWrapper').style.visibility = 'hidden';
         }
 
         function addMarkerToMap(pos, item) {
@@ -105,32 +107,24 @@
             clusterer.addMarker(marker);
         }
 
-        ffunction showResults() {
-    const keyword = document.getElementById('searchKeyword').value.trim();
-    const list = document.getElementById('resultList');
-    
-    if (keyword.length < 1) { 
-        list.style.display = 'none'; 
-        return; 
-    }
-    
-    list.innerHTML = '';
-    
-    // 안전한 필터링 로직: String()으로 감싸서 무조건 문자열로 변환 후 비교
-    const filtered = sheetData.filter(item => {
-        const siteName = item.site ? String(item.site) : "";
-        return siteName.includes(keyword);
-    });
-    
-    filtered.forEach(item => {
-        let li = document.createElement('li');
-        li.textContent = item.site;
-        li.onclick = () => selectItem(item);
-        list.appendChild(li);
-    });
-    
-    list.style.display = filtered.length > 0 ? 'block' : 'none';
-}
+        function showResults() {
+            const keyword = document.getElementById('searchKeyword').value.trim();
+            const list = document.getElementById('resultList');
+            if (keyword.length < 1) { list.style.display = 'none'; return; }
+            list.innerHTML = '';
+            const filtered = sheetData.filter(item => {
+                const siteName = item.site ? String(item.site) : "";
+                return siteName.includes(keyword);
+            });
+            filtered.forEach(item => {
+                let li = document.createElement('li');
+                li.textContent = item.site;
+                li.onclick = () => selectItem(item);
+                list.appendChild(li);
+            });
+            list.style.display = filtered.length > 0 ? 'block' : 'none';
+        }
+
         function selectItem(item) {
             document.getElementById('searchKeyword').value = item.site;
             document.getElementById('resultList').style.display = 'none';
