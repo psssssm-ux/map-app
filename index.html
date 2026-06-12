@@ -7,10 +7,10 @@
     <style>
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; display: flex; overflow: hidden; font-family: sans-serif; }
         #sidebar { width: 320px; min-width: 320px; height: 100%; background: #ffffff; border-right: 1px solid #eaeaea; display: flex; flex-direction: column; z-index: 10; box-shadow: 2px 0 10px rgba(0,0,0,0.05); }
-        #sidebarContent { padding: 25px; overflow-y: auto; flex-grow: 1; }
+        #sidebarContent { padding: 25px; overflow-y: auto; flex-grow: 1; display: flex; flex-direction: column; }
         #map { flex-grow: 1; height: 100%; background-color: #f0f0f0; }
         
-        #resetBtn { margin: 15px 0; cursor: pointer; color: #fff; background-color: #667eea; font-weight: bold; font-size: 14px; padding: 10px; border-radius: 8px; text-align: center; transition: background 0.2s; }
+        #resetBtn { width: 100%; margin-bottom: 20px; cursor: pointer; color: #fff; background-color: #667eea; font-weight: bold; font-size: 14px; padding: 12px; border-radius: 8px; text-align: center; border: none; }
         #resetBtn:hover { background-color: #5a67d8; }
         
         #recentMenu { margin-bottom: 10px; cursor: pointer; color: #ffffff; background-color: #764ba2; font-weight: bold; font-size: 14px; padding: 12px; border-radius: 8px; text-align: center; }
@@ -26,21 +26,22 @@
         #searchKeyword { width: 100%; padding: 14px; border: 2px solid #eee; border-radius: 12px; box-sizing: border-box; }
         #resultList { list-style: none; padding: 0; margin-top: 10px; display: none; background: #fff; border: 1px solid #eee; border-radius: 12px; }
         #resultList li { padding: 12px; border-bottom: 1px solid #f9f9f9; cursor: pointer; font-size: 13px; }
-        
-        .custom-overlay { position: absolute; bottom: 60px; left: -130px; border-radius: 16px; background: #ffffff; box-shadow: 0 10px 20px rgba(0,0,0,0.2); width: 260px; pointer-events: none; }
-        .overlay-header { background: linear-gradient(135deg, #764ba2 0%, #667eea 100%); color: white; padding: 12px 18px; font-weight: 700; border-radius: 16px 16px 0 0; }
-        .overlay-body { padding: 15px; font-size: 13px; line-height: 1.6; }
+
+        /* 푸터 추가 */
+        #footer { margin-top: auto; padding-top: 30px; text-align: center; color: #888; font-size: 12px; }
+        .creator { font-size: 16px; font-weight: bold; color: #444; margin-bottom: 5px; }
+        .idea { font-size: 12px; color: #999; }
     </style>
 </head>
 <body>
     <div id="sidebar">
         <div id="sidebarContent">
+            <div id="resetBtn" onclick="resetMap()">지도 위치 초기화 🔄</div>
+
             <div id="loadingWrapper">
                 <div style="font-size:13px; font-weight:bold; color:#764ba2;">데이터 로딩 중... <span id="percentText">0%</span></div>
                 <div id="progressContainer"><div id="progressBar"></div></div>
             </div>
-
-            <div id="resetBtn" onclick="resetMap()">지도 위치 초기화 🔄</div>
 
             <div id="recentMenu" onclick="toggleRecent()">최근 수정된 사이트 LIST ▼</div>
             <ul id="recentList"></ul>
@@ -49,6 +50,11 @@
             <input type="text" id="searchKeyword" placeholder="사이트명/코너명/기번 검색..." onkeyup="filterList()">
             <ul id="resultList"></ul>
             <div style="margin-top:20px; font-size:13px;">전체 사이트: <b id="totalCount">0개</b></div>
+            
+            <div id="footer">
+                <div class="creator">제작자: 박상문</div>
+                <div class="idea">아이디어 제공: 김민우</div>
+            </div>
         </div>
     </div>
     <div id="map"></div>
@@ -105,7 +111,6 @@
                 const sorted = [...sheetData]
                     .sort((a, b) => new Date(b.date) - new Date(a.date))
                     .slice(0, 6);
-                
                 list.innerHTML = sorted.map(i => `<li onclick="goTo('${i.address}')">${i.site}</li>`).join('');
                 list.style.display = 'block';
             }
