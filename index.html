@@ -7,41 +7,25 @@
     <style>
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; font-family: sans-serif; }
         #app-container { display: flex; width: 100%; height: 100%; }
-        
-        #sidebar { 
-            width: 320px; min-width: 320px; height: 100%; background: #ffffff; 
-            border-right: 1px solid #eaeaea; display: flex; flex-direction: column; 
-            z-index: 10; box-shadow: 2px 0 10px rgba(0,0,0,0.05);
-        }
+        #sidebar { width: 320px; min-width: 320px; height: 100%; background: #ffffff; border-right: 1px solid #eaeaea; display: flex; flex-direction: column; z-index: 10; box-shadow: 2px 0 10px rgba(0,0,0,0.05); }
         #sidebarContent { padding: 25px; flex-grow: 1; overflow-y: auto; }
         #map { flex-grow: 1; height: 100%; background-color: #f0f0f0; }
-
-        /* 버튼 가로 길이 통일 (width: 100%, box-sizing으로 여백 포함) */
-        .btn-style { 
-            width: 100%; box-sizing: border-box; cursor: pointer; 
-            font-weight: bold; font-size: 14px; padding: 12px; 
-            border-radius: 8px; text-align: center; border: none; 
-            display: block; margin-top: 10px;
-        }
-        #resetBtn { background-color: #667eea; color: #fff; }
-        #resetBtn:hover { background-color: #5a67d8; }
-        
-        #recentMenu { background-color: #764ba2; color: #ffffff; }
-        #recentList { list-style: none; padding: 0; margin-top: 10px; display: none; background: #f9f9f9; border: 1px solid #eee; border-radius: 8px; }
-        #recentList li { padding: 10px; border-bottom: 1px solid #eee; font-size: 13px; cursor: pointer; }
-
         .section-gap { margin-top: 30px; }
-        #loadingWrapper { margin-bottom: 0; }
-        #progressContainer { width: 100%; height: 8px; background: #eee; border-radius: 4px; overflow: hidden; margin-top: 5px; }
-        #progressBar { width: 0%; height: 100%; background: #764ba2; transition: width 0.2s; }
         
-        h3 { font-size: 18px; color: #444; margin-bottom: 15px; border-bottom: 2px solid #764ba2; padding-bottom: 10px; }
-        #searchKeyword { width: 100%; padding: 14px; border: 2px solid #eee; border-radius: 12px; box-sizing: border-box; }
-        
-        #footer { padding: 20px; text-align: center; border-top: 1px solid #f0f0f0; background: #fafafa; flex-shrink: 0; }
-        .copyright { font-size: 11px; color: #bbb; margin-bottom: 8px; }
-        .creator { font-size: 15px; font-weight: 700; color: #333; margin-bottom: 4px; }
-        .idea { font-size: 11px; color: #777; text-transform: uppercase; }
+        /* 버튼 스타일 통일 */
+        .my-btn { 
+            width: 100% !important; 
+            box-sizing: border-box !important; 
+            padding: 12px 0 !important; 
+            text-align: center !important; 
+            border-radius: 8px !important; 
+            font-weight: bold !important; 
+            font-size: 14px !important; 
+            cursor: pointer !important; 
+            margin-top: 10px !important;
+            display: block !important;
+            border: none !important;
+        }
     </style>
 </head>
 <body>
@@ -50,40 +34,42 @@
             <div id="sidebarContent">
                 <div id="loadingWrapper">
                     <div style="font-size:13px; font-weight:bold; color:#764ba2;">데이터 로딩 중... <span id="percentText">0%</span></div>
-                    <div id="progressContainer"><div id="progressBar"></div></div>
+                    <div style="width: 100%; height: 8px; background: #eee; border-radius: 4px; overflow: hidden; margin-top: 5px;"><div id="progressBar" style="width: 0%; height: 100%; background: #764ba2; transition: width 0.2s;"></div></div>
                 </div>
 
-                <div id="resetBtn" class="btn-style" onclick="resetMap()">지도 위치 초기화 🔄</div>
-                <div id="recentMenu" class="btn-style" onclick="toggleRecent()">최근 수정된 사이트 LIST ▼</div>
-                <ul id="recentList"></ul>
+                <div class="my-btn" style="background-color: #667eea; color: #fff;" onclick="resetMap()">지도 위치 초기화 🔄</div>
+                <div class="my-btn" style="background-color: #764ba2; color: #fff;" onclick="toggleRecent()">최근 수정된 사이트 LIST ▼</div>
+                
+                <ul id="recentList" style="list-style: none; padding: 0; margin-top: 10px; display: none; background: #f9f9f9; border: 1px solid #eee; border-radius: 8px;"></ul>
 
                 <div class="section-gap">
-                    <h3>사이트 관리</h3>
-                    <input type="text" id="searchKeyword" placeholder="사이트명/코너명/기번 검색..." onkeyup="filterList()">
+                    <h3 style="font-size: 18px; color: #444; margin-bottom: 15px; border-bottom: 2px solid #764ba2; padding-bottom: 10px;">사이트 관리</h3>
+                    <input type="text" id="searchKeyword" style="width: 100%; padding: 14px; border: 2px solid #eee; border-radius: 12px; box-sizing: border-box;" placeholder="사이트명/코너명/기번 검색..." onkeyup="filterList()">
                     <ul id="resultList" style="list-style:none; padding:0; margin-top:10px; display:none; background:#fff; border:1px solid #eee; border-radius:12px;"></ul>
                     <div style="margin-top:15px; font-size:13px;">전체 사이트: <b id="totalCount">0개</b></div>
                 </div>
             </div>
-            <div id="footer">
-                <div class="copyright">© 2026. All rights reserved.</div>
-                <div class="creator">Developed by 박상문</div>
-                <div class="idea">Designed & Planned by 김민우</div>
+            
+            <div id="footer" style="padding: 20px; text-align: center; border-top: 1px solid #f0f0f0; background: #fafafa; flex-shrink: 0;">
+                <div style="font-size: 11px; color: #bbb; margin-bottom: 8px;">© 2026. All rights reserved.</div>
+                <div style="font-size: 15px; font-weight: 700; color: #333; margin-bottom: 4px;">Developed by 박상문</div>
+                <div style="font-size: 11px; color: #777; text-transform: uppercase;">Designed & Planned by 김민우</div>
             </div>
         </div>
         <div id="map"></div>
     </div>
     
     <script>
-        // (스크립트 로직 동일함 - 생략)
+        // (스크립트 로직은 그대로 유지합니다)
         let map, geocoder, clusterer, customOverlay, sheetData = [];
         kakao.maps.load(() => { map = new kakao.maps.Map(document.getElementById('map'), { center: new kakao.maps.LatLng(35.1517, 129.0305), level: 7 }); geocoder = new kakao.maps.services.Geocoder(); clusterer = new kakao.maps.MarkerClusterer({ map: map, gridSize: 35, averageCenter: true, minLevel: 7 }); loadSheetData(); });
         function resetMap() { map.setCenter(new kakao.maps.LatLng(35.1517, 129.0305)); map.setLevel(7); }
         async function loadSheetData() { const res = await fetch('https://script.google.com/macros/s/AKfycbwxAh4O39J93KVy87IjPu3h17BUZJ120BwkfkESVHuorO21GXpZcJT0qLxEdJwTDM-y8Q/exec'); sheetData = await res.json(); document.getElementById('totalCount').textContent = sheetData.length + '개'; sheetData.forEach((item, index) => { if (!item.address) return; const cacheKey = 'loc_' + item.address; const cached = localStorage.getItem(cacheKey); if (cached) addMarker(JSON.parse(cached), item); else { setTimeout(() => { geocoder.addressSearch(item.address, (result, status) => { if (status === kakao.maps.services.Status.OK) { const pos = { lat: result[0].y, lng: result[0].x }; localStorage.setItem(cacheKey, JSON.stringify(pos)); addMarker(pos, item); } }); }, index * 100); } }); }
-        function toggleRecent() { const list = document.getElementById('recentList'); if (list.style.display === 'block') list.style.display = 'none'; else { const sorted = [...sheetData].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 6); list.innerHTML = sorted.map(i => `<li onclick="goTo('${i.address}')">${i.site}</li>`).join(''); list.style.display = 'block'; } }
+        function toggleRecent() { const list = document.getElementById('recentList'); if (list.style.display === 'block') list.style.display = 'none'; else { const sorted = [...sheetData].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 6); list.innerHTML = sorted.map(i => `<li onclick="goTo('${i.address}')" style="padding:10px; border-bottom:1px solid #eee; font-size:13px; cursor:pointer;">${i.site}</li>`).join(''); list.style.display = 'block'; } }
         function addMarker(pos, item) { const marker = new kakao.maps.Marker({ position: new kakao.maps.LatLng(pos.lat, pos.lng) }); kakao.maps.event.addListener(marker, 'mouseover', () => showOverlay(marker, item)); kakao.maps.event.addListener(marker, 'mouseout', () => closeOverlay()); clusterer.addMarker(marker); }
         function showOverlay(target, item) { closeOverlay(); const content = document.createElement('div'); content.className = 'custom-overlay'; content.innerHTML = `<div class="overlay-header">${item.site}</div><div class="overlay-body">경비사: ${item.sec || '-'}<br>주차: ${item.park || '-'}<br>코너명: ${item.BIN2 || '-'}<br>기번: ${item.MN || '-'}</div>`; customOverlay = new kakao.maps.CustomOverlay({ position: target.getPosition(), content: content, yAnchor: 1 }); customOverlay.setMap(map); }
         function closeOverlay() { if (customOverlay) customOverlay.setMap(null); }
-        function filterList() { const val = document.getElementById('searchKeyword').value.toLowerCase(); const list = document.getElementById('resultList'); if(!val) { list.style.display = 'none'; return; } const filtered = sheetData.filter(i => (i.site && i.site.toLowerCase().includes(val)) || (i.BIN2 && String(i.BIN2).toLowerCase().includes(val)) || (i.MN && String(i.MN).toLowerCase().includes(val))); list.innerHTML = filtered.map(i => `<li onclick="goTo('${i.address}')"><strong>${i.site}</strong><br><small style="color:#666">코너명: ${i.BIN2 || '-'} / 기번: ${i.MN || '-'}</small></li>`).join(''); list.style.display = filtered.length ? 'block' : 'none'; }
+        function filterList() { const val = document.getElementById('searchKeyword').value.toLowerCase(); const list = document.getElementById('resultList'); if(!val) { list.style.display = 'none'; return; } const filtered = sheetData.filter(i => (i.site && i.site.toLowerCase().includes(val)) || (i.BIN2 && String(i.BIN2).toLowerCase().includes(val)) || (i.MN && String(i.MN).toLowerCase().includes(val))); list.innerHTML = filtered.map(i => `<li onclick="goTo('${i.address}')" style="padding:12px; border-bottom:1px solid #f9f9f9; cursor:pointer; font-size:13px;"><strong>${i.site}</strong><br><small style="color:#666">코너명: ${i.BIN2 || '-'} / 기번: ${i.MN || '-'}</small></li>`).join(''); list.style.display = filtered.length ? 'block' : 'none'; }
         function goTo(addr) { geocoder.addressSearch(addr, (res, status) => { if(status === 'OK') { map.setCenter(new kakao.maps.LatLng(res[0].y, res[0].x)); map.setLevel(3); } }); }
     </script>
 </body>
