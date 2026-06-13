@@ -8,11 +8,36 @@
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; font-family: 'Pretendard', sans-serif; }
         #app-container { display: flex; width: 100vw; height: 100vh; }
         
-        #sidebar { width: 320px; min-width: 320px; height: 100vh; background: #ffffff; border-right: 1px solid #eaeaea; z-index: 10; box-shadow: 2px 0 10px rgba(0,0,0,0.05); display: flex; flex-direction: column; }
-        #sidebarContent { padding: 25px; flex-grow: 1; overflow-y: auto; }
+        /* 사이드바 구성 */
+        #sidebar { 
+            width: 320px; 
+            min-width: 320px; 
+            height: 100vh; 
+            background: #ffffff; 
+            border-right: 1px solid #eaeaea; 
+            z-index: 10; 
+            box-shadow: 2px 0 10px rgba(0,0,0,0.05); 
+            display: flex; 
+            flex-direction: column; /* 세로 정렬 */
+        }
         
-        /* 사이드바 하단 서명란 스타일 */
-        #sidebarFooter { padding: 20px; border-top: 1px solid #eee; font-size: 11px; color: #777; text-align: center; background: #fafafa; line-height: 1.5; }
+        #sidebarContent { 
+            flex: 1; /* 남은 공간 모두 차지 */
+            padding: 25px; 
+            overflow-y: auto; /* 내용 길어지면 스크롤 */
+        }
+        
+        /* 서명란 스타일: 항상 하단에 고정 */
+        #sidebarFooter { 
+            flex-shrink: 0; 
+            padding: 20px; 
+            border-top: 1px solid #eee; 
+            font-size: 12px; 
+            color: #777; 
+            text-align: center; 
+            background: #fafafa; 
+            line-height: 1.6;
+        }
         
         #map { flex-grow: 1; height: 100vh; background-color: #f0f0f0; }
         
@@ -51,6 +76,7 @@
                     <div style="margin-top:15px; font-size:13px; color:#666;">전체 사이트: <b id="totalCount" style="color:#000;">0개</b></div>
                 </div>
             </div>
+            
             <div id="sidebarFooter">
                 🛠️ 제작: Sangmun Park<br>
                 💡 아이디어 제공: Minwoo kim
@@ -80,7 +106,6 @@
             const imageSize = new kakao.maps.Size(64, 69);
             const markerImage = new kakao.maps.MarkerImage(imageSrc, imageSize);
             const marker = new kakao.maps.Marker({ map: map, position: position, image: markerImage });
-
             kakao.maps.event.addListener(marker, 'mouseover', () => {
                 myLocOverlay = new kakao.maps.CustomOverlay({
                     content: '<div class="my-location-tooltip">현재 위치입니다.</div>',
