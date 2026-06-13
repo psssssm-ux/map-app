@@ -2,50 +2,35 @@
 <html lang="ko">
 <head>
     <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>사이트 통합 지도 앱</title>
     <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=7f3387ab66fb524dbefeb77ae9f85e90&libraries=services,clusterer&autoload=false"></script>
     <style>
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; font-family: 'Pretendard', sans-serif; }
         #app-container { display: flex; width: 100vw; height: 100vh; }
         
-        /* 사이드바 구성 */
         #sidebar { 
-            width: 320px; 
-            min-width: 320px; 
-            height: 100vh; 
-            background: #ffffff; 
-            border-right: 1px solid #eaeaea; 
-            z-index: 10; 
-            box-shadow: 2px 0 10px rgba(0,0,0,0.05); 
-            display: flex; 
-            flex-direction: column; /* 세로 정렬 */
+            width: 320px; min-width: 320px; height: 100vh; background: #ffffff; 
+            border-right: 1px solid #eaeaea; z-index: 10; box-shadow: 2px 0 10px rgba(0,0,0,0.05); 
+            display: flex; flex-direction: column; 
         }
         
-        #sidebarContent { 
-            flex: 1; /* 남은 공간 모두 차지 */
-            padding: 25px; 
-            overflow-y: auto; /* 내용 길어지면 스크롤 */
-        }
-        
-        /* 서명란 스타일: 항상 하단에 고정 */
-        #sidebarFooter { 
-            flex-shrink: 0; 
-            padding: 20px; 
-            border-top: 1px solid #eee; 
-            font-size: 12px; 
-            color: #777; 
-            text-align: center; 
-            background: #fafafa; 
-            line-height: 1.6;
-        }
-        
+        #sidebarContent { flex: 1; padding: 25px; overflow-y: auto; }
+        #sidebarFooter { flex-shrink: 0; padding: 20px; border-top: 1px solid #eee; font-size: 12px; color: #777; text-align: center; background: #fafafa; line-height: 1.6; }
         #map { flex-grow: 1; height: 100vh; background-color: #f0f0f0; }
+        
+        /* 모바일 대응 미디어 쿼리 */
+        @media (max-width: 768px) {
+            #app-container { flex-direction: column; }
+            #sidebar { width: 100%; min-width: 100%; height: 40vh; } /* 모바일에서는 사이드바 높이를 40%로 제한 */
+            #map { height: 60vh; } /* 지도 높이 확장 */
+        }
         
         .btn-common { width: 100%; max-width: 270px; display: block; margin: 0 auto 10px auto; padding: 14px 0; text-align: center; border-radius: 10px; font-weight: 700; font-size: 14px; cursor: pointer; border: none; transition: transform 0.2s; }
         .btn-common:hover { transform: translateY(-2px); }
         
         .my-location-tooltip { padding: 5px 10px; background: #ff4757; color: white; border-radius: 5px; font-size: 12px; font-weight: bold; white-space: nowrap; margin-bottom: 50px; }
-        #recentList, #resultList { list-style: none; padding: 0; margin-top: 10px; display: none; background: #f9f9f9; border: 1px solid #eee; border-radius: 10px; width: 270px; margin: 0 auto; overflow: hidden; }
+        #recentList, #resultList { list-style: none; padding: 0; margin-top: 10px; display: none; background: #f9f9f9; border: 1px solid #eee; border-radius: 10px; width: 90%; margin: 0 auto; overflow: hidden; }
         #recentList li, #resultList li { padding: 12px; border-bottom: 1px solid #eee; font-size: 13px; cursor: pointer; }
         .info-box { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border: 1px solid rgba(0,0,0,0.1); border-radius: 16px; padding: 16px; font-size: 13px; min-width: 180px; max-width: 300px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15); line-height: 1.6; }
         .info-title { font-size: 15px; font-weight: 800; color: #4a148c; margin-bottom: 8px; padding-bottom: 8px; border-bottom: 2px solid #ede7f6; }
@@ -71,7 +56,7 @@
                 
                 <div style="margin-top: 30px;">
                     <h3 style="font-size: 18px; color: #444; border-bottom: 2px solid #764ba2; padding-bottom: 10px;">사이트 검색 ▼ </h3>
-                    <input type="text" id="searchKeyword" style="width: 270px; padding: 14px; border: 2px solid #eee; border-radius: 10px; box-sizing: border-box;" placeholder="사이트명/코너명/기번 검색...">
+                    <input type="text" id="searchKeyword" style="width: 90%; padding: 14px; border: 2px solid #eee; border-radius: 10px; box-sizing: border-box;" placeholder="사이트명/코너명/기번 검색...">
                     <ul id="resultList"></ul>
                     <div style="margin-top:15px; font-size:13px; color:#666;">전체 사이트: <b id="totalCount" style="color:#000;">0개</b></div>
                 </div>
@@ -86,6 +71,7 @@
     </div>
 
     <script>
+        // (기존 자바스크립트 로직 동일)
         let map, geocoder, clusterer, customOverlay, sheetData = [];
         let loadedCount = 0;
         let currentLocationMarker = null; 
