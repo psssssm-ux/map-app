@@ -7,18 +7,21 @@
     <style>
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; font-family: 'Pretendard', sans-serif; }
         #app-container { display: flex; width: 100vw; height: 100vh; }
-        #sidebar { width: 320px; min-width: 320px; height: 100vh; background: #ffffff; border-right: 1px solid #eaeaea; z-index: 10; box-shadow: 2px 0 10px rgba(0,0,0,0.05); display: flex; flex-direction: column; overflow-y: auto; }
-        #sidebarContent { padding: 25px; }
+        
+        #sidebar { width: 320px; min-width: 320px; height: 100vh; background: #ffffff; border-right: 1px solid #eaeaea; z-index: 10; box-shadow: 2px 0 10px rgba(0,0,0,0.05); display: flex; flex-direction: column; }
+        #sidebarContent { padding: 25px; flex-grow: 1; overflow-y: auto; }
+        
+        /* 사이드바 하단 서명란 스타일 */
+        #sidebarFooter { padding: 20px; border-top: 1px solid #eee; font-size: 11px; color: #777; text-align: center; background: #fafafa; line-height: 1.5; }
+        
         #map { flex-grow: 1; height: 100vh; background-color: #f0f0f0; }
         
         .btn-common { width: 100%; max-width: 270px; display: block; margin: 0 auto 10px auto; padding: 14px 0; text-align: center; border-radius: 10px; font-weight: 700; font-size: 14px; cursor: pointer; border: none; transition: transform 0.2s; }
         .btn-common:hover { transform: translateY(-2px); }
         
         .my-location-tooltip { padding: 5px 10px; background: #ff4757; color: white; border-radius: 5px; font-size: 12px; font-weight: bold; white-space: nowrap; margin-bottom: 50px; }
-
         #recentList, #resultList { list-style: none; padding: 0; margin-top: 10px; display: none; background: #f9f9f9; border: 1px solid #eee; border-radius: 10px; width: 270px; margin: 0 auto; overflow: hidden; }
         #recentList li, #resultList li { padding: 12px; border-bottom: 1px solid #eee; font-size: 13px; cursor: pointer; }
-
         .info-box { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border: 1px solid rgba(0,0,0,0.1); border-radius: 16px; padding: 16px; font-size: 13px; min-width: 180px; max-width: 300px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15); line-height: 1.6; }
         .info-title { font-size: 15px; font-weight: 800; color: #4a148c; margin-bottom: 8px; padding-bottom: 8px; border-bottom: 2px solid #ede7f6; }
         .info-item { display: flex; gap: 10px; }
@@ -48,6 +51,10 @@
                     <div style="margin-top:15px; font-size:13px; color:#666;">전체 사이트: <b id="totalCount" style="color:#000;">0개</b></div>
                 </div>
             </div>
+            <div id="sidebarFooter">
+                🛠️ 제작: Sangmun Park<br>
+                💡 아이디어 제공: Minwoo kim
+            </div>
         </div>
         <div id="map"></div>
     </div>
@@ -68,20 +75,12 @@
 
         kakao.maps.load(initMap);
 
-        // 현재 위치 마커 전용 생성 함수
         function createMyLocationMarker(position) {
-            // 빨간색 마커 이미지
             const imageSrc = 'https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/marker_red.png';
             const imageSize = new kakao.maps.Size(64, 69);
             const markerImage = new kakao.maps.MarkerImage(imageSrc, imageSize);
+            const marker = new kakao.maps.Marker({ map: map, position: position, image: markerImage });
 
-            const marker = new kakao.maps.Marker({
-                map: map,
-                position: position,
-                image: markerImage
-            });
-
-            // 마우스 오버 이벤트 등록
             kakao.maps.event.addListener(marker, 'mouseover', () => {
                 myLocOverlay = new kakao.maps.CustomOverlay({
                     content: '<div class="my-location-tooltip">현재 위치입니다.</div>',
@@ -90,12 +89,7 @@
                 });
                 myLocOverlay.setMap(map);
             });
-
-            // 마우스 아웃 이벤트 등록
-            kakao.maps.event.addListener(marker, 'mouseout', () => {
-                if (myLocOverlay) myLocOverlay.setMap(null);
-            });
-
+            kakao.maps.event.addListener(marker, 'mouseout', () => { if (myLocOverlay) myLocOverlay.setMap(null); });
             return marker;
         }
 
@@ -103,21 +97,15 @@
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition((position) => {
                     const locPosition = new kakao.maps.LatLng(position.coords.latitude, position.coords.longitude);
-                    
-                    // 기존 마커 및 오버레이 정리
                     if (currentLocationMarker) currentLocationMarker.setMap(null);
                     if (myLocOverlay) myLocOverlay.setMap(null);
-
-                    // 새로운 빨간 마커 생성
                     currentLocationMarker = createMyLocationMarker(locPosition);
-
                     map.setCenter(locPosition);
                     map.setLevel(3);
                 }, (err) => { alert("위치 정보를 가져올 수 없습니다."); });
             } else { alert("위치 기능을 지원하지 않습니다."); }
         }
 
-        // ... (나머지 기존 함수들과 동일)
         function renderOverlay(pos, item) {
             if (customOverlay) customOverlay.setMap(null);
             const div = document.createElement('div');
