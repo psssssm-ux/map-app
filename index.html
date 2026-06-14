@@ -11,14 +11,15 @@
         #sidebar { width: 400px; min-width: 400px; height: 100vh; background: #fff; border-right: 1px solid #ddd; z-index: 10; overflow-y: auto; padding: 20px; box-sizing: border-box; }
         #map { flex-grow: 1; height: 100vh; position: relative; }
 
-        /* 원래 사용하시던 버튼 디자인 복구 */
+        /* 버튼 디자인 복구 */
         .btn-common { width: 100%; padding: 15px; margin-bottom: 10px; border-radius: 5px; font-weight: bold; cursor: pointer; border: none; color: #fff; text-align: center; font-size: 14px; }
         
-        /* 마커 정보창(Custom Overlay) 디자인 복구 */
-        .premium-card { background: white; border-radius: 10px; padding: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); width: 280px; border: 1px solid #ccc; }
+        /* 마커 정보창 디자인 복구 */
+        .premium-card { background: white; border-radius: 10px; padding: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); width: 280px; border: 1px solid #ccc; font-size: 14px; }
         .premium-header { font-weight: bold; font-size: 16px; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 2px solid #0070c0; color: #0070c0; }
-        .info-body { font-size: 14px; line-height: 1.8; color: #333; }
-        .footer-btns { margin-top: 10px; display: flex; justify-content: space-between; font-weight: bold; color: #000080; }
+        .info-body { line-height: 1.8; color: #333; margin-bottom: 10px; }
+        .footer-btns { display: flex; justify-content: space-between; font-weight: bold; }
+        .footer-btns a { color: #000080; text-decoration: none; }
         
         .data-list { list-style: none; padding: 0; margin: 10px 0; display: none; border: 1px solid #ddd; border-radius: 5px; }
         .data-list li { padding: 10px; border-bottom: 1px solid #eee; cursor: pointer; font-size: 14px; }
@@ -73,7 +74,6 @@
 
         function showOverlay(pos, item) {
             if(customOverlay) customOverlay.setMap(null);
-            // 요청하신 6,9,10,11,12,13행 정보 포함
             const content = `
             <div class="premium-card">
                 <div class="premium-header">${item.site}</div>
