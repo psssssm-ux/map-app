@@ -59,7 +59,7 @@
 
         async function loadData() {
             try {
-                const res = await fetch('https://script.google.com/macros/s/AKfycbzdpzbv7uXGZ4SqCh5YtSn_0Nfv6aY6iYHHZE1KJi8spiI7Ts_-u0-ZS3pN01RSQBYRQA/exec');
+                const res = await fetch('https://script.google.com/macros/s/AKfycbwQNp3OGUMj9WN2h8A8wJoyoGKysrdRm1nFHzjeYqTpfPAhraX2hT803CBgN58Xr9B8gQ/exec');
                 sheetData = await res.json();
                 
                 for (const item of sheetData) {
