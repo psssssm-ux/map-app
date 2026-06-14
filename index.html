@@ -112,36 +112,39 @@
         });
 
         function findSite(index) {
-            const item = sheetData[index];
-            geocoder.addressSearch(item.address, (res, status) => {
-                if (status === kakao.maps.services.Status.OK) {
-                    const coords = new kakao.maps.LatLng(res[0].y, res[0].x);
-                    map.setCenter(coords); map.setLevel(3);
-                    infowindow.close();
-                    const marker = new kakao.maps.Marker({ map: map, position: coords });
-                    
-                    const renderRow = (label, val) => (val && val !== '-') ? `<div class="card-row"><b>${label}</b> <span>${val}</span></div>` : '';
-                    
-                    const infoContent = `
-                        <div class="info-card">
-                            <div class="card-title">${item.site}</div>
-                            ${renderRow('기번', item.MN)}
-                            ${renderRow('담당자', item.TSE)}
-                            ${renderRow('경비사', item.sec)}
-                            ${renderRow('연락처', item.phone)}
-                            ${renderRow('기타', item.etc)}
-                            ${renderRow('주차', item.park)}
-                            <div class="card-btns">
-                                <a href="tel:${item.phone || '#'}" class="btn-tel">📞 전화</a>
-                                <a href="https://map.kakao.com/link/to/${item.site},${res[0].y},${res[0].x}" target="_blank" class="btn-map">📍 길찾기</a>
-                            </div>
-                        </div>`;
-                    infowindow.setContent(infoContent);
-                    infowindow.open(map, marker);
-                    document.getElementById('resultList').style.display = 'none';
-                }
-            });
+    const item = sheetData[index];
+    geocoder.addressSearch(item.address, (res, status) => {
+        if (status === kakao.maps.services.Status.OK) {
+            const coords = new kakao.maps.LatLng(res[0].y, res[0].x);
+            map.setCenter(coords);
+            map.setLevel(3);
+            infowindow.close();
+            const marker = new kakao.maps.Marker({ map: map, position: coords });
+            
+            // 데이터가 있는 경우에만 줄을 만드는 헬퍼 함수
+            const renderRow = (label, val) => (val && val !== '-') ? `<div class="card-row"><b>${label}</b> <span>${val}</span></div>` : '';
+
+            const infoContent = `
+                <div class="info-card">
+                    <div class="card-title">${item.site}</div>
+                    ${renderRow('기번', item.MN)}
+                    ${renderRow('담당자', item.TSE)}
+                    ${renderRow('경비사', item.sec)}
+                    ${renderRow('연락처', item.phone)}
+                    ${renderRow('기타', item.etc)}
+                    ${renderRow('주차', item.park)}
+                    <div class="card-btns">
+                        <a href="tel:${item.phone || '#'}" class="btn-tel">📞 전화</a>
+                        <a href="https://map.kakao.com/link/to/${item.site},${res[0].y},${res[0].x}" target="_blank" class="btn-map">📍 길찾기</a>
+                    </div>
+                </div>`;
+            
+            infowindow.setContent(infoContent);
+            infowindow.open(map, marker);
+            document.getElementById('resultList').style.display = 'none';
         }
+    });
+}
 
         function toggleRecent() {
             const list = document.getElementById('recentList');
