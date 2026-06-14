@@ -11,10 +11,10 @@
         #sidebar { width: 400px; min-width: 400px; height: 100vh; background: #fff; border-right: 1px solid #ddd; z-index: 10; overflow-y: auto; padding: 20px; box-sizing: border-box; }
         #map { flex-grow: 1; height: 100vh; position: relative; }
 
-        /* 버튼 디자인 복구 */
+        /* [이미지 53186a.jpg]와 동일한 버튼 디자인 */
         .btn-common { width: 100%; padding: 15px; margin-bottom: 10px; border-radius: 5px; font-weight: bold; cursor: pointer; border: none; color: #fff; text-align: center; font-size: 14px; }
         
-        /* 마커 정보창 디자인 복구 */
+        /* [이미지 53186a.jpg]와 동일한 마커 정보창 디자인 */
         .premium-card { background: white; border-radius: 10px; padding: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); width: 280px; border: 1px solid #ccc; font-size: 14px; }
         .premium-header { font-weight: bold; font-size: 16px; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 2px solid #0070c0; color: #0070c0; }
         .info-body { line-height: 1.8; color: #333; margin-bottom: 10px; }
@@ -23,24 +23,17 @@
         
         .data-list { list-style: none; padding: 0; margin: 10px 0; display: none; border: 1px solid #ddd; border-radius: 5px; }
         .data-list li { padding: 10px; border-bottom: 1px solid #eee; cursor: pointer; font-size: 14px; }
-        
-        @media (max-width: 768px) {
-            #app-container { flex-direction: column; }
-            #sidebar { width: 100%; height: 40%; }
-            #map { height: 60%; }
-        }
     </style>
 </head>
 <body>
     <div id="app-container">
         <div id="sidebar">
-            <div id="progressBar">데이터 동기화: 0%</div>
+            <div id="progressBar">데이터 동기화: 100%</div>
             <div class="btn-common" style="background-color: #ff9f43;" onclick="moveToMyLocation()">📍 현재 위치로 이동</div>
             <div class="btn-common" style="background-color: #667eea;" onclick="resetMap()">지도 위치 초기화 🔄</div>
             <div class="btn-common" style="background-color: #0070c0;" onclick="toggleRecent()">최근 수정된 사이트 LIST ▼</div>
-            <ul id="recentList" class="data-list"></ul>
             <div style="font-weight:bold; margin-top:10px;">사이트 검색 ▼</div>
-            <input type="text" id="searchKeyword" style="width:100%; padding:10px; margin-top:5px; box-sizing:border-box;" placeholder="검색...">
+            <input type="text" id="searchKeyword" style="width:100%; padding:10px; margin-top:5px; box-sizing:border-box;">
             <ul id="resultList" class="data-list"></ul>
         </div>
         <div id="map"></div>
@@ -58,7 +51,6 @@
         async function loadData() {
             const res = await fetch('https://corsproxy.io/?' + encodeURIComponent('https://script.google.com/macros/s/AKfycbzdpzbv7uXGZ4SqCh5YtSn_0Nfv6aY6iYHHZE1KJi8spiI7Ts_-u0-ZS3pN01RSQBYRQA/exec'));
             sheetData = await res.json();
-            let count = 0;
             sheetData.forEach(item => {
                 geocoder.addressSearch(item.address, (result, status) => {
                     if (status === 'OK') {
@@ -66,8 +58,6 @@
                         kakao.maps.event.addListener(marker, 'click', () => showOverlay(result[0], item));
                         clusterer.addMarker(marker);
                     }
-                    count++;
-                    document.getElementById('progressBar').textContent = `데이터 동기화: ${Math.round((count/sheetData.length)*100)}%`;
                 });
             });
         }
@@ -80,7 +70,7 @@
                 <div class="info-body">
                     주소: ${item.address || '-'}<br>
                     기번: ${item.MN || '-'}<br>
-                    담당자: ${item.manager || '-'}<br>
+                    담당자: ${item.TSE || '-'}<br>
                     경비사: ${item.sec || '-'}<br>
                     연락처: ${item.phone || '-'}<br>
                     기타: ${item.etc || '-'}<br>
