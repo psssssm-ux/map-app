@@ -48,8 +48,6 @@
 
     <script>
         let map, geocoder, clusterer, infowindow, sheetData = [];
-        let myLocationMarker = null;
-
         kakao.maps.load(() => {
             map = new kakao.maps.Map(document.getElementById('map'), { center: new kakao.maps.LatLng(35.1517, 129.0305), level: 7 });
             geocoder = new kakao.maps.services.Geocoder();
@@ -74,35 +72,32 @@
             } catch (e) { document.getElementById('progressBar').innerText = "데이터 로딩 실패"; }
         }
 
+        // 검색 기능 복구
+        document.getElementById('searchKeyword').addEventListener('input', function() {
+            const val = this.value.toLowerCase();
+            const list = document.getElementById('resultList');
+            if (val.length < 1) { list.style.display = 'none'; return; }
+            
+            const filtered = sheetData.filter(i => (i.site || '').toLowerCase().includes(val));
+            list.innerHTML = filtered.map((i, index) => 
+                `<li onclick="findSite(${sheetData.indexOf(i)})">${i.site} <span style="font-size:11px; color:#888;">(${i.address})</span></li>`
+            ).join('');
+            list.style.display = 'block';
+        });
+
         function openMapRoute(address) {
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-    
-    if (isMobile) {
-        // 현재 위치를 먼저 확인
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition((pos) => {
-                const lat = pos.coords.latitude;
-                const lng = pos.coords.longitude;
-                
-                // sp(출발지 좌표), ep(도착지 주소)를 명시적으로 전달
-                // 카카오맵 앱에서 주소를 완벽하게 도착지로 세팅하는 표준 방식입니다.
-                const url = `kakaomap://route?sp=${lat},${lng}&ep=${encodeURIComponent(address)}&by=CAR`;
-                window.location.href = url;
-                
-                // 앱 미설치 시 웹으로 연결
-                setTimeout(() => {
-                    window.location.href = `https://map.kakao.com/?sName=현위치&eName=${encodeURIComponent(address)}`;
-                }, 1000);
-            }, () => {
-                // 위치 권한 거부 시 주소만 검색
-                window.location.href = `https://map.kakao.com/?eName=${encodeURIComponent(address)}`;
-            });
+            const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+            if (isMobile) {
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition((pos) => {
+                        window.location.href = `kakaomap://route?sp=${pos.coords.latitude},${pos.coords.longitude}&ep=${encodeURIComponent(address)}&by=CAR`;
+                        setTimeout(() => { window.location.href = `https://map.kakao.com/?eName=${encodeURIComponent(address)}`; }, 1000);
+                    }, () => { window.location.href = `https://map.kakao.com/?eName=${encodeURIComponent(address)}`; });
+                }
+            } else {
+                window.open(`https://map.kakao.com/?eName=${encodeURIComponent(address)}`, '_blank');
+            }
         }
-    } else {
-        // PC는 웹 브라우저로 목적지 주소 전달
-        window.open(`https://map.kakao.com/?eName=${encodeURIComponent(address)}`, '_blank');
-    }
-}
 
         function findSite(index) {
             const item = sheetData[index];
@@ -122,7 +117,6 @@
                             <a onclick="openMapRoute('${item.address.replace(/'/g, "\\'")}')" class="btn-map">📍 길찾기</a>
                         </div>
                     </div>`;
-                    
                     infowindow.setContent(infoContent);
                     infowindow.open(map, marker);
                     document.getElementById('resultList').style.display = 'none';
@@ -130,10 +124,12 @@
             });
         }
 
-        // ... (나머지 함수 동일)
-        function moveToMyLocation() { /* 동일 */ }
-        document.getElementById('searchKeyword').addEventListener('input', function() { /* 동일 */ });
-        function toggleRecent() { /* 동일 */ }
+        function toggleRecent() {
+            const list = document.getElementById('recentList');
+            list.style.display = (list.style.display === 'block') ? 'none' : 'block';
+            list.innerHTML = sheetData.slice(-5).map(i => `<li onclick="findSite(${sheetData.indexOf(i)}); document.getElementById('recentList').style.display='none'">${i.site}</li>`).join('');
+        }
+        function moveToMyLocation() { navigator.geolocation.getCurrentPosition(pos => { map.setCenter(new kakao.maps.LatLng(pos.coords.latitude, pos.coords.longitude)); }); }
         function resetMap() { map.setCenter(new kakao.maps.LatLng(35.1517, 129.0305)); map.setLevel(7); }
     </script>
 </body>
