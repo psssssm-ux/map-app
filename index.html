@@ -7,21 +7,26 @@
     <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=7f3387ab66fb524dbefeb77ae9f85e90&libraries=services,clusterer&autoload=false"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
+        /* 기본 레이아웃 및 폰트 */
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; font-family: 'Pretendard', sans-serif; background: #f4f7fa; }
         #app-container { display: flex; width: 100vw; height: 100vh; }
         
+        /* 사이드바 설정 */
         #sidebar { width: 320px; min-width: 320px; height: 100vh; background: #ffffff; border-right: 1px solid #e1e4e8; z-index: 10; display: flex; flex-direction: column; box-shadow: 5px 0 15px rgba(0,0,0,0.05); }
         #sidebarContent { flex: 1; padding: 25px; overflow-y: auto; }
-        #sidebarFooter { padding: 15px; border-top: 1px solid #eee; font-size: 11px; color: #aaa; text-align: center; background: #fcfcfc; }
+        #sidebarFooter { padding: 15px; border-top: 1px solid #eee; font-size: 11px; color: #999; text-align: center; background: #fcfcfc; line-height: 1.6; }
+        
         #map { flex-grow: 1; height: 100vh; position: relative; }
 
+        /* 버튼 스타일 */
         .btn-common { width: 100%; max-width: 270px; display: block; margin: 0 auto 12px auto; padding: 14px 0; text-align: center; border-radius: 12px; font-weight: 700; font-size: 14px; cursor: pointer; border: none; transition: all 0.2s; }
         .btn-common:hover { filter: brightness(1.1); transform: translateY(-2px); }
         
+        /* 검색창 스타일 */
         #searchKeyword { width: 100%; padding: 15px; border: 2px solid #edf0f5; border-radius: 12px; font-size: 14px; outline: none; transition: all 0.2s; background: #f8fafc; margin-bottom: 5px; }
-        #searchKeyword:focus { border-color: #0070c0; background: #fff; }
+        #searchKeyword:focus { border-color: #0070c0; background: #fff; box-shadow: 0 0 8px rgba(0,112,192,0.1); }
 
-        /* 정보창 가변형 디자인 */
+        /* 프리미엄 정보창(CustomOverlay) 디자인 */
         .premium-card {
             display: inline-block;
             background: white;
@@ -42,106 +47,34 @@
             color: white;
         }
 
-        .premium-header .site-title {
-            font-size: 19px;
-            font-weight: 800;
-            display: block;
-            margin-bottom: 6px;
-            letter-spacing: -0.5px;
-            white-space: nowrap;
-        }
+        .premium-header .site-title { font-size: 19px; font-weight: 800; display: block; margin-bottom: 6px; letter-spacing: -0.5px; white-space: nowrap; }
+        .premium-header .site-sub { font-size: 13px; opacity: 0.9; display: block; word-break: break-all; }
 
-        .premium-header .site-sub {
-            font-size: 13px;
-            opacity: 0.9;
-            display: block;
-            word-break: break-all;
-        }
+        .premium-body { padding: 20px 25px; background: #fff; }
+        .premium-row { display: flex; align-items: flex-start; margin-bottom: 12px; font-size: 14px; }
+        .premium-row i { width: 28px; height: 28px; background: #f0f4f8; color: #0070c0; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 12px; margin-right: 12px; flex-shrink: 0; }
+        .premium-row .row-label { font-weight: 700; color: #94a3b8; width: 45px; font-size: 13px; flex-shrink: 0; margin-top: 5px; }
+        .premium-row .row-value { color: #1e293b; font-weight: 600; flex: 1; margin-top: 5px; white-space: nowrap; padding-right: 10px; }
+        .premium-row.etc-row .row-value { white-space: normal; word-break: break-all; }
 
-        .premium-body {
-            padding: 20px 25px;
-            background: #fff;
-        }
-
-        .premium-row {
-            display: flex;
-            align-items: flex-start;
-            margin-bottom: 12px;
-            font-size: 14px;
-        }
-
-        .premium-row i {
-            width: 28px;
-            height: 28px;
-            background: #f0f4f8;
-            color: #0070c0;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 12px;
-            margin-right: 12px;
-            flex-shrink: 0;
-        }
-
-        .premium-row .row-label {
-            font-weight: 700;
-            color: #94a3b8;
-            width: 45px;
-            font-size: 13px;
-            flex-shrink: 0;
-            margin-top: 5px;
-        }
-
-        .premium-row .row-value {
-            color: #1e293b;
-            font-weight: 600;
-            flex: 1;
-            margin-top: 5px;
-            white-space: nowrap; 
-            padding-right: 10px;
-        }
-
-        .premium-row.etc-row .row-value {
-            white-space: normal;
-            word-break: break-all;
-        }
-
-        .premium-footer {
-            display: flex;
-            border-top: 1px solid #f1f5f9;
-            background: #fafbfc;
-        }
-
-        .footer-btn {
-            flex: 1;
-            padding: 18px;
-            text-align: center;
-            font-size: 15px;
-            font-weight: 700;
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            transition: all 0.2s;
-            cursor: pointer;
-        }
-
+        .premium-footer { display: flex; border-top: 1px solid #f1f5f9; background: #fafbfc; }
+        .footer-btn { flex: 1; padding: 18px; text-align: center; font-size: 15px; font-weight: 700; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 10px; transition: all 0.2s; cursor: pointer; }
         .btn-call { color: #0070c0; border-right: 1px solid #f1f5f9; }
         .btn-navi { color: #202124; background: #ffeb00; }
         .footer-btn:hover { filter: brightness(0.95); }
 
+        /* 로딩 바 */
         #progressBarWrapper { margin-bottom: 20px; }
         #progressBar { width: 0%; height: 6px; background: #0070c0; border-radius: 3px; transition: width 0.3s; }
 
+        /* 모바일 대응 */
         @media (max-width: 768px) {
             #app-container { flex-direction: column; }
             #sidebar { width: 100%; min-width: 100%; height: 40vh; }
             #map { height: 60vh; }
         }
 
-        /* 검색 결과 리스트 스타일 */
+        /* 검색 결과 리스트 */
         #resultList { list-style: none; padding: 0; margin: 0; display: none; background: #f8fafc; border-radius: 12px; overflow: hidden; border: 1px solid #eee; }
         #resultList li { padding: 15px; border-bottom: 1px solid #eee; font-size: 13px; cursor: pointer; transition: background 0.2s; }
         #resultList li:hover { background: #eef2f7; }
@@ -158,17 +91,22 @@
                         <div id="progressBar"></div>
                     </div>
                 </div>
+
                 <div class="btn-common" style="background-color: #ff9f43; color: #fff;" onclick="moveToMyLocation()">📍 현재 위치로 이동</div>
                 <div class="btn-common" style="background-color: #667eea; color: #fff;" onclick="resetMap()">지도 위치 초기화 🔄</div>
                 
-                <div style="margin-top: 25px;">
-                    <h3 style="font-size: 15px; color: #333; margin-bottom: 10px;">사이트 검색 ▼</h3>
+                <div style="margin-top: 30px;">
+                    <h3 style="font-size: 18px; color: #444; border-bottom: 2px solid #0070c0; padding-bottom: 10px; margin-bottom: 15px;">사이트 검색 ▼</h3>
                     <input type="text" id="searchKeyword" placeholder="사이트명/코너명/기번 검색...">
                     <ul id="resultList"></ul>
-                    <div style="margin-top:10px; font-size:12px; color:#94a3b8;">전체 사이트: <b id="totalCount" style="color:#1e293b;">0개</b></div>
+                    <div style="margin-top:15px; font-size:12px; color:#94a3b8;">전체 사이트: <b id="totalCount" style="color:#1e293b;">0개</b></div>
                 </div>
             </div>
-            <div id="sidebarFooter">🛠️ 제작: Sangmun Park | 💡 아이디어: Minwoo kim</div>
+
+            <div id="sidebarFooter">
+                🛠️ 제작: Sangmun Park<br>
+                💡 아이디어 제공: Minwoo kim
+            </div>
         </div>
         <div id="map"></div>
     </div>
@@ -187,11 +125,10 @@
         }
         kakao.maps.load(initMap);
 
-        // 정보창 렌더링 함수
+        // 프리미엄 정보창 렌더링
         function renderOverlay(pos, item) {
             if (customOverlay) customOverlay.setMap(null);
             
-            // 데이터 안전하게 추출 (여러 필드명 대응)
             const sitePhone = item.phone || item['연락처'] || item['연락'] || item.tel || '-';
             const siteBin = item.BIN2 || item.bin2 || '-';
             const siteMn = item.MN || item.mn || '-';
@@ -226,7 +163,6 @@
             customOverlay.setMap(map);
         }
 
-        // 마커 추가 함수
         function addMarker(pos, item) {
             const marker = new kakao.maps.Marker({ position: new kakao.maps.LatLng(pos.lat, pos.lng) });
             kakao.maps.event.addListener(marker, 'click', () => {
@@ -237,7 +173,6 @@
             clusterer.addMarker(marker);
         }
 
-        // 구글 시트 데이터 로드
         async function loadSheetData() {
             try {
                 const res = await fetch('https://script.google.com/macros/s/AKfycbwxAh4O39J93KVy87IjPu3h17BUZJ120BwkfkESVHuorO21GXpZcJT0qLxEdJwTDM-y8Q/exec');
@@ -261,7 +196,7 @@
                         }, index * 100);
                     }
                 });
-            } catch (e) { console.error("데이터 로드 중 오류:", e); }
+            } catch (e) { console.error(e); }
         }
 
         function updateProgress() {
@@ -284,10 +219,10 @@
                     });
                     map.setCenter(locPosition); map.setLevel(3);
                 });
-            } else { alert("GPS 정보를 사용할 수 없습니다."); }
+            }
         }
 
-        // [복구] 검색 기능 로직
+        // 검색어 입력 이벤트
         document.getElementById('searchKeyword').addEventListener('keyup', function() {
             const val = this.value.toLowerCase().trim();
             const list = document.getElementById('resultList');
@@ -302,7 +237,7 @@
             );
 
             if(filtered.length > 0) {
-                list.innerHTML = filtered.map((i, idx) => `
+                list.innerHTML = filtered.map(i => `
                     <li onclick="handleSearchClick(${sheetData.indexOf(i)})">
                         <strong>${i.site}</strong>
                         <small style="color:#999">코너: ${i.BIN2 || i.bin2 || '-'} / 기번: ${i.MN || i.mn || '-'}</small>
@@ -314,7 +249,7 @@
             }
         });
 
-        // 검색 결과 클릭 시 처리 함수 (인덱스 기반으로 안전하게 처리)
+        // 검색 리스트 클릭 함수
         function handleSearchClick(index) {
             const item = sheetData[index];
             const list = document.getElementById('resultList');
@@ -327,8 +262,6 @@
                     map.setCenter(pos); 
                     map.setLevel(3);
                     renderOverlay(pos, item);
-                } else {
-                    alert("주소를 찾을 수 없는 사이트입니다.");
                 }
             });
         }
