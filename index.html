@@ -16,7 +16,6 @@
         .data-list { list-style: none; padding: 0; margin: 10px 0; background: #fff; border: 1px solid #e1e4e8; border-radius: 12px; display: none; overflow-y: auto; max-height: 250px; }
         .data-list li { padding: 14px; border-bottom: 1px solid #f0f0f0; cursor: pointer; font-size: 14px; }
         
-        /* [핵심] 고급스러운 카드형 인포윈도우 스타일 */
         .info-card { width: 280px; background: white; border-radius: 20px; padding: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.2); border: 1px solid rgba(0,0,0,0.05); }
         .card-title { font-size: 17px; font-weight: 800; color: #1a1a1a; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #f0f0f0; }
         .card-row { display: flex; margin-bottom: 8px; font-size: 13.5px; }
@@ -26,8 +25,6 @@
         .card-btns a { flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 10px; border-radius: 12px; font-size: 13px; font-weight: 700; text-decoration: none; transition: 0.2s; }
         .btn-tel { background: #f0f7ff; color: #0070c0; border: 1px solid #d1e7ff; }
         .btn-map { background: #fff9e6; color: #d9480f; border: 1px solid #ffe8a1; }
-        .btn-tel:hover { background: #e1efff; }
-        .btn-map:hover { background: #fff3bf; }
         
         @media (max-width: 768px) {
             #app-container { flex-direction: column; }
@@ -39,7 +36,7 @@
     <div id="app-container">
         <div id="sidebar">
             <div id="progressBar" style="font-size:12px; font-weight:bold; margin-bottom:10px; color:#0070c0;">데이터 로딩 중...</div>
-            <div class="btn-common" style="background-color: #ff9f43;" onclick="moveToMyLocation()">📍 현재 위치로 이동</div>
+            <div class="btn-common" style="background-color: #ff4757;" onclick="moveToMyLocation()">📍 현재 위치로 이동 (빨간 마커)</div>
             <div class="btn-common" style="background-color: #667eea;" onclick="resetMap()">지도 위치 초기화 🔄</div>
             <div class="btn-common" style="background-color: #0070c0;" onclick="toggleRecent()">최근 수정된 사이트 LIST ▼</div>
             <ul id="recentList" class="data-list"></ul>
@@ -52,6 +49,7 @@
 
     <script>
         let map, geocoder, clusterer, infowindow, sheetData = [];
+        let myLocationMarker = null; // 현재 위치 마커 변수
 
         kakao.maps.load(() => {
             map = new kakao.maps.Map(document.getElementById('map'), { center: new kakao.maps.LatLng(35.1517, 129.0305), level: 7 });
@@ -65,7 +63,6 @@
             try {
                 const res = await fetch('https://script.google.com/macros/s/AKfycbwQNp3OGUMj9WN2h8A8wJoyoGKysrdRm1nFHzjeYqTpfPAhraX2hT803CBgN58Xr9B8gQ/exec');
                 sheetData = await res.json();
-                
                 for (const item of sheetData) {
                     geocoder.addressSearch(item.address, (result, status) => {
                         if (status === kakao.maps.services.Status.OK) {
@@ -76,6 +73,33 @@
                 }
                 document.getElementById('progressBar').innerText = "데이터 동기화 완료";
             } catch (e) { document.getElementById('progressBar').innerText = "데이터 로딩 실패"; }
+        }
+
+        function moveToMyLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(position => {
+                    const lat = position.coords.latitude;
+                    const lon = position.coords.longitude;
+                    const locPosition = new kakao.maps.LatLng(lat, lon);
+
+                    map.setCenter(locPosition);
+                    map.setLevel(3);
+
+                    // 기존 마커 제거
+                    if (myLocationMarker) myLocationMarker.setMap(null);
+
+                    // 빨간색 마커 생성
+                    myLocationMarker = new kakao.maps.Marker({
+                        map: map,
+                        position: locPosition,
+                        image: new kakao.maps.MarkerImage(
+                            'https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/marker_red.png',
+                            new kakao.maps.Size(64, 69), 
+                            {offset: new kakao.maps.Point(27, 69)}
+                        )
+                    });
+                });
+            }
         }
 
         document.getElementById('searchKeyword').addEventListener('input', function() {
@@ -130,7 +154,6 @@
             list.innerHTML = sheetData.slice(-5).map(i => `<li onclick="findSite(${sheetData.indexOf(i)}); document.getElementById('recentList').style.display='none'">${i.site}</li>`).join('');
         }
         function resetMap() { map.setCenter(new kakao.maps.LatLng(35.1517, 129.0305)); map.setLevel(7); }
-        function moveToMyLocation() { navigator.geolocation.getCurrentPosition(p => map.setCenter(new kakao.maps.LatLng(p.coords.latitude, p.coords.longitude))); }
     </script>
 </body>
 </html>
