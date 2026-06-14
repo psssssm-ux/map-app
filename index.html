@@ -49,7 +49,7 @@
 
     <script>
         let map, geocoder, clusterer, infowindow, sheetData = [];
-        let myLocationMarker = null; // 현재 위치 마커 변수
+        let myLocationMarker = null;
 
         kakao.maps.load(() => {
             map = new kakao.maps.Map(document.getElementById('map'), { center: new kakao.maps.LatLng(35.1517, 129.0305), level: 7 });
@@ -75,31 +75,37 @@
             } catch (e) { document.getElementById('progressBar').innerText = "데이터 로딩 실패"; }
         }
 
+        // [수정된 함수] 위치 추적 및 빨간 마커 생성
         function moveToMyLocation() {
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(position => {
-                    const lat = position.coords.latitude;
-                    const lon = position.coords.longitude;
-                    const locPosition = new kakao.maps.LatLng(lat, lon);
-
-                    map.setCenter(locPosition);
-                    map.setLevel(3);
-
-                    // 기존 마커 제거
-                    if (myLocationMarker) myLocationMarker.setMap(null);
-
-                    // 빨간색 마커 생성
-                    myLocationMarker = new kakao.maps.Marker({
-                        map: map,
-                        position: locPosition,
-                        image: new kakao.maps.MarkerImage(
-                            'https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/marker_red.png',
-                            new kakao.maps.Size(64, 69), 
-                            {offset: new kakao.maps.Point(27, 69)}
-                        )
-                    });
-                });
+            if (!navigator.geolocation) {
+                alert("현재 브라우저가 위치 정보를 지원하지 않습니다.");
+                return;
             }
+
+            navigator.geolocation.getCurrentPosition(position => {
+                const lat = position.coords.latitude;
+                const lon = position.coords.longitude;
+                const locPosition = new kakao.maps.LatLng(lat, lon);
+
+                map.setCenter(locPosition);
+                map.setLevel(3);
+
+                if (myLocationMarker) myLocationMarker.setMap(null);
+
+                // 카카오 기본 마커 대신 색상을 보장하는 이미지 객체 생성
+                const imageSrc = 'https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/marker_red.png';
+                const imageSize = new kakao.maps.Size(32, 35);
+                const markerImage = new kakao.maps.MarkerImage(imageSrc, imageSize);
+
+                myLocationMarker = new kakao.maps.Marker({
+                    map: map,
+                    position: locPosition,
+                    image: markerImage,
+                    zIndex: 999 // 레이어 최상단
+                });
+            }, () => {
+                alert("위치 접근이 거부되었습니다. 설정에서 위치 권한을 확인해주세요.");
+            });
         }
 
         document.getElementById('searchKeyword').addEventListener('input', function() {
@@ -133,8 +139,6 @@
                             <div class="card-row"><b>담당자</b> <span>${item.TSE || '-'}</span></div>
                             <div class="card-row"><b>경비사</b> <span>${item.sec || '-'}</span></div>
                             <div class="card-row"><b>연락처</b> <span>${item.phone || '-'}</span></div>
-                            <div class="card-row"><b>기타</b> <span>${item.etc || '-'}</span></div>
-                            <div class="card-row"><b>주차</b> <span>${item.park || '-'}</span></div>
                             <div class="card-btns">
                                 <a href="tel:${item.phone}" class="btn-tel">📞 전화</a>
                                 <a href="https://map.kakao.com/link/to/${item.site},${res[0].y},${res[0].x}" target="_blank" class="btn-map">📍 길찾기</a>
