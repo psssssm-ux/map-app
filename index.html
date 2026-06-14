@@ -72,53 +72,67 @@ HTML
                 });
             } catch (e) { console.error(e); }
         }
+document.getElementById('searchKeyword').addEventListener('input', function() {
+        const val = this.value.toLowerCase();
+        const list = document.getElementById('resultList');
+        const popup = document.getElementById('resultPopup');
+        const popupContent = document.getElementById('popupContent');
+        const filtered = sheetData.filter(i => (i.site || '').toLowerCase().includes(val));
+        
+        if (val.length === 0) { list.style.display = 'none'; popup.style.display = 'none'; return; }
 
-        document.getElementById('searchKeyword').addEventListener('input', function() {
-            const val = this.value.toLowerCase();
-            const list = document.getElementById('resultList');
-            const popup = document.getElementById('resultPopup');
-            const popupContent = document.getElementById('popupContent');
-            const filtered = sheetData.filter(i => (i.site || '').toLowerCase().includes(val));
-            if (val.length === 0) { list.style.display = 'none'; popup.style.display = 'none'; return; }
-            const listHTML = filtered.map((i, idx) => `
-                <li onclick="findSite(${sheetData.indexOf(i)}, ${window.innerWidth <= 768})" style="padding: 10px; border-bottom: 1px solid #eee;">
-                    <div style="font-weight:bold; font-size:14px;">${i.site}</div>
-                </li>`).join('');
-            if (window.innerWidth <= 768) { popupContent.innerHTML = listHTML; popup.style.display = 'block'; } 
-            else { list.innerHTML = listHTML; list.style.display = 'block'; }
+        const listHTML = filtered.map(i => `
+            <li onclick="findSite(${sheetData.indexOf(i)}, ${window.innerWidth <= 768})" style="padding: 10px; border-bottom: 1px solid #eee;">
+                <div style="font-weight:bold; font-size:14px;">${i.site}</div>
+            </li>`).join('');
+
+        if (window.innerWidth <= 768) { popupContent.innerHTML = listHTML; popup.style.display = 'block'; } 
+        else { list.innerHTML = listHTML; list.style.display = 'block'; }
+    });
+
+    // 2. 검색 시 지도 이동 및 정보창 출력
+    function findSite(index, isMobile) {
+        const item = sheetData[index];
+        if (!item || !item.address) { alert('주소 정보가 없습니다.'); return; }
+        
+        geocoder.addressSearch(item.address, (res, status) => {
+            if (status === 'OK') {
+                const coords = new kakao.maps.LatLng(res[0].y, res[0].x);
+                
+                // 지도 중심 이동 및 레벨 변경
+                map.setCenter(coords);
+                map.setLevel(4);
+                
+                // 마커 생성 (새로운 마커 생성 전 기존 정보창 닫기)
+                infowindow.close();
+                const marker = new kakao.maps.Marker({ map: map, position: coords });
+                
+                const infoContent = `
+                    <div class="info-win">
+                        <div class="info-win-title">${item.site}</div>
+                        <div class="info-win-row"><b>기번:</b> ${item.col6 || '-'}</div>
+                        <div class="info-win-row"><b>담당자:</b> ${item.col9 || '-'}</div>
+                        <div class="info-win-row"><b>경비사:</b> ${item.col10 || '-'}</div>
+                        <div class="info-win-row"><b>연락처:</b> ${item.col11 || '-'}</div>
+                        <div class="info-win-row"><b>기타:</b> ${item.col12 || '-'}</div>
+                        <div class="info-win-row"><b>주차:</b> ${item.col13 || '-'}</div>
+                        <div class="info-win-btns">
+                            <a href="tel:${item.col11}" style="color:#0070c0; font-weight:bold; text-decoration:none;">📞 전화</a>
+                            <a href="https://map.kakao.com/link/to/${item.site},${res[0].y},${res[0].x}" target="_blank" style="color:#ff9f43; font-weight:bold; text-decoration:none;">📍 길찾기</a>
+                        </div>
+                    </div>`;
+                
+                infowindow.setContent(infoContent);
+                infowindow.open(map, marker);
+                
+                // 검색창 닫기
+                if(isMobile) document.getElementById('resultPopup').style.display = 'none';
+                else document.getElementById('resultList').style.display = 'none';
+            } else {
+                alert('주소를 찾을 수 없습니다.');
+            }
         });
-
-        function findSite(index, isMobile) {
-            const item = sheetData[index];
-            geocoder.addressSearch(item.address, (res, status) => {
-                if (status === 'OK') {
-                    const coords = new kakao.maps.LatLng(res[0].y, res[0].x);
-                    map.setCenter(coords);
-                    map.setLevel(4);
-                    const marker = new kakao.maps.Marker({ map: map, position: coords });
-                    
-                    const infoContent = `
-                        <div class="info-win">
-                            <div class="info-win-title">${item.site}</div>
-                            <div class="info-win-row"><b>기번:</b> ${item.col6 || '-'}</div>
-                            <div class="info-win-row"><b>담당자:</b> ${item.col9 || '-'}</div>
-                            <div class="info-win-row"><b>경비사:</b> ${item.col10 || '-'}</div>
-                            <div class="info-win-row"><b>연락처:</b> ${item.col11 || '-'}</div>
-                            <div class="info-win-row"><b>기타:</b> ${item.col12 || '-'}</div>
-                            <div class="info-win-row"><b>주차:</b> ${item.col13 || '-'}</div>
-                            <div class="info-win-btns">
-                                <a href="tel:${item.col11}" style="color:#0070c0; font-weight:bold; text-decoration:none;">📞 전화</a>
-                                <a href="https://map.kakao.com/link/to/${item.site},${res[0].y},${res[0].x}" target="_blank" style="color:#ff9f43; font-weight:bold; text-decoration:none;">📍 길찾기</a>
-                            </div>
-                        </div>`;
-                    
-                    infowindow.setContent(infoContent);
-                    infowindow.open(map, marker);
-                    if(isMobile) document.getElementById('resultPopup').style.display = 'none';
-                    else document.getElementById('resultList').style.display = 'none';
-                }
-            });
-        }
+    }
         function toggleRecent() {
             const list = document.getElementById('recentList');
             list.style.display = (list.style.display === 'block') ? 'none' : 'block';
