@@ -89,26 +89,12 @@
             } catch (e) { document.getElementById('progressBar').innerText = "데이터 로딩 실패"; }
         }
 
-        // 길찾기 실행 함수 (주소 기반 도착지 설정)
-        function openMapRoute(siteName, address, lat, lng) {
-    if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-            (pos) => {
-                // sName: 출발지, eName: 도착지 주소, ep: 도착지 좌표, sp: 출발지 좌표
-                const url = `https://map.kakao.com/?sName=현위치&eName=${encodeURIComponent(address)}&ep=${lat},${lng}&sp=${pos.coords.latitude},${pos.coords.longitude}`;
-                window.open(url, '_blank');
-            },
-            () => {
-                alert("위치 접근이 거부되었습니다.");
-                // 위치 정보가 없을 경우 주소값만으로 도착지 지정
-                window.open(`https://map.kakao.com/?eName=${encodeURIComponent(address)}&ep=${lat},${lng}`, '_blank');
-            },
-            { enableHighAccuracy: true, timeout: 5000 }
-        );
-    } else {
-        window.open(`https://map.kakao.com/?eName=${encodeURIComponent(address)}&ep=${lat},${lng}`, '_blank');
-    }
-}
+        // 길찾기 함수 수정: 도착지 주소만 명확하게 전달 (가장 확실한 방법)
+        function openMapRoute(address) {
+            // 카카오맵은 도착지 주소(eName)만 넘겨도 경로 탐색 페이지로 이동합니다.
+            const url = `https://map.kakao.com/?eName=${encodeURIComponent(address)}`;
+            window.open(url, '_blank');
+        }
 
         function findSite(index) {
             const item = sheetData[index];
@@ -120,19 +106,12 @@
                     infowindow.close();
                     const marker = new kakao.maps.Marker({ map: map, position: coords });
                     
-                   const renderRow = (label, val) => {
-    // 데이터가 있고 '-'가 아니며, 빈 값이 아닐 때만 출력
-    if (val && val !== '-' && val.toString().trim() !== '') {
-        return `<div class="card-row"><b>${label}</b> <span>${val}</span></div>`;
-    }
-    return '';
-};
+                    const renderRow = (label, val) => (val && val !== '-' && val.toString().trim() !== '') ? `<div class="card-row"><b>${label}</b> <span>${val}</span></div>` : '';
                     
-                    // 길찾기 버튼에 주소값(address)을 전달하도록 수정
                     const infoContent = `
                         <div class="info-card">
                             <div class="card-title">${item.site}</div>
-                             ${renderRow('주소', item.address)}
+                            ${renderRow('주소', item.address)}
                             ${renderRow('기번', item.MN)}
                             ${renderRow('담당자', item.TSE)}
                             ${renderRow('경비사', item.sec)}
@@ -141,7 +120,7 @@
                             ${renderRow('주차', item.park)}
                             <div class="card-btns">
                                 <a href="tel:${item.phone || '#'}" class="btn-tel">📞 전화</a>
-                                <a onclick="openMapRoute('${item.site.replace(/'/g, "\\'")}', '${item.address.replace(/'/g, "\\'")}', ${res[0].y}, ${res[0].x})" class="btn-map">📍 길찾기</a>
+                                <a onclick="openMapRoute('${item.address.replace(/'/g, "\\'")}')" class="btn-map">📍 길찾기</a>
                             </div>
                         </div>`;
                     
