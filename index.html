@@ -61,28 +61,37 @@
         }
 
         document.getElementById('searchKeyword').addEventListener('input', function() {
-            const val = this.value.toLowerCase();
-            const list = document.getElementById('resultList');
-            const popup = document.getElementById('resultPopup');
-            const popupContent = document.getElementById('popupContent');
-            const filtered = sheetData.filter(i => (i.site || '').toLowerCase().includes(val));
-            
-            if (val.length === 0) { list.style.display = 'none'; popup.style.display = 'none'; return; }
+    const val = this.value.toLowerCase();
+    const list = document.getElementById('resultList');
+    const popup = document.getElementById('resultPopup');
+    const popupContent = document.getElementById('popupContent');
+    
+    // 검색어가 포함된 모든 항목 필터링
+    const filtered = sheetData.filter(i => (i.site || '').toLowerCase().includes(val));
+    
+    if (val.length === 0) {
+        list.style.display = 'none';
+        popup.style.display = 'none';
+        return;
+    }
 
-            const listHTML = filtered.map(i => `
-                <li onclick="findSite('${i.site}', ${window.innerWidth <= 768})">
-                    <strong>${i.site}</strong><br>
-                    <span style="font-size:11px; color:#666;">코너: ${i.BIN2 || '-'} / 기번: ${i.MN || '-'}</span>
-                </li>`).join('');
+    // 리스트 항목 생성 (사이트명 + BIN2 + MN 모두 표시)
+    const listHTML = filtered.map(i => `
+        <li onclick="findSite('${i.site}', ${window.innerWidth <= 768})" style="padding: 10px; border-bottom: 1px solid #eee;">
+            <div style="font-weight:bold; font-size:14px;">${i.site}</div>
+            <div style="font-size:12px; color:#666; margin-top:4px;">
+                코너: ${i.BIN2 || '-'} / 기번: ${i.MN || '-'}
+            </div>
+        </li>`).join('');
 
-            if (window.innerWidth <= 768) {
-                popupContent.innerHTML = listHTML;
-                popup.style.display = 'block';
-            } else {
-                list.innerHTML = listHTML;
-                list.style.display = 'block';
-            }
-        });
+    if (window.innerWidth <= 768) {
+        popupContent.innerHTML = listHTML;
+        popup.style.display = 'block';
+    } else {
+        list.innerHTML = listHTML;
+        list.style.display = 'block';
+    }
+});
 
         function findSite(name, isMobile) {
             const item = sheetData.find(i => i.site === name);
