@@ -86,10 +86,13 @@
             
             if (val.length === 0) { list.style.display = 'none'; popup.style.display = 'none'; return; }
 
+            // 검색 결과 리스트에 BIN2와 MN 정보를 포함하여 출력
             const listHTML = filtered.map(i => `
                 <li onclick="findSite(${sheetData.indexOf(i)}, ${window.innerWidth <= 768})" style="padding: 10px; border-bottom: 1px solid #eee;">
                     <div style="font-weight:bold; font-size:14px;">${i.site}</div>
-                    <div style="font-size:11px; color:#666;">코너: ${i.BIN2 || '-'} | 기번: ${i.MN || '-'}</div>
+                    <div style="font-size:12px; color:#555; margin-top:4px;">
+                        코너: ${i.BIN2 || '-'} | 기번: ${i.MN || '-'}
+                    </div>
                 </li>`).join('');
 
             if (window.innerWidth <= 768) { popupContent.innerHTML = listHTML; popup.style.display = 'block'; } 
@@ -109,7 +112,8 @@
                     const infoContent = `
                         <div class="info-win">
                             <div class="info-win-title">${item.site}</div>
-                            <div class="info-win-row"><b>기번:</b> ${item.col6 || '-'}</div>
+                            <div class="info-win-row"><b>코너:</b> ${item.BIN2 || '-'}</div>
+                            <div class="info-win-row"><b>기번:</b> ${item.MN || '-'}</div>
                             <div class="info-win-row"><b>담당자:</b> ${item.col9 || '-'}</div>
                             <div class="info-win-row"><b>경비사:</b> ${item.col10 || '-'}</div>
                             <div class="info-win-row"><b>연락처:</b> ${item.col11 || '-'}</div>
