@@ -82,7 +82,7 @@
     
     list.innerHTML = filtered.map(i => {
         // 사이트명 옆에 기번(MN)과 담당자(TSE) 정보를 포함
-        const infoText = `${i.MN || ''} / ${i.TSE || ''}`.replace(/^\/|\/$/g, '').trim();
+        const infoText = `${i.MN || ''} / ${i.TSE || ''} /  ${i.BIN2 || ''}`.replace(/^\/|\/$/g, '').trim();
         return `
             <li onclick="findSite(${sheetData.indexOf(i)})">
                 <div style="font-weight:700;">${i.site}</div>
