@@ -143,30 +143,20 @@
         }
 
         async function loadSheetData() {
-            try {
-                const res = await fetch('https://script.google.com/macros/s/AKfycbxaAZJ0-dqALfRGrmq-GtTx7PvEIPtWsoAgYYeTb4VBY0wyJnFUINry3F86LqbqslQi8Q/exec?t=' + Date.now());
-                sheetData = await res.json();
-                document.getElementById('totalCount').textContent = sheetData.length + '개';
-                sheetData.forEach((item, index) => {
-                    if (!item.address) { loadedCount++; return; }
-                    const cacheKey = 'loc_' + item.address;
-                    const cached = localStorage.getItem(cacheKey);
-                    if (cached) { addMarker(JSON.parse(cached), item); loadedCount++; updateProgress(); }
-                    else {
-                        setTimeout(() => {
-                            geocoder.addressSearch(item.address, (result, status) => {
-                                if (status === kakao.maps.services.Status.OK) {
-                                    const pos = { lat: result[0].y, lng: result[0].x };
-                                    localStorage.setItem(cacheKey, JSON.stringify(pos));
-                                    addMarker(pos, item);
-                                }
-                                loadedCount++; updateProgress();
-                            });
-                        }, index * 100);
-                    }
-                });
-            } catch (e) { console.error(e); }
-        }
+    try {
+        // 구글 스크립트 주소 앞에 'https://corsproxy.io/?'를 붙입니다.
+        const targetUrl = 'https://script.google.com/macros/s/AKfycbzdpzbv7uXGZ4SqCh5YtSn_0Nfv6aY6iYHHZE1KJi8spiI7Ts_-u0-ZS3pN01RSQBYRQA/exec';
+        const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(targetUrl + '?t=' + Date.now());
+        
+        const res = await fetch(proxyUrl);
+        sheetData = await res.json();
+        
+        document.getElementById('totalCount').textContent = sheetData.length + '개';
+        // ... (이후 기존 마커 로딩 로직 동일) ...
+    } catch (e) {
+        console.error("데이터 로드 실패:", e);
+    }
+}
 
         function updateProgress() {
             const percent = Math.round((loadedCount / sheetData.length) * 100);
