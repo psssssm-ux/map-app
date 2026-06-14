@@ -47,7 +47,8 @@
     </div>
 
     <script>
-        let map, geocoder, clusterer, infowindow, sheetData = [];
+        let map, geocoder, clusterer, infowindow, sheetData = [], myLocationMarker = null;
+
         kakao.maps.load(() => {
             map = new kakao.maps.Map(document.getElementById('map'), { center: new kakao.maps.LatLng(35.1517, 129.0305), level: 7 });
             geocoder = new kakao.maps.services.Geocoder();
@@ -59,12 +60,14 @@
         async function loadData() {
             try {
                 const res = await fetch('https://script.google.com/macros/s/AKfycbwQNp3OGUMj9WN2h8A8wJoyoGKysrdRm1nFHzjeYqTpfPAhraX2hT803CBgN58Xr9B8gQ/exec');
-                sheetData = await res.json();
+                const data = await res.json();
+                // 날짜순(최신순) 정렬
+                sheetData = data.sort((a, b) => new Date(b.date) - new Date(a.date));
+                
                 sheetData.forEach((item) => {
                     geocoder.addressSearch(item.address, (result, status) => {
                         if (status === kakao.maps.services.Status.OK) {
                             const marker = new kakao.maps.Marker({ position: new kakao.maps.LatLng(result[0].y, result[0].x) });
-                            
                             kakao.maps.event.addListener(marker, 'mouseover', () => displayInfowindow(marker, item));
                             clusterer.addMarker(marker);
                         }
@@ -130,46 +133,25 @@
 
         function toggleRecent() {
             const list = document.getElementById('recentList');
-            list.style.display = (list.style.display === 'block') ? 'none' : 'block';
-            list.innerHTML = sheetData.slice(-5).map(i => `<li onclick="findSite(${sheetData.indexOf(i)}); document.getElementById('recentList').style.display='none'">${i.site}</li>`).join('');
+            if(list.style.display === 'block') { list.style.display = 'none'; return; }
+            list.innerHTML = sheetData.slice(0, 5).map(i => `<li onclick="findSite(${sheetData.indexOf(i)}); document.getElementById('recentList').style.display='none'"><div style="font-weight:700;">${i.site}</div><div style="font-size:11px; color:#888;">${i.date || ''}</div></li>`).join('');
+            list.style.display = 'block';
         }
-        let myLocationMarker = null;
 
-function moveToMyLocation() {
-    if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(pos => {
-            const lat = pos.coords.latitude;
-            const lng = pos.coords.longitude;
-            const myPos = new kakao.maps.LatLng(lat, lng);
+        function moveToMyLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(pos => {
+                    const myPos = new kakao.maps.LatLng(pos.coords.latitude, pos.coords.longitude);
+                    if (myLocationMarker) myLocationMarker.setMap(null);
+                    map.setCenter(myPos); map.setLevel(3);
+                    myLocationMarker = new kakao.maps.Marker({
+                        map: map, position: myPos,
+                        image: new kakao.maps.MarkerImage('https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/marker_red.png', new kakao.maps.Size(31, 35), { offset: new kakao.maps.Point(15, 35) })
+                    });
+                }, () => alert("위치 정보를 가져올 수 없습니다."));
+            } else { alert("위치 기능을 지원하지 않습니다."); }
+        }
 
-            // 1. 기존 현위치 마커가 있다면 제거
-            if (myLocationMarker) myLocationMarker.setMap(null);
-
-            // 2. 지도 중심 이동
-            map.setCenter(myPos);
-            map.setLevel(3);
-
-            // 3. 빨간색 마커 이미지 설정 (기본보다 조금 더 선명한 빨간색 마커 사용)
-            const markerImage = new kakao.maps.MarkerImage(
-                'https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/marker_red.png',
-                new kakao.maps.Size(31, 35),
-                { offset: new kakao.maps.Point(15, 35) } // 마커 중심점 조정
-            );
-
-            // 4. 현재 위치 마커 생성 (인포윈도우 없이 마커만 표시)
-            myLocationMarker = new kakao.maps.Marker({
-                map: map,
-                position: myPos,
-                image: markerImage
-            });
-
-        }, (err) => {
-            alert("위치 정보를 가져올 수 없습니다.");
-        });
-    } else {
-        alert("이 브라우저에서는 위치 기능을 지원하지 않습니다.");
-    }
-}
         function resetMap() { map.setCenter(new kakao.maps.LatLng(35.1517, 129.0305)); map.setLevel(7); }
     </script>
 </body>
