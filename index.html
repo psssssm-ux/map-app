@@ -144,9 +144,8 @@
             clusterer.addMarker(marker);
         }
 
-        async function loadSheetData() {
+       async function loadSheetData() {
     try {
-        // 구글 스크립트 주소 앞에 'https://corsproxy.io/?'를 붙입니다.
         const targetUrl = 'https://script.google.com/macros/s/AKfycbzdpzbv7uXGZ4SqCh5YtSn_0Nfv6aY6iYHHZE1KJi8spiI7Ts_-u0-ZS3pN01RSQBYRQA/exec';
         const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(targetUrl + '?t=' + Date.now());
         
@@ -154,9 +153,22 @@
         sheetData = await res.json();
         
         document.getElementById('totalCount').textContent = sheetData.length + '개';
-        // ... (이후 기존 마커 로딩 로직 동일) ...
+        
+        // [추가된 부분] 데이터를 하나씩 돌면서 마커 생성
+        sheetData.forEach((item, index) => {
+            if (item.address) {
+                geocoder.addressSearch(item.address, (result, status) => {
+                    if (status === kakao.maps.services.Status.OK) {
+                        addMarker({lat: result[0].y, lng: result[0].x}, item);
+                        loadedCount++;
+                        updateProgress();
+                    }
+                });
+            }
+        });
     } catch (e) {
         console.error("데이터 로드 실패:", e);
+        alert("데이터를 불러오지 못했습니다.");
     }
 }
 
