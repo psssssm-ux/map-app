@@ -111,21 +111,38 @@
             list.style.display = 'block';
         });
 
-        function findSite(index) {
-            const item = sheetData[index];
-            geocoder.addressSearch(item.address, (res, status) => {
-                if (status === kakao.maps.services.Status.OK) {
-                    const coords = new kakao.maps.LatLng(res[0].y, res[0].x);
-                    map.setCenter(coords);
-                    map.setLevel(3);
-                    infowindow.close();
-                    const marker = new kakao.maps.Marker({ map: map, position: coords });
-                    infowindow.setContent(`<div style="padding:15px; border-radius:15px;"><b>${item.site}</b><br>기번: ${item.MN}<br>담당: ${item.TSE}</div>`);
-                    infowindow.open(map, marker);
-                    document.getElementById('resultList').style.display = 'none';
-                }
-            });
+       function findSite(index) {
+    const item = sheetData[index];
+    geocoder.addressSearch(item.address, (res, status) => {
+        if (status === kakao.maps.services.Status.OK) {
+            const coords = new kakao.maps.LatLng(res[0].y, res[0].x);
+            map.setCenter(coords);
+            map.setLevel(3);
+            infowindow.close();
+            const marker = new kakao.maps.Marker({ map: map, position: coords });
+            
+            // [수정된 부분] 누락된 '기타'와 '주차' 항목 추가
+            const infoContent = `
+                <div class="info-card">
+                    <div class="card-title">${item.site}</div>
+                    <div class="card-row"><b>기번</b> <span>${item.MN || '-'}</span></div>
+                    <div class="card-row"><b>담당자</b> <span>${item.TSE || '-'}</span></div>
+                    <div class="card-row"><b>경비사</b> <span>${item.sec || '-'}</span></div>
+                    <div class="card-row"><b>연락처</b> <span>${item.phone || '-'}</span></div>
+                    <div class="card-row"><b>기타</b> <span>${item.etc || '-'}</span></div>
+                    <div class="card-row"><b>주차</b> <span>${item.park || '-'}</span></div>
+                    <div class="card-btns">
+                        <a href="tel:${item.phone}" class="btn-tel">📞 전화</a>
+                        <a href="https://map.kakao.com/link/to/${item.site},${res[0].y},${res[0].x}" target="_blank" class="btn-map">📍 길찾기</a>
+                    </div>
+                </div>`;
+            
+            infowindow.setContent(infoContent);
+            infowindow.open(map, marker);
+            document.getElementById('resultList').style.display = 'none';
         }
+    });
+}
 
         function toggleRecent() {
             const list = document.getElementById('recentList');
