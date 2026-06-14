@@ -118,7 +118,13 @@
                     infowindow.close();
                     const marker = new kakao.maps.Marker({ map: map, position: coords });
                     
-                    const renderRow = (label, val) => (val && val !== '-') ? `<div class="card-row"><b>${label}</b> <span>${val}</span></div>` : '';
+                   const renderRow = (label, val) => {
+    // 데이터가 있고 '-'가 아니며, 빈 값이 아닐 때만 출력
+    if (val && val !== '-' && val.toString().trim() !== '') {
+        return `<div class="card-row"><b>${label}</b> <span>${val}</span></div>`;
+    }
+    return '';
+};
                     
                     // 길찾기 버튼에 주소값(address)을 전달하도록 수정
                     const infoContent = `
