@@ -57,20 +57,34 @@
         });
 
         async function loadData() {
-            try {
-                const res = await fetch('https://script.google.com/macros/s/AKfycbwQNp3OGUMj9WN2h8A8wJoyoGKysrdRm1nFHzjeYqTpfPAhraX2hT803CBgN58Xr9B8gQ/exec');
-                sheetData = await res.json();
-                sheetData.forEach(item => {
-                    geocoder.addressSearch(item.address, (result, status) => {
-                        if (status === kakao.maps.services.Status.OK) {
-                            const marker = new kakao.maps.Marker({ position: new kakao.maps.LatLng(result[0].y, result[0].x) });
-                            clusterer.addMarker(marker);
-                        }
+    try {
+        const res = await fetch('https://script.google.com/macros/s/AKfycbwQNp3OGUMj9WN2h8A8wJoyoGKysrdRm1nFHzjeYqTpfPAhraX2hT803CBgN58Xr9B8gQ/exec');
+        sheetData = await res.json();
+        
+        sheetData.forEach((item, index) => {
+            geocoder.addressSearch(item.address, (result, status) => {
+                if (status === kakao.maps.services.Status.OK) {
+                    const position = new kakao.maps.LatLng(result[0].y, result[0].x);
+                    const marker = new kakao.maps.Marker({ position: position });
+
+                    // 마우스 올렸을 때
+                    kakao.maps.event.addListener(marker, 'mouseover', () => {
+                        displayInfowindow(marker, item);
                     });
-                });
-                document.getElementById('progressBar').innerText = "데이터 동기화 완료";
-            } catch (e) { document.getElementById('progressBar').innerText = "데이터 로딩 실패"; }
-        }
+
+                    // 마커에서 마우스가 벗어날 때 (인포윈도우 닫기)
+                    kakao.maps.event.addListener(marker, 'mouseout', () => {
+                        // 닫기 로직: 마우스가 infowindow 영역 밖으로 나갔을 때만 닫히도록 
+                        // 아래의 인포윈도우 생성 함수와 연동
+                    });
+
+                    clusterer.addMarker(marker);
+                }
+            });
+        });
+        document.getElementById('progressBar').innerText = "데이터 동기화 완료";
+    } catch (e) { document.getElementById('progressBar').innerText = "데이터 로딩 실패"; }
+}
 
         // 검색 결과 스타일 복구
      document.getElementById('searchKeyword').addEventListener('input', function() {
@@ -142,6 +156,21 @@
         }
         function moveToMyLocation() { navigator.geolocation.getCurrentPosition(pos => { map.setCenter(new kakao.maps.LatLng(pos.coords.latitude, pos.coords.longitude)); }); }
         function resetMap() { map.setCenter(new kakao.maps.LatLng(35.1517, 129.0305)); map.setLevel(7); }
+        function displayInfowindow(marker, item) {
+    const renderRow = (label, val) => (val && val !== '-' && val.toString().trim() !== '') ? `<div class="card-row"><b>${label}</b> <span>${val}</span></div>` : '';
+    
+    const content = `<div class="info-card" onmouseleave="infowindow.close()">
+                        <div class="card-title">${item.site}</div>
+                        ${renderRow('주소', item.address)}${renderRow('기번', item.MN)}${renderRow('담당자', item.TSE)}${renderRow('경비사', item.sec)}${renderRow('연락처', item.phone)}${renderRow('기타', item.etc)}${renderRow('주차', item.park)}
+                        <div class="card-btns">
+                            <a href="tel:${item.phone || '#'}" class="btn-tel">📞 전화</a>
+                            <a onclick="openMapRoute('${item.address.replace(/'/g, "\\'")}')" class="btn-map">📍 길찾기</a>
+                        </div>
+                    </div>`;
+    
+    infowindow.setContent(content);
+    infowindow.open(map, marker);
+}
     </script>
 </body>
 </html>
