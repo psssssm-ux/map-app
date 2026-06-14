@@ -103,18 +103,36 @@
             infowindow.open(map, marker);
         }
 
-        document.getElementById('searchKeyword').addEventListener('input', function() {
-            const val = this.value.toLowerCase();
-            const list = document.getElementById('resultList');
-            if (val.length < 1) { list.style.display = 'none'; return; }
-            const filtered = sheetData.filter(i => (i.site || '').toLowerCase().includes(val));
-            list.innerHTML = filtered.map(i => {
-                const info = [i.MN, i.TSE, i.BIN2].filter(v => v && v !== '-').join(' / ');
-                return `<li onclick="findSite(${sheetData.indexOf(i)})"><div style="font-weight:700; font-size:14px;">${i.site}</div><div style="font-size:12px; color:#555; margin-top:3px;">${info}</div></li>`;
-            }).join('');
-            list.style.display = 'block';
-        });
+       document.getElementById('searchKeyword').addEventListener('input', function() {
+    const val = this.value.toLowerCase();
+    const list = document.getElementById('resultList');
+    
+    if (val.length < 1) { 
+        list.style.display = 'none'; 
+        return; 
+    }
 
+    // [수정된 로직] 사이트명(site), 기번(MN), 코드(BIN2) 중 하나라도 포함되면 필터링
+    const filtered = sheetData.filter(i => {
+        const site = (i.site || '').toLowerCase();
+        const mn = (i.MN || '').toLowerCase();
+        const BIN2 = (i.BIN2 || '').toLowerCase(); // BIN2 사용중이므로 bin2로 지정
+        
+        return site.includes(val) || mn.includes(val) || BIN2.includes(val);
+    });
+
+    list.innerHTML = filtered.map(i => {
+        // 리스트에 보여줄 부가 정보
+        const subInfo = [i.MN, i.TSE, i.BIN2].filter(v => v && v !== '-').join(' / ');
+        
+        return `<li onclick="findSite(${sheetData.indexOf(i)})">
+                    <div style="font-weight:700; font-size:14px;">${i.site}</div>
+                    <div style="font-size:12px; color:#555; margin-top:3px;">기번: ${i.MN || '-'} | 코드: ${i.BIN2 || '-'}</div>
+                </li>`;
+    }).join('');
+    
+    list.style.display = filtered.length > 0 ? 'block' : 'none';
+});
         function findSite(index) {
             const item = sheetData[index];
             geocoder.addressSearch(item.address, (res, status) => {
