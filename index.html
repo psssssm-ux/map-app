@@ -9,8 +9,8 @@
         body, html { margin: 0; padding: 0; width: 100%; height: 100svh; font-family: 'Pretendard', sans-serif; overflow: hidden; background: #f4f7fa; }
         #app-container { display: flex; width: 100vw; height: 100%; flex-direction: row; }
         
-        #sidebar { width: 400px; min-width: 400px; height: 100%; background: #ffffff; border-right: 1px solid #e1e4e8; z-index: 10; display: flex; flex-direction: column; padding: 20px; box-sizing: border-box; overflow-y: auto; }
-        #map { flex: 1; height: 100%; position: relative; }
+        #sidebar { width: 400px; min-width: 400px; height: 100%; background: #ffffff; border-right: 1px solid #e1e4e8; z-index: 10; display: flex; flex-direction: column; padding: 20px; box-sizing: border-box; }
+        #map { flex: 1; height: 100%; position: relative; z-index: 1; }
 
         @media (max-width: 768px) {
             #app-container { flex-direction: column; }
@@ -20,10 +20,10 @@
 
         .btn-common { width: 100%; padding: 12px; margin-bottom: 8px; border-radius: 8px; font-weight: 700; font-size: 14px; cursor: pointer; border: none; color: #fff; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         
-        /* 결과 리스트를 전체 화면 오버레이로 처리 */
-        #resultList { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 9999; display: none; overflow-y: auto; padding: 20px; box-sizing: border-box; }
-        .data-list { list-style: none; padding: 0; }
-        .data-list li { padding: 15px; border-bottom: 1px solid #eee; cursor: pointer; font-size: 16px; }
+        /* 팝업형 검색 리스트 스타일 */
+        #resultPopup { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #fff; z-index: 9999; display: none; overflow-y: auto; padding: 20px; box-sizing: border-box; }
+        .list-item { padding: 15px; border-bottom: 1px solid #eee; cursor: pointer; font-size: 16px; }
+        .recent-list { list-style: none; padding: 0; margin: 10px 0; background: #fff; border: 1px solid #ccc; border-radius: 8px; display: none; }
     </style>
 </head>
 <body>
@@ -33,7 +33,7 @@
             <div class="btn-common" style="background-color: #ff9f43;" onclick="moveToMyLocation()">📍 현재 위치로 이동</div>
             <div class="btn-common" style="background-color: #667eea;" onclick="resetMap()">지도 위치 초기화 🔄</div>
             <div class="btn-common" style="background-color: #0070c0;" onclick="toggleRecent()">최근 수정된 사이트 LIST ▼</div>
-            <ul id="recentList" class="data-list" style="position: relative; display: none; background: #f9f9f9;"></ul>
+            <ul id="recentList" class="recent-list"></ul>
             
             <div style="font-weight:700; margin-top:10px;">사이트 검색 ▼</div>
             <input type="text" id="searchKeyword" style="width:100%; padding:15px; margin-top:5px; box-sizing:border-box; border:1px solid #ccc; border-radius:8px; font-size:16px;" placeholder="사이트명 입력...">
@@ -41,9 +41,10 @@
         <div id="map"></div>
     </div>
     
-    <ul id="resultList" class="data-list">
-        <li style="background:#eee; font-weight:bold;" onclick="document.getElementById('resultList').style.display='none'">닫기 X</li>
-    </ul>
+    <div id="resultPopup">
+        <div style="padding:10px; background:#ddd; font-weight:bold; cursor:pointer; text-align:center;" onclick="document.getElementById('resultPopup').style.display='none'">닫기 X</div>
+        <div id="resultContent"></div>
+    </div>
 
     <script>
         let map, geocoder, clusterer, sheetData = [];
@@ -57,21 +58,22 @@
             const res = await fetch('https://corsproxy.io/?' + encodeURIComponent('https://script.google.com/macros/s/AKfycbzdpzbv7uXGZ4SqCh5YtSn_0Nfv6aY6iYHHZE1KJi8spiI7Ts_-u0-ZS3pN01RSQBYRQA/exec'));
             sheetData = await res.json();
         }
-        
+
+        // 실시간 검색
         document.getElementById('searchKeyword').addEventListener('input', function() {
             const val = this.value.toLowerCase();
-            const list = document.getElementById('resultList');
-            if (!val) { list.style.display = 'none'; return; }
-            const filtered = sheetData.filter(i => (i.site || '').toLowerCase().includes(val));
+            const popup = document.getElementById('resultPopup');
+            const content = document.getElementById('resultContent');
             
+            if (!val) { popup.style.display = 'none'; return; }
+            
+            const filtered = sheetData.filter(i => (i.site || '').toLowerCase().includes(val));
             if (filtered.length > 0) {
-                list.innerHTML = `<li style="background:#eee; font-weight:bold;" onclick="document.getElementById('resultList').style.display='none'">닫기 X</li>` + 
-                filtered.map(i => `
-                    <li onclick="findSite('${i.site}')">
-                        <strong>${i.site}</strong><br>
-                        <span style="font-size:13px; color:#666;">코너: ${i.BIN2 || '-'} / 기번: ${i.MN || '-'}</span>
-                    </li>`).join('');
-                list.style.display = 'block';
+                content.innerHTML = filtered.map(i => `
+                    <div class="list-item" onclick="findSite('${i.site}')">
+                        <strong>${i.site}</strong><br><span style="font-size:12px; color:#666;">기번: ${i.MN || '-'}</span>
+                    </div>`).join('');
+                popup.style.display = 'block';
             }
         });
 
@@ -81,14 +83,15 @@
                 geocoder.addressSearch(item.address, (res) => {
                     map.setCenter(new kakao.maps.LatLng(res[0].y, res[0].x));
                     map.setLevel(4);
-                    document.getElementById('resultList').style.display = 'none';
+                    document.getElementById('resultPopup').style.display = 'none';
+                    document.getElementById('searchKeyword').value = '';
                 });
             }
         }
         function toggleRecent() {
             const list = document.getElementById('recentList');
             list.style.display = (list.style.display === 'block') ? 'none' : 'block';
-            list.innerHTML = sheetData.slice(-5).map(i => `<li onclick="findSite('${i.site}'); document.getElementById('recentList').style.display='none'">${i.site}</li>`).join('');
+            list.innerHTML = sheetData.slice(-5).map(i => `<li class="list-item" onclick="findSite('${i.site}'); document.getElementById('recentList').style.display='none'">${i.site}</li>`).join('');
         }
         function resetMap() { map.setCenter(new kakao.maps.LatLng(35.1517, 129.0305)); map.setLevel(7); }
         function moveToMyLocation() { navigator.geolocation.getCurrentPosition(p => map.setCenter(new kakao.maps.LatLng(p.coords.latitude, p.coords.longitude))); }
