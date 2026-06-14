@@ -58,24 +58,36 @@
         });
 
         async function loadData() {
-            try {
-                const res = await fetch('https://script.google.com/macros/s/AKfycbwQNp3OGUMj9WN2h8A8wJoyoGKysrdRm1nFHzjeYqTpfPAhraX2hT803CBgN58Xr9B8gQ/exec');
-                const data = await res.json();
-                // 날짜순(최신순) 정렬
-                sheetData = data.sort((a, b) => new Date(b.date) - new Date(a.date));
-                
-                sheetData.forEach((item) => {
-                    geocoder.addressSearch(item.address, (result, status) => {
-                        if (status === kakao.maps.services.Status.OK) {
-                            const marker = new kakao.maps.Marker({ position: new kakao.maps.LatLng(result[0].y, result[0].x) });
-                            kakao.maps.event.addListener(marker, 'mouseover', () => displayInfowindow(marker, item));
-                            clusterer.addMarker(marker);
-                        }
-                    });
-                });
-                document.getElementById('progressBar').innerText = "데이터 동기화 완료";
-            } catch (e) { document.getElementById('progressBar').innerText = "데이터 로딩 실패"; }
-        }
+    try {
+        const res = await fetch('https://script.google.com/macros/s/AKfycbwQNp3OGUMj9WN2h8A8wJoyoGKysrdRm1nFHzjeYqTpfPAhraX2hT803CBgN58Xr9B8gQ/exec');
+        const data = await res.json();
+        
+        // 날짜순(최신순) 정렬 보완
+        sheetData = data.sort((a, b) => {
+            // 날짜 데이터가 없거나 형식이 이상할 경우를 대비해 0으로 처리
+            const dateA = a.date ? new Date(a.date).getTime() : 0;
+            const dateB = b.date ? new Date(b.date).getTime() : 0;
+            return dateB - dateA; // 큰 값(최신 날짜)이 앞으로 오도록 정렬
+        });
+        
+        // 정렬 확인용 로그 (콘솔에서 확인 가능)
+        console.log("정렬된 데이터:", sheetData);
+
+        sheetData.forEach((item) => {
+            geocoder.addressSearch(item.address, (result, status) => {
+                if (status === kakao.maps.services.Status.OK) {
+                    const marker = new kakao.maps.Marker({ position: new kakao.maps.LatLng(result[0].y, result[0].x) });
+                    kakao.maps.event.addListener(marker, 'mouseover', () => displayInfowindow(marker, item));
+                    clusterer.addMarker(marker);
+                }
+            });
+        });
+        document.getElementById('progressBar').innerText = "데이터 동기화 완료";
+    } catch (e) { 
+        console.error("데이터 로딩 에러:", e);
+        document.getElementById('progressBar').innerText = "데이터 로딩 실패"; 
+    }
+}
 
         function displayInfowindow(marker, item) {
             const renderRow = (label, val) => (val && val !== '-' && val.toString().trim() !== '') ? `<div class="card-row"><b>${label}</b> <span>${val}</span></div>` : '';
