@@ -191,21 +191,28 @@
         }
 
         function toggleRecent() {
-            const list = document.getElementById('recentList');
-            if (list.style.display === 'block') {
-                list.style.display = 'none';
-            } else {
-                const sorted = [...sheetData].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 6);
-                list.innerHTML = sorted.map(i => `
-                    <li onclick="handleListClick(${sheetData.indexOf(i)}, 'recentList')">
-                        <strong>${i.site}</strong>
-                        <small style="color:#999">${i.date || '날짜정보없음'}</small>
-                    </li>
-                `).join('');
-                list.style.display = 'block';
-                document.getElementById('resultList').style.display = 'none';
-            }
-        }
+    const list = document.getElementById('recentList');
+    if (list.style.display === 'block') {
+        list.style.display = 'none';
+    } else {
+        // 데이터 정렬 시 'date' 헤더명이 정확한지 시트와 대조하세요
+        const sorted = [...sheetData]
+            .filter(i => i.date) 
+            .map(i => ({ ...i, timeValue: new Date(i.date).getTime() }))
+            .sort((a, b) => b.timeValue - a.timeValue)
+            .slice(0, 5);
+
+        list.innerHTML = sorted.map(i => `
+            <li onclick="handleListClick(${sheetData.indexOf(i)}, 'recentList')">
+                <strong>${i.site}</strong>
+                <small style="color:#999">수정일: ${new Date(i.date).toLocaleDateString()}</small>
+            </li>
+        `).join('');
+        
+        list.style.display = 'block';
+        document.getElementById('resultList').style.display = 'none';
+    }
+}
 
         document.getElementById('searchKeyword').addEventListener('keyup', function() {
             const val = this.value.toLowerCase().trim();
@@ -233,17 +240,18 @@
         });
 
         function handleListClick(index, listId) {
-            const item = sheetData[index];
-            document.getElementById(listId).style.display = 'none';
-            if(listId === 'resultList') document.getElementById('searchKeyword').value = item.site;
-            geocoder.addressSearch(item.address, (res, status) => {
-                if(status === 'OK') {
-                    const pos = new kakao.maps.LatLng(res[0].y, res[0].x);
-                    map.setCenter(pos); map.setLevel(3);
-                    renderOverlay(pos, item);
-                }
-            });
+    const item = sheetData[index];
+    document.getElementById(listId).style.display = 'none';
+    
+    geocoder.addressSearch(item.address, (res, status) => {
+        if(status === 'OK') {
+            const pos = new kakao.maps.LatLng(res[0].y, res[0].x);
+            map.setCenter(pos);
+            map.setLevel(3);
+            renderOverlay(pos, item);
         }
+    });
+}
     </script>
 </body>
 </html>
