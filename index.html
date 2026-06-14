@@ -89,22 +89,22 @@
             } catch (e) { document.getElementById('progressBar').innerText = "데이터 로딩 실패"; }
         }
 
-        // 길찾기 실행 함수 (범용으로 분리)
-        function openMapRoute(siteName, lat, lng) {
+        // 길찾기 실행 함수 (주소 기반 도착지 설정)
+        function openMapRoute(siteName, address, lat, lng) {
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(
                     (pos) => {
-                        const url = `https://map.kakao.com/?sName=현위치&eName=${encodeURIComponent(siteName)}&ep=${lat},${lng}&sp=${pos.coords.latitude},${pos.coords.longitude}`;
+                        const url = `https://map.kakao.com/?sName=현위치&eName=${encodeURIComponent(address)}&ep=${lat},${lng}&sp=${pos.coords.latitude},${pos.coords.longitude}`;
                         window.open(url, '_blank');
                     },
                     () => {
                         alert("위치 접근이 거부되었습니다.");
-                        window.open(`https://map.kakao.com/link/to/${encodeURIComponent(siteName)},${lat},${lng}`, '_blank');
+                        window.open(`https://map.kakao.com/?eName=${encodeURIComponent(address)}&ep=${lat},${lng}`, '_blank');
                     },
                     { enableHighAccuracy: true, timeout: 5000 }
                 );
             } else {
-                window.open(`https://map.kakao.com/link/to/${encodeURIComponent(siteName)},${lat},${lng}`, '_blank');
+                window.open(`https://map.kakao.com/?eName=${encodeURIComponent(address)}&ep=${lat},${lng}`, '_blank');
             }
         }
 
@@ -120,7 +120,7 @@
                     
                     const renderRow = (label, val) => (val && val !== '-') ? `<div class="card-row"><b>${label}</b> <span>${val}</span></div>` : '';
                     
-                    // 길찾기 버튼에 좌표를 직접 넘겨줌
+                    // 길찾기 버튼에 주소값(address)을 전달하도록 수정
                     const infoContent = `
                         <div class="info-card">
                             <div class="card-title">${item.site}</div>
@@ -132,7 +132,7 @@
                             ${renderRow('주차', item.park)}
                             <div class="card-btns">
                                 <a href="tel:${item.phone || '#'}" class="btn-tel">📞 전화</a>
-                                <a onclick="openMapRoute('${item.site.replace(/'/g, "\\'")}', ${res[0].y}, ${res[0].x})" class="btn-map">📍 길찾기</a>
+                                <a onclick="openMapRoute('${item.site.replace(/'/g, "\\'")}', '${item.address.replace(/'/g, "\\'")}', ${res[0].y}, ${res[0].x})" class="btn-map">📍 길찾기</a>
                             </div>
                         </div>`;
                     
