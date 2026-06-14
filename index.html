@@ -57,57 +57,62 @@
         });
 
         async function loadData() {
-    try {
-        const res = await fetch('https://script.google.com/macros/s/AKfycbwQNp3OGUMj9WN2h8A8wJoyoGKysrdRm1nFHzjeYqTpfPAhraX2hT803CBgN58Xr9B8gQ/exec');
-        sheetData = await res.json();
-        
-        sheetData.forEach((item, index) => {
-            geocoder.addressSearch(item.address, (result, status) => {
+            try {
+                const res = await fetch('https://script.google.com/macros/s/AKfycbwQNp3OGUMj9WN2h8A8wJoyoGKysrdRm1nFHzjeYqTpfPAhraX2hT803CBgN58Xr9B8gQ/exec');
+                sheetData = await res.json();
+                sheetData.forEach((item) => {
+                    geocoder.addressSearch(item.address, (result, status) => {
+                        if (status === kakao.maps.services.Status.OK) {
+                            const marker = new kakao.maps.Marker({ position: new kakao.maps.LatLng(result[0].y, result[0].x) });
+                            
+                            kakao.maps.event.addListener(marker, 'mouseover', () => displayInfowindow(marker, item));
+                            clusterer.addMarker(marker);
+                        }
+                    });
+                });
+                document.getElementById('progressBar').innerText = "데이터 동기화 완료";
+            } catch (e) { document.getElementById('progressBar').innerText = "데이터 로딩 실패"; }
+        }
+
+        function displayInfowindow(marker, item) {
+            const renderRow = (label, val) => (val && val !== '-' && val.toString().trim() !== '') ? `<div class="card-row"><b>${label}</b> <span>${val}</span></div>` : '';
+            const content = `<div class="info-card" onmouseleave="infowindow.close()">
+                                <div class="card-title">${item.site}</div>
+                                ${renderRow('주소', item.address)}${renderRow('기번', item.MN)}${renderRow('담당자', item.TSE)}${renderRow('경비사', item.sec)}${renderRow('연락처', item.phone)}${renderRow('기타', item.etc)}${renderRow('주차', item.park)}
+                                <div class="card-btns">
+                                    <a href="tel:${item.phone || '#'}" class="btn-tel">📞 전화</a>
+                                    <a onclick="openMapRoute('${item.address.replace(/'/g, "\\'")}')" class="btn-map">📍 길찾기</a>
+                                </div>
+                            </div>`;
+            infowindow.setContent(content);
+            infowindow.open(map, marker);
+        }
+
+        document.getElementById('searchKeyword').addEventListener('input', function() {
+            const val = this.value.toLowerCase();
+            const list = document.getElementById('resultList');
+            if (val.length < 1) { list.style.display = 'none'; return; }
+            const filtered = sheetData.filter(i => (i.site || '').toLowerCase().includes(val));
+            list.innerHTML = filtered.map(i => {
+                const info = [i.MN, i.TSE, i.BIN2].filter(v => v && v !== '-').join(' / ');
+                return `<li onclick="findSite(${sheetData.indexOf(i)})"><div style="font-weight:700; font-size:14px;">${i.site}</div><div style="font-size:12px; color:#555; margin-top:3px;">${info}</div></li>`;
+            }).join('');
+            list.style.display = 'block';
+        });
+
+        function findSite(index) {
+            const item = sheetData[index];
+            geocoder.addressSearch(item.address, (res, status) => {
                 if (status === kakao.maps.services.Status.OK) {
-                    const position = new kakao.maps.LatLng(result[0].y, result[0].x);
-                    const marker = new kakao.maps.Marker({ position: position });
-
-                    // 마우스 올렸을 때
-                    kakao.maps.event.addListener(marker, 'mouseover', () => {
-                        displayInfowindow(marker, item);
-                    });
-
-                    // 마커에서 마우스가 벗어날 때 (인포윈도우 닫기)
-                    kakao.maps.event.addListener(marker, 'mouseout', () => {
-                        // 닫기 로직: 마우스가 infowindow 영역 밖으로 나갔을 때만 닫히도록 
-                        // 아래의 인포윈도우 생성 함수와 연동
-                    });
-
-                    clusterer.addMarker(marker);
+                    const coords = new kakao.maps.LatLng(res[0].y, res[0].x);
+                    map.setCenter(coords); map.setLevel(3);
+                    const marker = new kakao.maps.Marker({ map: map, position: coords });
+                    displayInfowindow(marker, item);
+                    document.getElementById('resultList').style.display = 'none';
+                    document.getElementById('searchKeyword').value = "";
                 }
             });
-        });
-        document.getElementById('progressBar').innerText = "데이터 동기화 완료";
-    } catch (e) { document.getElementById('progressBar').innerText = "데이터 로딩 실패"; }
-}
-
-        // 검색 결과 스타일 복구
-     document.getElementById('searchKeyword').addEventListener('input', function() {
-    const val = this.value.toLowerCase();
-    const list = document.getElementById('resultList');
-    if (val.length < 1) { list.style.display = 'none'; return; }
-    
-    const filtered = sheetData.filter(i => (i.site || '').toLowerCase().includes(val));
-    
-    list.innerHTML = filtered.map(i => {
-        // 기번(MN), 담당자(TSE), 코너(BIN2) 정보를 안전하게 결합
-        const info = [i.MN, i.TSE, i.BIN2].filter(v => v && v !== '-').join(' / ');
-        
-        return `
-            <li onclick="findSite(${sheetData.indexOf(i)})">
-                <div style="font-weight:700; font-size:14px;">${i.site}</div>
-                <div style="font-size:12px; color:#555; margin-top:3px;">${info}</div>
-            </li>
-        `;
-    }).join('');
-    
-    list.style.display = 'block';
-});
+        }
 
         function openMapRoute(address) {
             const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
@@ -123,32 +128,6 @@
             }
         }
 
-        function findSite(index) {
-            const item = sheetData[index];
-            geocoder.addressSearch(item.address, (res, status) => {
-                if (status === kakao.maps.services.Status.OK) {
-                    const coords = new kakao.maps.LatLng(res[0].y, res[0].x);
-                    map.setCenter(coords); map.setLevel(3);
-                    infowindow.close();
-                    const marker = new kakao.maps.Marker({ map: map, position: coords });
-                    const renderRow = (label, val) => (val && val !== '-' && val.toString().trim() !== '') ? `<div class="card-row"><b>${label}</b> <span>${val}</span></div>` : '';
-                    
-                    const infoContent = `<div class="info-card">
-                        <div class="card-title">${item.site}</div>
-                        ${renderRow('주소', item.address)}${renderRow('기번', item.MN)}${renderRow('담당자', item.TSE)}${renderRow('경비사', item.sec)}${renderRow('연락처', item.phone)}${renderRow('기타', item.etc)}${renderRow('주차', item.park)}
-                        <div class="card-btns">
-                            <a href="tel:${item.phone || '#'}" class="btn-tel">📞 전화</a>
-                            <a onclick="openMapRoute('${item.address.replace(/'/g, "\\'")}')" class="btn-map">📍 길찾기</a>
-                        </div>
-                    </div>`;
-                    infowindow.setContent(infoContent);
-                    infowindow.open(map, marker);
-                    document.getElementById('resultList').style.display = 'none';
-                    document.getElementById('searchKeyword').value = ""; // 검색어 초기화
-                }
-            });
-        }
-
         function toggleRecent() {
             const list = document.getElementById('recentList');
             list.style.display = (list.style.display === 'block') ? 'none' : 'block';
@@ -156,21 +135,6 @@
         }
         function moveToMyLocation() { navigator.geolocation.getCurrentPosition(pos => { map.setCenter(new kakao.maps.LatLng(pos.coords.latitude, pos.coords.longitude)); }); }
         function resetMap() { map.setCenter(new kakao.maps.LatLng(35.1517, 129.0305)); map.setLevel(7); }
-        function displayInfowindow(marker, item) {
-    const renderRow = (label, val) => (val && val !== '-' && val.toString().trim() !== '') ? `<div class="card-row"><b>${label}</b> <span>${val}</span></div>` : '';
-    
-    const content = `<div class="info-card" onmouseleave="infowindow.close()">
-                        <div class="card-title">${item.site}</div>
-                        ${renderRow('주소', item.address)}${renderRow('기번', item.MN)}${renderRow('담당자', item.TSE)}${renderRow('경비사', item.sec)}${renderRow('연락처', item.phone)}${renderRow('기타', item.etc)}${renderRow('주차', item.park)}
-                        <div class="card-btns">
-                            <a href="tel:${item.phone || '#'}" class="btn-tel">📞 전화</a>
-                            <a onclick="openMapRoute('${item.address.replace(/'/g, "\\'")}')" class="btn-map">📍 길찾기</a>
-                        </div>
-                    </div>`;
-    
-    infowindow.setContent(content);
-    infowindow.open(map, marker);
-}
     </script>
 </body>
 </html>
