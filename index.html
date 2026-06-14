@@ -3,36 +3,47 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>사이트 통합 지도 앱</title>
+    <title>사이트 통합 지도 앱 - 최종 복구본</title>
     <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=7f3387ab66fb524dbefeb77ae9f85e90&libraries=services,clusterer&autoload=false"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; font-family: 'Pretendard', sans-serif; background: #f4f7fa; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; font-family: 'Pretendard', sans-serif; background: #f4f7fa; }
         #app-container { display: flex; width: 100vw; height: 100vh; }
-        #sidebar { width: 450px; min-width: 450px; height: 100vh; background: #ffffff; border-right: 1px solid #e1e4e8; padding: 25px; box-sizing: border-box; overflow-y: auto; }
-        #map { flex-grow: 1; height: 100vh; }
-        .btn-common { width: 100%; padding: 14px; margin-bottom: 10px; border-radius: 12px; font-weight: 700; cursor: pointer; border: none; text-align: center; color: white; display: block; }
-        #progressBar { width: 0%; height: 6px; background: #0070c0; border-radius: 3px; transition: width 0.3s; }
-        .data-list { list-style: none; padding: 0; margin: 10px 0; background: #f8fafc; border: 1px solid #eee; border-radius: 12px; display: none; }
-        .data-list li { padding: 15px; border-bottom: 1px solid #eee; cursor: pointer; font-size: 13px; }
-        .premium-card { background: white; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); width: 280px; overflow: hidden; border: 1px solid #ccc; }
-        .premium-header { background: #0070c0; padding: 15px; color: white; font-weight: 800; }
-        .premium-body { padding: 15px; font-size: 13px; }
+        #sidebar { width: 450px; min-width: 450px; height: 100vh; background: #ffffff; border-right: 1px solid #e1e4e8; z-index: 10; display: flex; flex-direction: column; box-shadow: 5px 0 15px rgba(0,0,0,0.05); }
+        #sidebarContent { flex: 1; padding: 25px; overflow-y: auto; }
+        #sidebarFooter { padding: 15px; border-top: 1px solid #eee; font-size: 11px; color: #999; text-align: center; background: #fcfcfc; line-height: 1.6; }
+        #map { flex-grow: 1; height: 100vh; position: relative; }
+        .btn-common { width: 100%; display: block; margin: 0 auto 10px auto; padding: 14px 0; text-align: center; border-radius: 12px; font-weight: 700; font-size: 14px; cursor: pointer; border: none; transition: all 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        #searchKeyword { width: 100%; box-sizing: border-box; padding: 15px; border: 2px solid #edf0f5; border-radius: 12px; font-size: 14px; outline: none; background: #f8fafc; }
+        .data-list { list-style: none; padding: 0; margin: 10px 0; display: none; background: #f8fafc; border-radius: 12px; overflow: hidden; border: 1px solid #eee; }
+        .data-list li { padding: 15px; border-bottom: 1px solid #eee; font-size: 13px; cursor: pointer; }
+        /* 프리미엄 카드 디자인 복구 */
+        .premium-card { background: white; border-radius: 20px; box-shadow: 0 15px 45px rgba(0,0,0,0.3); width: 280px; overflow: hidden; border: 1px solid rgba(0,0,0,0.1); }
+        .premium-header { background: linear-gradient(135deg, #005088 0%, #0070c0 100%); padding: 20px; color: white; }
+        .premium-body { padding: 20px; font-size: 14px; }
+        .premium-footer { display: flex; border-top: 1px solid #f1f5f9; background: #fafbfc; }
+        .footer-btn { flex: 1; padding: 15px; text-align: center; font-weight: 700; cursor: pointer; text-decoration: none; color: #0070c0; }
     </style>
 </head>
 <body>
     <div id="app-container">
         <div id="sidebar">
-            <div style="margin-bottom: 20px;">
-                <div style="font-size:12px; font-weight:bold; margin-bottom:5px;">데이터 동기화: <span id="percentText">0%</span></div>
-                <div style="width: 100%; height: 6px; background: #eee; border-radius: 3px;"><div id="progressBar"></div></div>
+            <div id="sidebarContent">
+                <div id="progressBarWrapper" style="margin-bottom:20px;">
+                    <div style="font-size:12px; font-weight:bold; color:#0070c0;">데이터 동기화: <span id="percentText">0%</span></div>
+                    <div style="width: 100%; height: 6px; background: #eee; border-radius: 3px;"><div id="progressBar" style="width:0%; height:6px; background:#0070c0; border-radius:3px;"></div></div>
+                </div>
+                <div class="btn-common" style="background:#ff9f43; color:white;" onclick="moveToMyLocation()">📍 현재 위치로 이동</div>
+                <div class="btn-common" style="background:#667eea; color:white;" onclick="resetMap()">지도 위치 초기화 🔄</div>
+                <div class="btn-common" style="background:#0070c0; color:white;" onclick="toggleList('recentList')">최근 수정된 사이트 LIST ▼</div>
+                <ul id="recentList" class="data-list"></ul>
+                <div style="margin-top:30px;">
+                    <h3 style="font-size: 18px; border-bottom: 2px solid #0070c0; padding-bottom: 10px;">사이트 검색 ▼</h3>
+                    <input type="text" id="searchKeyword" placeholder="사이트명/코너명/기번 검색...">
+                    <ul id="resultList" class="data-list"></ul>
+                </div>
             </div>
-            <div class="btn-common" style="background-color: #ff9f43;" onclick="moveToMyLocation()">📍 현재 위치로 이동</div>
-            <div class="btn-common" style="background-color: #667eea;" onclick="resetMap()">지도 위치 초기화 🔄</div>
-            <div class="btn-common" style="background-color: #0070c0;" onclick="toggleRecent()">최근 수정된 사이트 LIST ▼</div>
-            <ul id="recentList" class="data-list"></ul>
-            <input type="text" id="searchKeyword" placeholder="사이트명/코너명/기번 검색..." style="width:100%; padding:15px; margin-top:20px; box-sizing:border-box; border-radius:12px; border:1px solid #ccc;">
-            <ul id="resultList" class="data-list"></ul>
+            <div id="sidebarFooter">🛠️ 제작: Sangmun Park<br>💡 아이디어 제공: Minwoo kim</div>
         </div>
         <div id="map"></div>
     </div>
@@ -51,25 +62,21 @@
 
         async function loadSheetData() {
             try {
-                const response = await fetch('https://script.google.com/macros/s/AKfycbzdpzbv7uXGZ4SqCh5YtSn_0Nfv6aY6iYHHZE1KJi8spiI7Ts_-u0-ZS3pN01RSQBYRQA/exec');
-                sheetData = await response.json();
+                const res = await fetch('https://script.google.com/macros/s/AKfycbzdpzbv7uXGZ4SqCh5YtSn_0Nfv6aY6iYHHZE1KJi8spiI7Ts_-u0-ZS3pN01RSQBYRQA/exec');
+                sheetData = await res.json();
                 sheetData.forEach(item => {
                     const cached = localStorage.getItem(item.address);
-                    if (cached) {
-                        addMarker(JSON.parse(cached), item);
-                        updateProgress();
-                    } else {
-                        geocoder.addressSearch(item.address, (result, status) => {
-                            if (status === 'OK') {
-                                const pos = { lat: result[0].y, lng: result[0].x };
-                                localStorage.setItem(item.address, JSON.stringify(pos));
-                                addMarker(pos, item);
-                            }
-                            updateProgress();
-                        });
-                    }
+                    if (cached) addMarker(JSON.parse(cached), item);
+                    else geocoder.addressSearch(item.address, (res, status) => {
+                        if (status === 'OK') {
+                            const pos = { lat: res[0].y, lng: res[0].x };
+                            localStorage.setItem(item.address, JSON.stringify(pos));
+                            addMarker(pos, item);
+                        }
+                    });
+                    updateProgress();
                 });
-            } catch (e) { console.error("데이터 로드 실패:", e); }
+            } catch (e) { console.error(e); }
         }
 
         function updateProgress() {
@@ -82,14 +89,13 @@
         function addMarker(pos, item) {
             const marker = new kakao.maps.Marker({ position: new kakao.maps.LatLng(pos.lat, pos.lng) });
             const infowindow = new kakao.maps.InfoWindow({ content: `<div style="padding:5px; font-size:12px;">${item.site}</div>` });
-
             kakao.maps.event.addListener(marker, 'mouseover', () => infowindow.open(map, marker));
             kakao.maps.event.addListener(marker, 'mouseout', () => infowindow.close());
             kakao.maps.event.addListener(marker, 'click', () => {
                 if (customOverlay) customOverlay.setMap(null);
                 customOverlay = new kakao.maps.CustomOverlay({
                     position: marker.getPosition(),
-                    content: `<div class="premium-card"><div class="premium-header">${item.site}</div><div class="premium-body">주소: ${item.address}</div></div>`,
+                    content: `<div class="premium-card"><div class="premium-header">${item.site}</div><div class="premium-body">주소: ${item.address || '-'}<br>경비: ${item.sec || '-'}<br>연락: ${item.phone || '-'}</div><div class="premium-footer"><a href="tel:${item.phone}" class="footer-btn">전화걸기</a></div></div>`,
                     yAnchor: 1.2
                 });
                 customOverlay.setMap(map);
@@ -98,9 +104,18 @@
             clusterer.addMarker(marker);
         }
 
+        // 검색 및 리스트 기능
+        document.getElementById('searchKeyword').addEventListener('keyup', function() {
+            const val = this.value.toLowerCase();
+            const list = document.getElementById('resultList');
+            const filtered = sheetData.filter(i => (i.site||'').toLowerCase().includes(val));
+            list.innerHTML = filtered.map(i => `<li onclick="alert('${i.site} 선택됨')">${i.site}</li>`).join('');
+            list.style.display = val ? 'block' : 'none';
+        });
+
+        function toggleList(id) { const l = document.getElementById(id); l.style.display = l.style.display === 'block' ? 'none' : 'block'; }
         function resetMap() { map.setCenter(new kakao.maps.LatLng(35.1517, 129.0305)); map.setLevel(7); }
-        function toggleRecent() { const list = document.getElementById('recentList'); list.style.display = list.style.display === 'block' ? 'none' : 'block'; }
-        function moveToMyLocation() { if(navigator.geolocation) navigator.geolocation.getCurrentPosition(pos => map.setCenter(new kakao.maps.LatLng(pos.coords.latitude, pos.coords.longitude))); }
+        function moveToMyLocation() { if(navigator.geolocation) navigator.geolocation.getCurrentPosition(p => map.setCenter(new kakao.maps.LatLng(p.coords.latitude, p.coords.longitude))); }
     </script>
 </body>
 </html>
