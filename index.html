@@ -59,19 +59,30 @@
         });
 
         async function loadData() {
-            try {
-                const res = await fetch('https://corsproxy.io/?' + encodeURIComponent('https://script.google.com/macros/s/AKfycbzdpzbv7uXGZ4SqCh5YtSn_0Nfv6aY6iYHHZE1KJi8spiI7Ts_-u0-ZS3pN01RSQBYRQA/exec'));
-                sheetData = await res.json();
-                sheetData.forEach(item => {
-                    geocoder.addressSearch(item.address, (result, status) => {
-                        if (status === 'OK') {
-                            const marker = new kakao.maps.Marker({ position: new kakao.maps.LatLng(result[0].y, result[0].x) });
-                            clusterer.addMarker(marker);
-                        }
-                    });
+    try {
+        const res = await fetch('https://corsproxy.io/?' + encodeURIComponent('https://script.google.com/macros/s/AKfycbzdpzbv7uXGZ4SqCh5YtSn_0Nfv6aY6iYHHZE1KJi8spiI7Ts_-u0-ZS3pN01RSQBYRQA/exec'));
+        sheetData = await res.json();
+
+        // 모든 마커를 한꺼번에 생성하지 않고, 순차적으로 생성하여 서버 부하 방지
+        for (const item of sheetData) {
+            await new Promise((resolve) => {
+                geocoder.addressSearch(item.address, (result, status) => {
+                    if (status === 'OK') {
+                        const marker = new kakao.maps.Marker({ 
+                            position: new kakao.maps.LatLng(result[0].y, result[0].x) 
+                        });
+                        clusterer.addMarker(marker);
+                    }
+                    // 200ms 간격으로 호출하여 400 에러(과부하) 방지
+                    setTimeout(resolve, 200); 
                 });
-            } catch (e) { console.error(e); }
+            });
         }
+        document.getElementById('progressBar').innerText = "데이터 동기화 완료";
+    } catch (e) { 
+        console.error("데이터 로딩 실패:", e); 
+    }
+}
 document.getElementById('searchKeyword').addEventListener('input', function() {
         const val = this.value.toLowerCase();
         const list = document.getElementById('resultList');
