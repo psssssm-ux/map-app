@@ -91,22 +91,32 @@
 
         // 길찾기 함수 (모바일 앱 우선 실행 로직)
         function openMapRoute(address) {
-            const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-            const encodedAddress = encodeURIComponent(address);
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    const encodedAddress = encodeURIComponent(address);
+    
+    if (isMobile) {
+        // 1. 현재 위치를 가져와 앱 실행
+        navigator.geolocation.getCurrentPosition((pos) => {
+            const lat = pos.coords.latitude;
+            const lng = pos.coords.longitude;
             
-            if (isMobile) {
-                // 카카오맵 앱 실행 (도착지 주소를 eName으로 전달)
-                window.location.href = `kakaomap://search?q=${encodedAddress}`;
-                
-                // 앱이 설치되어 있지 않을 경우를 대비해 1초 후 웹으로 이동
-                setTimeout(() => {
-                    window.location.href = `https://map.kakao.com/?eName=${encodedAddress}`;
-                }, 1000);
-            } else {
-                // PC는 웹으로 바로 이동
-                window.open(`https://map.kakao.com/?eName=${encodedAddress}`, '_blank');
-            }
-        }
+            // 카카오맵 앱 스킴: 출발지(sp)와 도착지(ep)를 주소로 전달
+            // ep(목적지)에는 주소를 넣으면 카카오맵 앱이 내부적으로 검색하여 길찾기 수행
+            window.location.href = `kakaomap://route?sp=${lat},${lng}&ep=${encodedAddress}&by=CAR`;
+            
+            // 앱이 없을 경우를 대비해 1.5초 후 웹으로 이동
+            setTimeout(() => {
+                window.location.href = `https://map.kakao.com/?sName=현위치&eName=${encodedAddress}`;
+            }, 1500);
+        }, () => {
+            // 위치 권한 거부 시 주소만 검색
+            window.location.href = `kakaomap://search?q=${encodedAddress}`;
+        });
+    } else {
+        // PC는 웹으로 이동
+        window.open(`https://map.kakao.com/?eName=${encodedAddress}`, '_blank');
+    }
+}
 
         function findSite(index) {
             const item = sheetData[index];
