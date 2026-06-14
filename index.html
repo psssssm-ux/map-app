@@ -14,7 +14,7 @@
         #footer-area { padding: 20px; border-top: 1px solid #eee; background: #fafafa; font-size: 12px; color: #888; text-align: center; line-height: 1.6; }
         #map { flex: 1; height: 100%; position: relative; z-index: 1; }
         .btn-common { width: 100%; padding: 12px; margin-bottom: 8px; border-radius: 12px; font-weight: 700; font-size: 14px; cursor: pointer; border: none; color: #fff; text-align: center; transition: background 0.2s; }
-        .data-list { list-style: none; padding: 0; margin: 10px 0; background: #fff; border: 1px solid #e1e4e8; border-radius: 12px; display: none; overflow-y: auto; max-height: 200px; }
+        .data-list { list-style: none; padding: 0; margin: 10px 0; background: #fff; border: 1px solid #e1e4e8; border-radius: 12px; display: none; overflow-y: auto; max-height: 300px; }
         .data-list li { padding: 14px; border-bottom: 1px solid #f0f0f0; cursor: pointer; font-size: 14px; }
         .info-card { width: 280px; background: #ffffff; border-radius: 20px; padding: 22px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); border: 1px solid #f0f0f0; }
         .card-title { font-size: 18px; font-weight: 800; color: #1a1a1a; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 2px solid #f8f9fa; }
@@ -72,15 +72,18 @@
             } catch (e) { document.getElementById('progressBar').innerText = "데이터 로딩 실패"; }
         }
 
-        // 검색 기능 복구
+        // 검색 결과 스타일 복구
         document.getElementById('searchKeyword').addEventListener('input', function() {
             const val = this.value.toLowerCase();
             const list = document.getElementById('resultList');
             if (val.length < 1) { list.style.display = 'none'; return; }
             
             const filtered = sheetData.filter(i => (i.site || '').toLowerCase().includes(val));
-            list.innerHTML = filtered.map((i, index) => 
-                `<li onclick="findSite(${sheetData.indexOf(i)})">${i.site} <span style="font-size:11px; color:#888;">(${i.address})</span></li>`
+            list.innerHTML = filtered.map(i => 
+                `<li onclick="findSite(${sheetData.indexOf(i)})">
+                    <div style="font-weight:700;">${i.site}</div>
+                    <div style="font-size:12px; color:#888;">주소: ${i.address}</div>
+                </li>`
             ).join('');
             list.style.display = 'block';
         });
@@ -120,6 +123,7 @@
                     infowindow.setContent(infoContent);
                     infowindow.open(map, marker);
                     document.getElementById('resultList').style.display = 'none';
+                    document.getElementById('searchKeyword').value = ""; // 검색어 초기화
                 }
             });
         }
