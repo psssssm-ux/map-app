@@ -131,6 +131,22 @@
     
     list.style.display = filtered.length > 0 ? 'block' : 'none';
 });
+        function findSiteByData(address) {
+    const item = sheetData.find(i => i.address === address);
+    if (!item) return;
+
+    geocoder.addressSearch(item.address, (res, status) => {
+        if (status === kakao.maps.services.Status.OK) {
+            const coords = new kakao.maps.LatLng(res[0].y, res[0].x);
+            map.setCenter(coords); 
+            map.setLevel(3);
+            const marker = new kakao.maps.Marker({ map: map, position: coords });
+            displayInfowindow(marker, item);
+            document.getElementById('resultList').style.display = 'none';
+            document.getElementById('searchKeyword').value = "";
+        }
+    });
+}
         function findSite(index) {
             const item = sheetData[index];
             geocoder.addressSearch(item.address, (res, status) => {
