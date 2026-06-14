@@ -288,40 +288,32 @@
 
         async function loadSheetData() {
     try {
-        const targetUrl = 'https://script.google.com/macros/s/AKfycbzdpzbv7uXGZ4SqCh5YtSn_0Nfv6aY6iYHHZE1KJi8spiI7Ts_-u0-ZS3pN01RSQBYRQA/exec';
+        const targetUrl = 'https://script.google.com/macros/s/AKfycbzdpzbv7uXGZ4SqCh5YtSn_0Nfv6aY6iYHHZE1KJi8spiI7Ts_-u0-ZS3pN01RSQBYRQA/exec'; 
         const res = await fetch(targetUrl);
         sheetData = await res.json();
-        
-        document.getElementById('totalCount').textContent = sheetData.length + '개';
 
         sheetData.forEach((item, index) => {
-            if (!item.address) return; // 주소 없으면 건너뜀
-
-            // 1. localStorage에서 좌표 불러오기
-            const cachedPos = localStorage.getItem(item.address);
+            const cached = localStorage.getItem(item.address);
             
-            if (cachedPos) {
-                addMarker(JSON.parse(cachedPos), item);
-                loadedCount++;
-                updateProgress();
+            if (cached) {
+                // 캐시된 좌표가 있으면 즉시 생성 (대기시간 없음)
+                addMarker(JSON.parse(cached), item);
             } else {
-                // 2. 캐시 없으면 지오코딩 (0.3초 간격으로 제한하여 429 에러 방지)
-                setTimeout(() => {
-                    geocoder.addressSearch(item.address, (result, status) => {
-                        if (status === kakao.maps.services.Status.OK) {
-                            const pos = { lat: result[0].y, lng: result[0].x };
-                            localStorage.setItem(item.address, JSON.stringify(pos));
-                            addMarker(pos, item);
-                            loadedCount++;
-                            updateProgress();
-                        }
-                    });
-                }, index * 300); 
+                // 캐시가 없으면 검색
+                // 주의: 한 번에 모든 데이터를 요청하지 말고, 
+                // 사용자가 보고 있는 영역(Bounds)에 들어오는 마커만 
+                // 불러오도록 'idle' 이벤트 리스너를 사용하는 것이 정석입니다.
+                geocoder.addressSearch(item.address, (res, status) => {
+                    if (status === 'OK') {
+                        const pos = { lat: res[0].y, lng: res[0].x };
+                        localStorage.setItem(item.address, JSON.stringify(pos));
+                        addMarker(pos, item);
+                    }
+                });
             }
         });
-    } catch (e) {
-        console.error("데이터 로드 실패:", e);
-    }
+    } catch (e) { console.error(e); }
+}
 }
         function updateProgress() {
 
