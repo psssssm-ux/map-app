@@ -9,7 +9,6 @@
         body, html { margin: 0; padding: 0; width: 100%; height: 100svh; font-family: 'Pretendard', sans-serif; overflow: hidden; background: #f4f7fa; }
         #app-container { display: flex; width: 100vw; height: 100%; flex-direction: row; }
         
-        /* 사이드바 스타일 (PC/모바일 공통) */
         #sidebar { width: 400px; min-width: 400px; height: 100%; background: #ffffff; border-right: 1px solid #e1e4e8; z-index: 10; display: flex; flex-direction: column; padding: 20px; box-sizing: border-box; overflow-y: auto; }
         #map { flex: 1; height: 100%; position: relative; z-index: 1; }
 
@@ -17,7 +16,7 @@
         .data-list { list-style: none; padding: 0; margin: 10px 0; background: #fff; border: 1px solid #ccc; border-radius: 8px; display: none; overflow-y: auto; max-height: 250px; }
         .data-list li { padding: 12px; border-bottom: 1px solid #eee; cursor: pointer; font-size: 14px; }
 
-        /* 모바일 전용: 결과 팝업 */
+        /* 모바일 전용 팝업 */
         #resultPopup { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #fff; z-index: 9999; overflow-y: auto; padding: 20px; box-sizing: border-box; }
 
         @media (max-width: 768px) {
@@ -68,18 +67,19 @@
             const popupContent = document.getElementById('popupContent');
             const filtered = sheetData.filter(i => (i.site || '').toLowerCase().includes(val));
             
-            if (val.length === 0) {
-                list.style.display = 'none';
-                popup.style.display = 'none';
-                return;
-            }
+            if (val.length === 0) { list.style.display = 'none'; popup.style.display = 'none'; return; }
 
-            // 모바일이면 팝업, PC면 원래대로 사이드바 리스트
+            const listHTML = filtered.map(i => `
+                <li onclick="findSite('${i.site}', ${window.innerWidth <= 768})">
+                    <strong>${i.site}</strong><br>
+                    <span style="font-size:11px; color:#666;">코너: ${i.BIN2 || '-'} / 기번: ${i.MN || '-'}</span>
+                </li>`).join('');
+
             if (window.innerWidth <= 768) {
-                popupContent.innerHTML = filtered.map(i => `<div style="padding:15px; border-bottom:1px solid #eee; font-size:16px;" onclick="findSite('${i.site}', true)">${i.site}</div>`).join('');
+                popupContent.innerHTML = listHTML;
                 popup.style.display = 'block';
             } else {
-                list.innerHTML = filtered.map(i => `<li onclick="findSite('${i.site}', false)"><strong>${i.site}</strong></li>`).join('');
+                list.innerHTML = listHTML;
                 list.style.display = 'block';
             }
         });
@@ -90,7 +90,6 @@
                 geocoder.addressSearch(item.address, (res) => {
                     map.setCenter(new kakao.maps.LatLng(res[0].y, res[0].x));
                     map.setLevel(4);
-                    // 모바일일 때만 팝업 닫기
                     if(isMobile) document.getElementById('resultPopup').style.display = 'none';
                     else document.getElementById('resultList').style.display = 'none';
                 });
