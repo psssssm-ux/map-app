@@ -10,7 +10,6 @@
         body, html { margin: 0; padding: 0; width: 100%; height: 100svh; font-family: 'Pretendard', -apple-system, sans-serif; overflow: hidden; background: #f4f7fa; }
         #app-container { display: flex; width: 100vw; height: 100%; flex-direction: row; }
         
-        /* 사이드바 구성 */
         #sidebar { 
             width: 400px; min-width: 400px; height: 100%; background: #ffffff; 
             border-right: 1px solid #e1e4e8; display: flex; flex-direction: column; 
@@ -25,7 +24,6 @@
         .data-list { list-style: none; padding: 0; margin: 10px 0; background: #fff; border: 1px solid #e1e4e8; border-radius: 12px; display: none; overflow-y: auto; max-height: 200px; }
         .data-list li { padding: 14px; border-bottom: 1px solid #f0f0f0; cursor: pointer; font-size: 14px; }
         
-        /* 인포창 디자인 */
         .info-card { width: 280px; background: #ffffff; border-radius: 20px; padding: 22px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); border: 1px solid #f0f0f0; }
         .card-title { font-size: 18px; font-weight: 800; color: #1a1a1a; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 2px solid #f8f9fa; }
         .card-row { display: flex; margin-bottom: 8px; font-size: 14px; }
@@ -55,7 +53,6 @@
                 <input type="text" id="searchKeyword" style="width:100%; padding:14px; margin-top:5px; box-sizing:border-box; border:1px solid #e1e4e8; border-radius:12px;" placeholder="사이트명 입력...">
                 <ul id="resultList" class="data-list"></ul>
             </div>
-            
             <div id="footer-area">
                 <div>제작자 : 경남팀 박상문 | 기획 : 경남팀 김민우</div>
                 <div style="margin-top: 5px; color: #bbb;">© 2026. All Rights Reserved.</div>
@@ -92,6 +89,50 @@
             } catch (e) { document.getElementById('progressBar').innerText = "데이터 로딩 실패"; }
         }
 
+        function findSite(index) {
+            const item = sheetData[index];
+            geocoder.addressSearch(item.address, (res, status) => {
+                if (status === kakao.maps.services.Status.OK) {
+                    const coords = new kakao.maps.LatLng(res[0].y, res[0].x);
+                    map.setCenter(coords);
+                    map.setLevel(3);
+                    infowindow.close();
+                    const marker = new kakao.maps.Marker({ map: map, position: coords });
+                    
+                    // 현재 위치를 시도하여 길찾기 URL 생성
+                    if (navigator.geolocation) {
+                        navigator.geolocation.getCurrentPosition(position => {
+                            const mapUrl = `https://map.kakao.com/?sName=현위치&eName=${item.site}&ep=${res[0].y},${res[0].x}&sp=${position.coords.latitude},${position.coords.longitude}`;
+                            renderInfoWindow(item, res, mapUrl, marker);
+                        }, () => renderInfoWindow(item, res, `https://map.kakao.com/link/to/${item.site},${res[0].y},${res[0].x}`, marker));
+                    } else {
+                        renderInfoWindow(item, res, `https://map.kakao.com/link/to/${item.site},${res[0].y},${res[0].x}`, marker);
+                    }
+                }
+            });
+        }
+
+        function renderInfoWindow(item, res, mapUrl, marker) {
+            const renderRow = (label, val) => (val && val !== '-') ? `<div class="card-row"><b>${label}</b> <span>${val}</span></div>` : '';
+            const infoContent = `
+                <div class="info-card">
+                    <div class="card-title">${item.site}</div>
+                    ${renderRow('기번', item.MN)}
+                    ${renderRow('담당자', item.TSE)}
+                    ${renderRow('경비사', item.sec)}
+                    ${renderRow('연락처', item.phone)}
+                    ${renderRow('기타', item.etc)}
+                    ${renderRow('주차', item.park)}
+                    <div class="card-btns">
+                        <a href="tel:${item.phone || '#'}" class="btn-tel">📞 전화</a>
+                        <a href="${mapUrl}" target="_blank" class="btn-map">📍 길찾기</a>
+                    </div>
+                </div>`;
+            infowindow.setContent(infoContent);
+            infowindow.open(map, marker);
+            document.getElementById('resultList').style.display = 'none';
+        }
+
         function moveToMyLocation() {
             if (!navigator.geolocation) { alert("위치 정보를 지원하지 않습니다."); return; }
             navigator.geolocation.getCurrentPosition(position => {
@@ -110,41 +151,6 @@
             list.innerHTML = filtered.map(i => `<li onclick="findSite(${sheetData.indexOf(i)})"><div style="font-weight:700;">${i.site}</div><div style="font-size:12px; color:#888;">코너: ${i.BIN2 || '-'} | 기번: ${i.MN || '-'}</div></li>`).join('');
             list.style.display = 'block';
         });
-
-        function findSite(index) {
-    const item = sheetData[index];
-    geocoder.addressSearch(item.address, (res, status) => {
-        if (status === kakao.maps.services.Status.OK) {
-            const coords = new kakao.maps.LatLng(res[0].y, res[0].x);
-            map.setCenter(coords);
-            map.setLevel(3);
-            infowindow.close();
-            const marker = new kakao.maps.Marker({ map: map, position: coords });
-            
-            // 데이터가 있는 경우에만 줄을 만드는 헬퍼 함수
-            const renderRow = (label, val) => (val && val !== '-') ? `<div class="card-row"><b>${label}</b> <span>${val}</span></div>` : '';
-
-            const infoContent = `
-                <div class="info-card">
-                    <div class="card-title">${item.site}</div>
-                    ${renderRow('기번', item.MN)}
-                    ${renderRow('담당자', item.TSE)}
-                    ${renderRow('경비사', item.sec)}
-                    ${renderRow('연락처', item.phone)}
-                    ${renderRow('기타', item.etc)}
-                    ${renderRow('주차', item.park)}
-                    <div class="card-btns">
-                        <a href="tel:${item.phone || '#'}" class="btn-tel">📞 전화</a>
-                        <a href="https://map.kakao.com/link/to/${item.site},${res[0].y},${res[0].x}" target="_blank" class="btn-map">📍 길찾기</a>
-                    </div>
-                </div>`;
-            
-            infowindow.setContent(infoContent);
-            infowindow.open(map, marker);
-            document.getElementById('resultList').style.display = 'none';
-        }
-    });
-}
 
         function toggleRecent() {
             const list = document.getElementById('recentList');
