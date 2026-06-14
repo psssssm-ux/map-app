@@ -89,14 +89,26 @@
             } catch (e) { document.getElementById('progressBar').innerText = "데이터 로딩 실패"; }
         }
 
-        // 길찾기 함수 수정: 도착지 주소만 명확하게 전달 (가장 확실한 방법)
+        // 모바일 앱(kakaomap://) 우선 길찾기 함수
         function openMapRoute(address) {
-            // 카카오맵은 도착지 주소(eName)만 넘겨도 경로 탐색 페이지로 이동합니다.
-            const url = `https://map.kakao.com/?eName=${encodeURIComponent(address)}`;
-            window.open(url, '_blank');
+            const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+            const encodedAddress = encodeURIComponent(address);
+            
+            if (isMobile) {
+                // 1. 카카오맵 앱 실행 시도
+                window.location.href = `kakaomap://route?ep=${encodedAddress}&by=CAR`;
+                
+                // 2. 1.5초 후에도 앱이 안 열리면 웹으로 이동
+                setTimeout(() => {
+                    window.open(`https://map.kakao.com/?eName=${encodedAddress}`, '_blank');
+                }, 1500);
+            } else {
+                // PC는 바로 웹으로 오픈
+                window.open(`https://map.kakao.com/?eName=${encodedAddress}`, '_blank');
+            }
         }
 
-        function findSite(index) {
+       function findSite(index) {
             const item = sheetData[index];
             geocoder.addressSearch(item.address, (res, status) => {
                 if (status === kakao.maps.services.Status.OK) {
