@@ -3,43 +3,40 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>사이트 통합 지도 앱 - 최종 수정판</title>
+    <title>사이트 통합 지도 앱 - 모바일 수정판</title>
     <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=7f3387ab66fb524dbefeb77ae9f85e90&libraries=services,clusterer&autoload=false"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
+        /* 기본 환경 설정: 높이 100% 강제 */
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; font-family: 'Pretendard', sans-serif; background: #f4f7fa; }
+        
         #app-container { display: flex; width: 100vw; height: 100vh; }
-        #sidebar { width: 450px; min-width: 450px; height: 100vh; background: #ffffff; border-right: 1px solid #e1e4e8; z-index: 10; display: flex; flex-direction: column; box-shadow: 5px 0 15px rgba(0,0,0,0.05); }
+        
+        #sidebar { width: 450px; min-width: 450px; height: 100%; background: #ffffff; border-right: 1px solid #e1e4e8; z-index: 10; display: flex; flex-direction: column; box-shadow: 5px 0 15px rgba(0,0,0,0.05); }
         #sidebarContent { flex: 1; padding: 25px; overflow-y: auto; }
-        #sidebarFooter { padding: 15px; border-top: 1px solid #eee; font-size: 11px; color: #999; text-align: center; background: #fcfcfc; line-height: 1.6; }
-        #map { flex-grow: 1; height: 100%; position: relative; }
+        #sidebarFooter { padding: 15px; border-top: 1px solid #eee; font-size: 11px; color: #999; text-align: center; background: #fcfcfc; }
         
-        .btn-common { width: 100%; display: block; margin: 0 auto 10px auto; padding: 14px 0; text-align: center; border-radius: 12px; font-weight: 700; font-size: 14px; cursor: pointer; border: none; transition: all 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .btn-common:hover { filter: brightness(1.1); transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        #searchKeyword { width: 100%; box-sizing: border-box; padding: 15px; border: 2px solid #edf0f5; border-radius: 12px; font-size: 14px; outline: none; transition: all 0.2s; background: #f8fafc; }
+        /* 지도 컨테이너: flex 1로 나머지 공간 전부 차지 */
+        #map { flex: 1; height: 100%; position: relative; }
         
-        /* 모바일 대응 수정 */
+        /* 모바일 대응 (화면 폭 768px 이하) */
         @media (max-width: 768px) {
             #app-container { flex-direction: column; }
             #sidebar { width: 100%; min-width: 100%; height: 40%; }
-            #map { width: 100%; height: 60%; }
+            #map { width: 100%; height: 60%; flex: none; } /* 지도 높이 60% 고정 */
         }
 
-        .premium-card { display: inline-block; background: white; border-radius: 20px; box-shadow: 0 15px 45px rgba(0,0,0,0.3); min-width: 280px; max-width: 480px; width: auto !important; overflow: hidden; border: 1px solid rgba(0,0,0,0.1); font-family: 'Pretendard', sans-serif; }
+        .btn-common { width: 100%; display: block; margin: 0 auto 10px auto; padding: 14px 0; text-align: center; border-radius: 12px; font-weight: 700; font-size: 14px; cursor: pointer; border: none; transition: all 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .btn-common:hover { filter: brightness(1.1); transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        #searchKeyword { width: 100%; box-sizing: border-box; padding: 15px; border: 2px solid #edf0f5; border-radius: 12px; font-size: 14px; outline: none; background: #f8fafc; }
+        .premium-card { display: inline-block; background: white; border-radius: 20px; box-shadow: 0 15px 45px rgba(0,0,0,0.3); min-width: 280px; max-width: 480px; width: auto !important; overflow: hidden; border: 1px solid rgba(0,0,0,0.1); }
         .premium-header { background: linear-gradient(135deg, #005088 0%, #0070c0 100%); padding: 20px 25px; color: white; }
         .premium-header .site-title { font-size: 19px; font-weight: 800; display: block; margin-bottom: 6px; }
         .premium-body { padding: 20px 25px; background: #fff; }
-        .premium-row { display: flex; align-items: flex-start; margin-bottom: 12px; font-size: 14px; }
-        .premium-row i { width: 28px; height: 28px; background: #f0f4f8; color: #0070c0; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-right: 12px; }
-        .premium-row .row-label { font-weight: 700; color: #94a3b8; width: 45px; }
-        .premium-row .row-value { color: #1e293b; font-weight: 600; flex: 1; }
         .premium-footer { display: flex; border-top: 1px solid #f1f5f9; background: #fafbfc; }
         .footer-btn { flex: 1; padding: 18px; text-align: center; font-size: 15px; font-weight: 700; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer; }
-        .btn-call { color: #0070c0; border-right: 1px solid #f1f5f9; }
-        .btn-navi { color: #202124; background: #ffeb00; }
         .data-list { list-style: none; padding: 0; margin: 10px 0; display: none; background: #f8fafc; border-radius: 12px; border: 1px solid #eee; overflow: hidden; }
         .data-list li { padding: 15px; border-bottom: 1px solid #eee; font-size: 13px; cursor: pointer; }
-        .data-list li:hover { background: #eef2f7; }
     </style>
 </head>
 <body>
@@ -68,6 +65,7 @@
         <div id="map"></div>
     </div>
     <script>
+        // 기존 스크립트 로직 동일 유지
         let map, geocoder, clusterer, customOverlay, sheetData = [];
         let loadedCount = 0;
 
