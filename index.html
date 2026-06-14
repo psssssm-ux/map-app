@@ -3,26 +3,25 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>사이트 통합 지도 앱 - 실시간 길찾기 지원</title>
+    <title>사이트 통합 지도 앱 - 최종 완성본</title>
     <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=7f3387ab66fb524dbefeb77ae9f85e90&libraries=services,clusterer&autoload=false"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; font-family: 'Pretendard', sans-serif; background: #f4f7fa; }
         #app-container { display: flex; width: 100vw; height: 100vh; }
         
-        /* 사이드바 스타일 */
-        #sidebar { width: 320px; min-width: 320px; height: 100vh; background: #ffffff; border-right: 1px solid #e1e4e8; z-index: 10; display: flex; flex-direction: column; box-shadow: 5px 0 15px rgba(0,0,0,0.05); transition: all 0.3s; }
+        #sidebar { width: 320px; min-width: 320px; height: 100vh; background: #ffffff; border-right: 1px solid #e1e4e8; z-index: 10; display: flex; flex-direction: column; box-shadow: 5px 0 15px rgba(0,0,0,0.05); }
         #sidebarContent { flex: 1; padding: 25px; overflow-y: auto; }
         #sidebarFooter { padding: 15px; border-top: 1px solid #eee; font-size: 11px; color: #aaa; text-align: center; background: #fcfcfc; }
         #map { flex-grow: 1; height: 100vh; position: relative; }
 
-        /* 공통 버튼 */
         .btn-common { width: 100%; max-width: 270px; display: block; margin: 0 auto 12px auto; padding: 14px 0; text-align: center; border-radius: 12px; font-weight: 700; font-size: 14px; cursor: pointer; border: none; transition: all 0.2s; }
         .btn-common:hover { filter: brightness(1.1); transform: translateY(-2px); }
         
-        #searchKeyword { width: 100%; padding: 15px; border: 2px solid #edf0f5; border-radius: 12px; font-size: 14px; outline: none; transition: all 0.2s; background: #f8fafc; }
+        #searchKeyword { width: 100%; padding: 15px; border: 2px solid #edf0f5; border-radius: 12px; font-size: 14px; outline: none; transition: all 0.2s; background: #f8fafc; margin-bottom: 5px; }
+        #searchKeyword:focus { border-color: #0070c0; background: #fff; }
 
-        /* [중요] 정보창(CustomOverlay) 가변형 프리미엄 디자인 */
+        /* 정보창 가변형 디자인 */
         .premium-card {
             display: inline-block;
             background: white;
@@ -44,7 +43,7 @@
         }
 
         .premium-header .site-title {
-            font-size: 20px;
+            font-size: 19px;
             font-weight: 800;
             display: block;
             margin-bottom: 6px;
@@ -99,11 +98,10 @@
             font-weight: 600;
             flex: 1;
             margin-top: 5px;
-            white-space: nowrap; /* 기본 한 줄 */
+            white-space: nowrap; 
             padding-right: 10px;
         }
 
-        /* 비고 칸은 자동 줄바꿈 */
         .premium-row.etc-row .row-value {
             white-space: normal;
             word-break: break-all;
@@ -131,10 +129,9 @@
         }
 
         .btn-call { color: #0070c0; border-right: 1px solid #f1f5f9; }
-        .btn-navi { color: #202124; background: #ffeb00; } /* 카카오 강조색 */
+        .btn-navi { color: #202124; background: #ffeb00; }
         .footer-btn:hover { filter: brightness(0.95); }
 
-        /* 로딩 바 */
         #progressBarWrapper { margin-bottom: 20px; }
         #progressBar { width: 0%; height: 6px; background: #0070c0; border-radius: 3px; transition: width 0.3s; }
 
@@ -144,9 +141,11 @@
             #map { height: 60vh; }
         }
 
-        .loc-tooltip { padding: 8px 15px; background: #ff4757; color: white; border-radius: 25px; font-size: 12px; font-weight: bold; box-shadow: 0 5px 15px rgba(255, 71, 87, 0.4); border: 2px solid white; }
-        #resultList { list-style: none; padding: 0; margin: 10px auto; display: none; background: #f8fafc; border-radius: 12px; overflow: hidden; width: 100%; }
-        #resultList li { padding: 15px; border-bottom: 1px solid #eee; font-size: 13px; cursor: pointer; }
+        /* 검색 결과 리스트 스타일 */
+        #resultList { list-style: none; padding: 0; margin: 0; display: none; background: #f8fafc; border-radius: 12px; overflow: hidden; border: 1px solid #eee; }
+        #resultList li { padding: 15px; border-bottom: 1px solid #eee; font-size: 13px; cursor: pointer; transition: background 0.2s; }
+        #resultList li:hover { background: #eef2f7; }
+        #resultList li strong { color: #0070c0; display: block; margin-bottom: 3px; }
     </style>
 </head>
 <body>
@@ -161,10 +160,12 @@
                 </div>
                 <div class="btn-common" style="background-color: #ff9f43; color: #fff;" onclick="moveToMyLocation()">📍 현재 위치로 이동</div>
                 <div class="btn-common" style="background-color: #667eea; color: #fff;" onclick="resetMap()">지도 위치 초기화 🔄</div>
-                <div style="margin-top: 30px;">
+                
+                <div style="margin-top: 25px;">
+                    <h3 style="font-size: 15px; color: #333; margin-bottom: 10px;">사이트 검색 ▼</h3>
                     <input type="text" id="searchKeyword" placeholder="사이트명/코너명/기번 검색...">
                     <ul id="resultList"></ul>
-                    <div style="margin-top:15px; font-size:12px; color:#94a3b8;">전체 사이트: <b id="totalCount" style="color:#1e293b;">0개</b></div>
+                    <div style="margin-top:10px; font-size:12px; color:#94a3b8;">전체 사이트: <b id="totalCount" style="color:#1e293b;">0개</b></div>
                 </div>
             </div>
             <div id="sidebarFooter">🛠️ 제작: Sangmun Park | 💡 아이디어: Minwoo kim</div>
@@ -186,11 +187,11 @@
         }
         kakao.maps.load(initMap);
 
-        // 정보창 렌더링 (clickable 옵션과 외부 길찾기 연동)
+        // 정보창 렌더링 함수
         function renderOverlay(pos, item) {
             if (customOverlay) customOverlay.setMap(null);
             
-            // 시트 데이터 매핑 보완 (다양한 열 이름 대응)
+            // 데이터 안전하게 추출 (여러 필드명 대응)
             const sitePhone = item.phone || item['연락처'] || item['연락'] || item.tel || '-';
             const siteBin = item.BIN2 || item.bin2 || '-';
             const siteMn = item.MN || item.mn || '-';
@@ -216,7 +217,6 @@
                 </div>
             `;
 
-            // clickable: true 옵션이 있어야 내부의 링크(a 태그)가 작동함
             customOverlay = new kakao.maps.CustomOverlay({ 
                 position: pos, 
                 content: content, 
@@ -226,6 +226,7 @@
             customOverlay.setMap(map);
         }
 
+        // 마커 추가 함수
         function addMarker(pos, item) {
             const marker = new kakao.maps.Marker({ position: new kakao.maps.LatLng(pos.lat, pos.lng) });
             kakao.maps.event.addListener(marker, 'click', () => {
@@ -236,6 +237,7 @@
             clusterer.addMarker(marker);
         }
 
+        // 구글 시트 데이터 로드
         async function loadSheetData() {
             try {
                 const res = await fetch('https://script.google.com/macros/s/AKfycbwxAh4O39J93KVy87IjPu3h17BUZJ120BwkfkESVHuorO21GXpZcJT0qLxEdJwTDM-y8Q/exec');
@@ -259,7 +261,7 @@
                         }, index * 100);
                     }
                 });
-            } catch (e) { console.error(e); }
+            } catch (e) { console.error("데이터 로드 중 오류:", e); }
         }
 
         function updateProgress() {
@@ -282,24 +284,51 @@
                     });
                     map.setCenter(locPosition); map.setLevel(3);
                 });
-            }
+            } else { alert("GPS 정보를 사용할 수 없습니다."); }
         }
 
+        // [복구] 검색 기능 로직
         document.getElementById('searchKeyword').addEventListener('keyup', function() {
-            const val = this.value.toLowerCase();
+            const val = this.value.toLowerCase().trim();
             const list = document.getElementById('resultList');
             if(!val) { list.style.display = 'none'; return; }
-            const filtered = sheetData.filter(i => (i.site && i.site.toLowerCase().includes(val)) || (i.BIN2 && String(i.BIN2).toLowerCase().includes(val)) || (i.MN && String(i.MN).toLowerCase().includes(val)));
-            list.innerHTML = filtered.map(i => `<li onclick="showInfo('${i.address}', '${i.site}', '${i.sec}', '${i.park}', '${i.BIN2 || i.bin2}', '${i.MN || i.mn}', '${i.etc || ''}', '${i.phone || i['연락처'] || i.tel || ''}')"><strong>${i.site}</strong></li>`).join('');
-            list.style.display = filtered.length ? 'block' : 'none';
+            
+            const filtered = sheetData.filter(i => 
+                (i.site && i.site.toLowerCase().includes(val)) || 
+                (i.BIN2 && String(i.BIN2).toLowerCase().includes(val)) || 
+                (i.bin2 && String(i.bin2).toLowerCase().includes(val)) || 
+                (i.MN && String(i.MN).toLowerCase().includes(val)) ||
+                (i.mn && String(i.mn).toLowerCase().includes(val))
+            );
+
+            if(filtered.length > 0) {
+                list.innerHTML = filtered.map((i, idx) => `
+                    <li onclick="handleSearchClick(${sheetData.indexOf(i)})">
+                        <strong>${i.site}</strong>
+                        <small style="color:#999">코너: ${i.BIN2 || i.bin2 || '-'} / 기번: ${i.MN || i.mn || '-'}</small>
+                    </li>
+                `).join('');
+                list.style.display = 'block';
+            } else {
+                list.style.display = 'none';
+            }
         });
 
-        function showInfo(addr, site, sec, park, bin2, mn, etc, phone) {
-            geocoder.addressSearch(addr, (res, status) => {
+        // 검색 결과 클릭 시 처리 함수 (인덱스 기반으로 안전하게 처리)
+        function handleSearchClick(index) {
+            const item = sheetData[index];
+            const list = document.getElementById('resultList');
+            list.style.display = 'none';
+            document.getElementById('searchKeyword').value = item.site;
+
+            geocoder.addressSearch(item.address, (res, status) => {
                 if(status === 'OK') {
                     const pos = new kakao.maps.LatLng(res[0].y, res[0].x);
-                    map.setCenter(pos); map.setLevel(3);
-                    renderOverlay(pos, {site, address: addr, sec, park, bin2, mn, etc, phone});
+                    map.setCenter(pos); 
+                    map.setLevel(3);
+                    renderOverlay(pos, item);
+                } else {
+                    alert("주소를 찾을 수 없는 사이트입니다.");
                 }
             });
         }
