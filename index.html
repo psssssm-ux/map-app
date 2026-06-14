@@ -144,7 +144,7 @@
 
         async function loadSheetData() {
             try {
-                const res = await fetch('https://script.google.com/macros/s/AKfycbzyCxBiFkXzemeK9goiqfX86_KW13u8wMhw9NZ8AVejEv6G0cRNOBLh2a2VHBrwtOerUg/exec?t=' + Date.now());
+                const res = await fetch('https://script.google.com/macros/s/AKfycbytkg_o1wXW0tt62zIAsoLHFN7hvOCxXvQZJ_NlgUBpqRnyTfEPUNOviZUYfNFl60Tqdg/exec?t=' + Date.now());
                 sheetData = await res.json();
                 document.getElementById('totalCount').textContent = sheetData.length + '개';
                 sheetData.forEach((item, index) => {
