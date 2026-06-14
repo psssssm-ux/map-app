@@ -5,28 +5,27 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>사이트 통합 지도 앱</title>
     <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=7f3387ab66fb524dbefeb77ae9f85e90&libraries=services,clusterer&autoload=false"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; font-family: 'Pretendard', sans-serif; overflow: hidden; }
         #app-container { display: flex; width: 100vw; height: 100vh; }
-        
-        #sidebar { width: 400px; min-width: 400px; height: 100vh; background: #fff; border-right: 1px solid #ddd; z-index: 10; display: flex; flex-direction: column; overflow-y: auto; }
-        #sidebarContent { padding: 20px; }
+        #sidebar { width: 400px; min-width: 400px; height: 100vh; background: #fff; border-right: 1px solid #ddd; z-index: 10; overflow-y: auto; padding: 20px; box-sizing: border-box; }
         #map { flex-grow: 1; height: 100vh; position: relative; }
 
-        /* 디자인 버튼 스타일 유지 */
-        .btn-common { width: 100%; padding: 15px; margin-bottom: 10px; border-radius: 12px; font-weight: bold; cursor: pointer; border: none; color: #fff; text-align: center; }
+        /* 원래 사용하시던 버튼 디자인 복구 */
+        .btn-common { width: 100%; padding: 15px; margin-bottom: 10px; border-radius: 5px; font-weight: bold; cursor: pointer; border: none; color: #fff; text-align: center; font-size: 14px; }
         
-        /* 검색 리스트 및 카드 */
-        .data-list { list-style: none; padding: 0; margin: 10px 0; display: none; border: 1px solid #ddd; border-radius: 8px; }
+        /* 마커 정보창(Custom Overlay) 디자인 복구 */
+        .premium-card { background: white; border-radius: 10px; padding: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); width: 280px; border: 1px solid #ccc; }
+        .premium-header { font-weight: bold; font-size: 16px; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 2px solid #0070c0; color: #0070c0; }
+        .info-body { font-size: 14px; line-height: 1.8; color: #333; }
+        .footer-btns { margin-top: 10px; display: flex; justify-content: space-between; font-weight: bold; color: #000080; }
+        
+        .data-list { list-style: none; padding: 0; margin: 10px 0; display: none; border: 1px solid #ddd; border-radius: 5px; }
         .data-list li { padding: 10px; border-bottom: 1px solid #eee; cursor: pointer; font-size: 14px; }
         
-        .premium-card { background: white; border-radius: 15px; padding: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); width: 250px; }
-        .premium-header { font-weight: bold; font-size: 16px; margin-bottom: 10px; border-bottom: 2px solid #0070c0; }
-
         @media (max-width: 768px) {
             #app-container { flex-direction: column; }
-            #sidebar { width: 100%; height: 40%; min-height: 40%; }
+            #sidebar { width: 100%; height: 40%; }
             #map { height: 60%; }
         }
     </style>
@@ -34,16 +33,14 @@
 <body>
     <div id="app-container">
         <div id="sidebar">
-            <div id="sidebarContent">
-                <div id="progressBar">데이터 동기화: 0%</div>
-                <div class="btn-common" style="background-color: #ff9f43;" onclick="moveToMyLocation()">📍 현재 위치로 이동</div>
-                <div class="btn-common" style="background-color: #667eea;" onclick="resetMap()">지도 위치 초기화 🔄</div>
-                <div class="btn-common" style="background-color: #0070c0;" onclick="toggleRecent()">최근 수정된 사이트 LIST ▼</div>
-                <ul id="recentList" class="data-list"></ul>
-                <h3>사이트 검색 ▼</h3>
-                <input type="text" id="searchKeyword" style="width:100%; padding:10px;" placeholder="사이트명/코너명/기번 검색...">
-                <ul id="resultList" class="data-list"></ul>
-            </div>
+            <div id="progressBar">데이터 동기화: 0%</div>
+            <div class="btn-common" style="background-color: #ff9f43;" onclick="moveToMyLocation()">📍 현재 위치로 이동</div>
+            <div class="btn-common" style="background-color: #667eea;" onclick="resetMap()">지도 위치 초기화 🔄</div>
+            <div class="btn-common" style="background-color: #0070c0;" onclick="toggleRecent()">최근 수정된 사이트 LIST ▼</div>
+            <ul id="recentList" class="data-list"></ul>
+            <div style="font-weight:bold; margin-top:10px;">사이트 검색 ▼</div>
+            <input type="text" id="searchKeyword" style="width:100%; padding:10px; margin-top:5px; box-sizing:border-box;" placeholder="검색...">
+            <ul id="resultList" class="data-list"></ul>
         </div>
         <div id="map"></div>
     </div>
@@ -76,38 +73,32 @@
 
         function showOverlay(pos, item) {
             if(customOverlay) customOverlay.setMap(null);
-            
-            // 정보창 HTML 구성 (요청하신 필드 반영)
+            // 요청하신 6,9,10,11,12,13행 정보 포함
             const content = `
             <div class="premium-card">
                 <div class="premium-header">${item.site}</div>
-                <div style="font-size: 13px; line-height: 1.6;">
+                <div class="info-body">
                     주소: ${item.address || '-'}<br>
                     기번: ${item.MN || '-'}<br>
-                    담당자: ${item.TSE || '-'}<br>
+                    담당자: ${item.manager || '-'}<br>
                     경비사: ${item.sec || '-'}<br>
                     연락처: ${item.phone || '-'}<br>
                     기타: ${item.etc || '-'}<br>
                     주차: ${item.park || '-'}
                 </div>
-                <div style="margin-top:10px; display:flex; justify-content:space-between;">
+                <div class="footer-btns">
                     <a href="tel:${item.phone || ''}">전화</a>
                     <a href="https://map.kakao.com/link/to/${item.site},${pos.y},${pos.x}" target="_blank">길찾기</a>
                 </div>
             </div>`;
-            
-            customOverlay = new kakao.maps.CustomOverlay({ 
-                position: new kakao.maps.LatLng(pos.y, pos.x), 
-                content: content, 
-                yAnchor: 1.2 
-            });
+            customOverlay = new kakao.maps.CustomOverlay({ position: new kakao.maps.LatLng(pos.y, pos.x), content: content, yAnchor: 1.2 });
             customOverlay.setMap(map);
         }
 
         document.getElementById('searchKeyword').addEventListener('keyup', function() {
             const val = this.value.toLowerCase();
             const list = document.getElementById('resultList');
-            const filtered = sheetData.filter(i => (i.site||'').toLowerCase().includes(val) || (i.BIN2||'').toString().includes(val) || (i.MN||'').toString().includes(val));
+            const filtered = sheetData.filter(i => (i.site||'').toLowerCase().includes(val) || (i.MN||'').toString().includes(val));
             list.innerHTML = filtered.map(i => `<li onclick="findSite('${i.site}')">${i.site}</li>`).join('');
             list.style.display = filtered.length > 0 ? 'block' : 'none';
         });
@@ -127,8 +118,7 @@
                 list.innerHTML = sheetData.slice(-5).map(i => `<li>${i.site}</li>`).join('');
             }
         }
-
-        function resetMap() { map.setCenter(new kakao.maps.LatLng(35.1517, 129.0305)); }
+        function resetMap() { map.setCenter(new kakao.maps.LatLng(35.1517, 129.0305)); map.setLevel(7); }
         function moveToMyLocation() { navigator.geolocation.getCurrentPosition(p => map.setCenter(new kakao.maps.LatLng(p.coords.latitude, p.coords.longitude))); }
     </script>
 </body>
