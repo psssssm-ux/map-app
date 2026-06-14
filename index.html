@@ -3,26 +3,23 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>사이트 통합 지도 앱 - 완전판</title>
+    <title>사이트 통합 지도 앱 - 최종 수정판</title>
     <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=7f3387ab66fb524dbefeb77ae9f85e90&libraries=services,clusterer&autoload=false"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; font-family: 'Pretendard', sans-serif; background: #f4f7fa; }
         #app-container { display: flex; width: 100vw; height: 100vh; }
         
-        /* 사이드바 스타일 */
         #sidebar { width: 320px; min-width: 320px; height: 100vh; background: #ffffff; border-right: 1px solid #e1e4e8; z-index: 10; display: flex; flex-direction: column; box-shadow: 5px 0 15px rgba(0,0,0,0.05); }
         #sidebarContent { flex: 1; padding: 25px; overflow-y: auto; }
         #sidebarFooter { padding: 15px; border-top: 1px solid #eee; font-size: 11px; color: #999; text-align: center; background: #fcfcfc; line-height: 1.6; }
         #map { flex-grow: 1; height: 100vh; position: relative; }
 
         /* 공통 버튼 */
-        .btn-common { width: 100%; max-width: 270px; display: block; margin: 0 auto 12px auto; padding: 14px 0; text-align: center; border-radius: 12px; font-weight: 700; font-size: 14px; cursor: pointer; border: none; transition: all 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .btn-common { width: 100%; max-width: 270px; display: block; margin: 0 auto 10px auto; padding: 14px 0; text-align: center; border-radius: 12px; font-weight: 700; font-size: 14px; cursor: pointer; border: none; transition: all 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         .btn-common:hover { filter: brightness(1.1); transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
         
-        /* 검색창 */
         #searchKeyword { width: 100%; padding: 15px; border: 2px solid #edf0f5; border-radius: 12px; font-size: 14px; outline: none; transition: all 0.2s; background: #f8fafc; }
-        #searchKeyword:focus { border-color: #0070c0; background: #fff; }
 
         /* 프리미엄 정보창(CustomOverlay) 가변형 디자인 */
         .premium-card {
@@ -48,7 +45,7 @@
         #progressBarWrapper { margin-bottom: 20px; }
         #progressBar { width: 0%; height: 6px; background: #0070c0; border-radius: 3px; transition: width 0.3s; }
 
-        /* 리스트 스타일 (검색 및 최근 수정 공통) */
+        /* 리스트 공통 스타일 */
         .data-list { list-style: none; padding: 0; margin: 10px 0; display: none; background: #f8fafc; border-radius: 12px; overflow: hidden; border: 1px solid #eee; }
         .data-list li { padding: 15px; border-bottom: 1px solid #eee; font-size: 13px; cursor: pointer; transition: background 0.2s; }
         .data-list li:hover { background: #eef2f7; }
@@ -108,10 +105,8 @@
         }
         kakao.maps.load(initMap);
 
-        // 프리미엄 정보창 렌더링
         function renderOverlay(pos, item) {
             if (customOverlay) customOverlay.setMap(null);
-            
             const sitePhone = item.phone || item['연락처'] || item['연락'] || item.tel || '-';
             const siteBin = item.BIN2 || item.bin2 || '-';
             const siteMn = item.MN || item.mn || '-';
@@ -137,13 +132,10 @@
                 </div>
             `;
 
-            customOverlay = new kakao.maps.CustomOverlay({ 
-                position: pos, content: content, yAnchor: 1.15, clickable: true 
-            });
+            customOverlay = new kakao.maps.CustomOverlay({ position: pos, content: content, yAnchor: 1.15, clickable: true });
             customOverlay.setMap(map);
         }
 
-        // 마커 추가
         function addMarker(pos, item) {
             const marker = new kakao.maps.Marker({ position: new kakao.maps.LatLng(pos.lat, pos.lng) });
             kakao.maps.event.addListener(marker, 'click', () => {
@@ -154,7 +146,6 @@
             clusterer.addMarker(marker);
         }
 
-        // 데이터 로드
         async function loadSheetData() {
             try {
                 const res = await fetch('https://script.google.com/macros/s/AKfycbwxAh4O39J93KVy87IjPu3h17BUZJ120BwkfkESVHuorO21GXpZcJT0qLxEdJwTDM-y8Q/exec');
@@ -203,26 +194,23 @@
             }
         }
 
-        // 최근 수정 사이트 토글 기능 복구
         function toggleRecent() {
             const list = document.getElementById('recentList');
             if (list.style.display === 'block') {
                 list.style.display = 'none';
             } else {
-                // 날짜 기준 내림차순 정렬하여 상위 6개 추출
                 const sorted = [...sheetData].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 6);
                 list.innerHTML = sorted.map(i => `
                     <li onclick="handleListClick(${sheetData.indexOf(i)}, 'recentList')">
                         <strong>${i.site}</strong>
-                        <small style="color:#999">${i.date || '날짜미상'}</small>
+                        <small style="color:#999">${i.date || '날짜정보없음'}</small>
                     </li>
                 `).join('');
                 list.style.display = 'block';
-                document.getElementById('resultList').style.display = 'none'; // 검색 리스트는 닫기
+                document.getElementById('resultList').style.display = 'none';
             }
         }
 
-        // 검색어 입력
         document.getElementById('searchKeyword').addEventListener('keyup', function() {
             const val = this.value.toLowerCase().trim();
             const list = document.getElementById('resultList');
@@ -244,16 +232,14 @@
                     </li>
                 `).join('');
                 list.style.display = 'block';
-                document.getElementById('recentList').style.display = 'none'; // 최근 리스트는 닫기
+                document.getElementById('recentList').style.display = 'none';
             } else { list.style.display = 'none'; }
         });
 
-        // 리스트 클릭 통합 처리 함수
         function handleListClick(index, listId) {
             const item = sheetData[index];
             document.getElementById(listId).style.display = 'none';
             if(listId === 'resultList') document.getElementById('searchKeyword').value = item.site;
-
             geocoder.addressSearch(item.address, (res, status) => {
                 if(status === 'OK') {
                     const pos = new kakao.maps.LatLng(res[0].y, res[0].x);
