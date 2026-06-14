@@ -9,34 +9,29 @@
     <style>
         body, html { margin: 0; padding: 0; width: 100%; height: 100svh; font-family: 'Pretendard', -apple-system, sans-serif; overflow: hidden; background: #f4f7fa; }
         #app-container { display: flex; width: 100vw; height: 100%; flex-direction: row; }
+        
+        /* 1. 사이드바 구조: flex-direction: column 필수 */
         #sidebar { 
             width: 400px; min-width: 400px; height: 100%; background: #ffffff; 
-            border-right: 1px solid #e1e4e8; z-index: 10; display: flex; flex-direction: column; 
-            padding: 20px; box-sizing: border-box; 
+            border-right: 1px solid #e1e4e8; display: flex; flex-direction: column; 
+            box-sizing: border-box; 
         }
-        #scroll-area { flex: 1; overflow-y: auto; }
+        
+        /* 2. 스크롤 영역: 나머지 공간을 다 차지함 */
+        #scroll-area { flex: 1; overflow-y: auto; padding: 20px; }
+        
+        /* 3. 하단 고정 영역: 고정된 높이 */
+        #footer-area { padding: 20px; border-top: 1px solid #eee; background: #fafafa; font-size: 12px; color: #888; text-align: center; }
+
         #map { flex: 1; height: 100%; position: relative; z-index: 1; }
+        
         .btn-common { width: 100%; padding: 12px; margin-bottom: 8px; border-radius: 12px; font-weight: 700; font-size: 14px; cursor: pointer; border: none; color: #fff; text-align: center; transition: background 0.2s; }
-        .btn-common:hover { opacity: 0.9; }
-        .data-list { list-style: none; padding: 0; margin: 10px 0; background: #fff; border: 1px solid #e1e4e8; border-radius: 12px; display: none; overflow-y: auto; max-height: 250px; }
+        .data-list { list-style: none; padding: 0; margin: 10px 0; background: #fff; border: 1px solid #e1e4e8; border-radius: 12px; display: none; overflow-y: auto; max-height: 200px; }
         .data-list li { padding: 14px; border-bottom: 1px solid #f0f0f0; cursor: pointer; font-size: 14px; }
         
-        .info-card { width: 280px; background: white; border-radius: 20px; padding: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.2); border: 1px solid rgba(0,0,0,0.05); }
-        .card-title { font-size: 17px; font-weight: 800; color: #1a1a1a; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #f0f0f0; }
-        .card-row { display: flex; margin-bottom: 8px; font-size: 13.5px; }
-        .card-row b { width: 65px; color: #888; font-weight: 500; flex-shrink: 0; }
-        .card-row span { color: #333; font-weight: 600; }
-        .card-btns { display: flex; gap: 10px; margin-top: 20px; }
-        .card-btns a { flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 10px; border-radius: 12px; font-size: 13px; font-weight: 700; text-decoration: none; transition: 0.2s; }
-        .btn-tel { background: #f0f7ff; color: #0070c0; border: 1px solid #d1e7ff; }
-        .btn-map { background: #fff9e6; color: #d9480f; border: 1px solid #ffe8a1; }
-        
-        /* 카피라이트 스타일 수정 */
-        .copyright { font-size: 12px; color: #888; text-align: center; padding: 20px 0 10px 0; border-top: 1px solid #f0f0f0; line-height: 1.6; }
-
         @media (max-width: 768px) {
             #app-container { flex-direction: column; }
-            #sidebar { width: 100%; height: 35%; border-right: none; border-bottom: 2px solid #ddd; }
+            #sidebar { width: 100%; height: 40%; border-right: none; border-bottom: 2px solid #ddd; }
         }
     </style>
 </head>
@@ -45,25 +40,25 @@
         <div id="sidebar">
             <div id="scroll-area">
                 <div id="progressBar" style="font-size:12px; font-weight:bold; margin-bottom:10px; color:#0070c0;">데이터 로딩 중...</div>
-                <div class="btn-common" style="background-color: #ff4757;" onclick="moveToMyLocation()">📍 현재 위치로 이동 (빨간 마커)</div>
+                <div class="btn-common" style="background-color: #ff4757;" onclick="moveToMyLocation()">📍 현재 위치로 이동</div>
                 <div class="btn-common" style="background-color: #667eea;" onclick="resetMap()">지도 위치 초기화 🔄</div>
                 <div class="btn-common" style="background-color: #0070c0;" onclick="toggleRecent()">최근 수정된 사이트 LIST ▼</div>
                 <ul id="recentList" class="data-list"></ul>
                 <div style="font-weight:700; margin-top:10px;">사이트 검색 ▼</div>
-                <input type="text" id="searchKeyword" style="width:100%; padding:14px; margin-top:5px; box-sizing:border-box; border:1px solid #e1e4e8; border-radius:12px;" placeholder="사이트명 입력...">
+                <input type="text" id="searchKeyword" style="width:100%; padding:14px; margin-top:5px; border:1px solid #e1e4e8; border-radius:12px;" placeholder="사이트명 입력...">
                 <ul id="resultList" class="data-list"></ul>
             </div>
             
-            <div class="copyright">
-                <div>제작자 : 경남팀 박상문</div>
-                <div>기획 : 경남팀 김민우</div>
-                <div style="margin-top: 5px; font-size: 10px; color: #bbb;">© 2026. All Rights Reserved.</div>
+            <div id="footer-area">
+                <div>제작자 : 경남팀 박상문 | 기획 : 경남팀 김민우</div>
+                <div style="margin-top: 5px; color: #bbb;">© 2026. All Rights Reserved.</div>
             </div>
         </div>
         <div id="map"></div>
     </div>
 
     <script>
+        // ... (기존 스크립트 코드와 동일)
         let map, geocoder, clusterer, infowindow, sheetData = [];
         let myLocationMarker = null;
 
@@ -125,7 +120,7 @@
                     map.setLevel(3);
                     infowindow.close();
                     const marker = new kakao.maps.Marker({ map: map, position: coords });
-                    infowindow.setContent(`<div class="info-card"><div class="card-title">${item.site}</div><div class="card-row"><b>기번</b> <span>${item.MN || '-'}</span></div><div class="card-row"><b>담당자</b> <span>${item.TSE || '-'}</span></div><div class="card-row"><b>경비사</b> <span>${item.sec || '-'}</span></div><div class="card-row"><b>연락처</b> <span>${item.phone || '-'}</span></div><div class="card-btns"><a href="tel:${item.phone}" class="btn-tel">📞 전화</a><a href="https://map.kakao.com/link/to/${item.site},${res[0].y},${res[0].x}" target="_blank" class="btn-map">📍 길찾기</a></div></div>`);
+                    infowindow.setContent(`<div style="padding:15px; border-radius:15px;"><b>${item.site}</b><br>기번: ${item.MN}<br>담당: ${item.TSE}</div>`);
                     infowindow.open(map, marker);
                     document.getElementById('resultList').style.display = 'none';
                 }
