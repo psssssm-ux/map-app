@@ -25,7 +25,7 @@
 <body>
     <div id="app-container">
         <div id="sidebar">
-            <div id="progressBar" style="font-size:12px; font-weight:bold; margin-bottom:10px; color:#555;">데이터 로딩 중...</div>
+            <div id="progressBar" style="font-size:12px; font-weight:bold; margin-bottom:10px; color:#0070c0;">데이터 로딩 중...</div>
             <div class="btn-common" style="background-color: #ff9f43;" onclick="moveToMyLocation()">📍 현재 위치로 이동</div>
             <div class="btn-common" style="background-color: #667eea;" onclick="resetMap()">지도 위치 초기화 🔄</div>
             <div class="btn-common" style="background-color: #0070c0;" onclick="toggleRecent()">최근 수정된 사이트 LIST ▼</div>
@@ -36,13 +36,15 @@
         </div>
         <div id="map"></div>
     </div>
+    
     <div id="resultPopup">
-        <div style="padding:15px; background:#0070c0; color:white; font-weight:bold; text-align:center; margin-bottom:10px;" onclick="document.getElementById('resultPopup').style.display='none'">닫기 X</div>
+        <div style="padding:15px; background:#0070c0; color:white; font-weight:bold; text-align:center;" onclick="document.getElementById('resultPopup').style.display='none'">닫기 X</div>
         <div id="popupContent"></div>
     </div>
 
     <script>
         let map, geocoder, clusterer, infowindow, sheetData = [];
+        
         kakao.maps.load(() => {
             map = new kakao.maps.Map(document.getElementById('map'), { center: new kakao.maps.LatLng(35.1517, 129.0305), level: 7 });
             geocoder = new kakao.maps.services.Geocoder();
@@ -58,6 +60,7 @@
                 sheetData = await res.json();
                 bar.innerText = "데이터 동기화 완료 (100%)";
                 
+                // 마커 생성 루프
                 sheetData.forEach(item => {
                     geocoder.addressSearch(item.address, (result, status) => {
                         if (status === 'OK') {
@@ -71,21 +74,28 @@
             }
         }
 
-        // 검색 및 나머지 함수는 동일
         document.getElementById('searchKeyword').addEventListener('input', function() {
             const val = this.value.toLowerCase();
             const list = document.getElementById('resultList');
             const popup = document.getElementById('resultPopup');
             const popupContent = document.getElementById('popupContent');
             const filtered = sheetData.filter(i => (i.site || '').toLowerCase().includes(val));
+            
             if (val.length === 0) { list.style.display = 'none'; popup.style.display = 'none'; return; }
+
             const listHTML = filtered.map(i => `
-                <li onclick="findSite('${i.site}', ${window.innerWidth <= 768})" style="padding: 10px; border-bottom: 1px solid #eee;">
+                <li onclick="findSite('${i.site.replace(/'/g, "\\'")}', ${window.innerWidth <= 768})" style="padding: 10px; border-bottom: 1px solid #eee;">
                     <div style="font-weight:bold; font-size:14px;">${i.site}</div>
                     <div style="font-size:11px; color:#666; margin-top:2px;">코너: ${i.BIN2 || '-'} / 기번: ${i.MN || '-'}</div>
                 </li>`).join('');
-            if (window.innerWidth <= 768) { popupContent.innerHTML = listHTML; popup.style.display = 'block'; } 
-            else { list.innerHTML = listHTML; list.style.display = 'block'; }
+
+            if (window.innerWidth <= 768) {
+                popupContent.innerHTML = listHTML;
+                popup.style.display = 'block';
+            } else {
+                list.innerHTML = listHTML;
+                list.style.display = 'block';
+            }
         });
 
         function findSite(name, isMobile) {
@@ -96,9 +106,11 @@
                         const coords = new kakao.maps.LatLng(res[0].y, res[0].x);
                         map.setCenter(coords);
                         map.setLevel(4);
+                        
                         const marker = new kakao.maps.Marker({ map: map, position: coords });
                         infowindow.setContent(`<div style="padding:10px; font-size:12px; line-height:1.5;"><strong>${item.site}</strong><br>코너: ${item.BIN2}<br>기번: ${item.MN}</div>`);
                         infowindow.open(map, marker);
+                        
                         if(isMobile) document.getElementById('resultPopup').style.display = 'none';
                         else document.getElementById('resultList').style.display = 'none';
                     }
@@ -109,7 +121,7 @@
         function toggleRecent() {
             const list = document.getElementById('recentList');
             list.style.display = (list.style.display === 'block') ? 'none' : 'block';
-            list.innerHTML = sheetData.slice(-5).map(i => `<li onclick="findSite('${i.site}', false); document.getElementById('recentList').style.display='none'">${i.site}</li>`).join('');
+            list.innerHTML = sheetData.slice(-5).map(i => `<li onclick="findSite('${i.site.replace(/'/g, "\\'")}', false); document.getElementById('recentList').style.display='none'">${i.site}</li>`).join('');
         }
         function resetMap() { map.setCenter(new kakao.maps.LatLng(35.1517, 129.0305)); map.setLevel(7); }
         function moveToMyLocation() { navigator.geolocation.getCurrentPosition(p => map.setCenter(new kakao.maps.LatLng(p.coords.latitude, p.coords.longitude))); }
