@@ -287,37 +287,42 @@
 
 
         async function loadSheetData() {
-
     try {
-
-        // 구글 스크립트 주소 앞에 'https://corsproxy.io/?'를 붙입니다.
-
         const targetUrl = 'https://script.google.com/macros/s/AKfycbzdpzbv7uXGZ4SqCh5YtSn_0Nfv6aY6iYHHZE1KJi8spiI7Ts_-u0-ZS3pN01RSQBYRQA/exec';
-
-        const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(targetUrl + '?t=' + Date.now());
-
-        
-
-        const res = await fetch(proxyUrl);
-
+        const res = await fetch(targetUrl);
         sheetData = await res.json();
-
         
-
         document.getElementById('totalCount').textContent = sheetData.length + '개';
 
-        // ... (이후 기존 마커 로딩 로직 동일) ...
+        sheetData.forEach((item, index) => {
+            if (!item.address) return; // 주소 없으면 건너뜀
 
+            // 1. localStorage에서 좌표 불러오기
+            const cachedPos = localStorage.getItem(item.address);
+            
+            if (cachedPos) {
+                addMarker(JSON.parse(cachedPos), item);
+                loadedCount++;
+                updateProgress();
+            } else {
+                // 2. 캐시 없으면 지오코딩 (0.3초 간격으로 제한하여 429 에러 방지)
+                setTimeout(() => {
+                    geocoder.addressSearch(item.address, (result, status) => {
+                        if (status === kakao.maps.services.Status.OK) {
+                            const pos = { lat: result[0].y, lng: result[0].x };
+                            localStorage.setItem(item.address, JSON.stringify(pos));
+                            addMarker(pos, item);
+                            loadedCount++;
+                            updateProgress();
+                        }
+                    });
+                }, index * 300); 
+            }
+        });
     } catch (e) {
-
         console.error("데이터 로드 실패:", e);
-
     }
-
 }
-
-
-
         function updateProgress() {
 
             const percent = Math.round((loadedCount / sheetData.length) * 100);
