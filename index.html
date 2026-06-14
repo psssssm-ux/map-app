@@ -69,7 +69,7 @@
                                 const marker = new kakao.maps.Marker({ position: new kakao.maps.LatLng(result[0].y, result[0].x) });
                                 clusterer.addMarker(marker);
                             }
-                            setTimeout(resolve, 200); // 0.2초 지연으로 과부하 방지
+                            setTimeout(resolve, 200);
                         });
                     });
                 }
@@ -89,6 +89,7 @@
             const listHTML = filtered.map(i => `
                 <li onclick="findSite(${sheetData.indexOf(i)}, ${window.innerWidth <= 768})" style="padding: 10px; border-bottom: 1px solid #eee;">
                     <div style="font-weight:bold; font-size:14px;">${i.site}</div>
+                    <div style="font-size:11px; color:#666;">코너: ${i.BIN2 || '-'} | 기번: ${i.MN || '-'}</div>
                 </li>`).join('');
 
             if (window.innerWidth <= 768) { popupContent.innerHTML = listHTML; popup.style.display = 'block'; } 
