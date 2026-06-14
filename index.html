@@ -76,8 +76,31 @@
 
         function showOverlay(pos, item) {
             if(customOverlay) customOverlay.setMap(null);
-            const content = `<div class="premium-card"><div class="premium-header">${item.site}</div><div>코너: ${item.BIN2 || '-'}<br>기번: ${item.MN || '-'}</div></div>`;
-            customOverlay = new kakao.maps.CustomOverlay({ position: new kakao.maps.LatLng(pos.y, pos.x), content: content, yAnchor: 1.2 });
+            
+            // 정보창 HTML 구성 (요청하신 필드 반영)
+            const content = `
+            <div class="premium-card">
+                <div class="premium-header">${item.site}</div>
+                <div style="font-size: 13px; line-height: 1.6;">
+                    주소: ${item.address || '-'}<br>
+                    기번: ${item.MN || '-'}<br>
+                    담당자: ${item.manager || '-'}<br>
+                    경비사: ${item.sec || '-'}<br>
+                    연락처: ${item.phone || '-'}<br>
+                    기타: ${item.etc || '-'}<br>
+                    주차: ${item.park || '-'}
+                </div>
+                <div style="margin-top:10px; display:flex; justify-content:space-between;">
+                    <a href="tel:${item.phone || ''}">전화</a>
+                    <a href="https://map.kakao.com/link/to/${item.site},${pos.y},${pos.x}" target="_blank">길찾기</a>
+                </div>
+            </div>`;
+            
+            customOverlay = new kakao.maps.CustomOverlay({ 
+                position: new kakao.maps.LatLng(pos.y, pos.x), 
+                content: content, 
+                yAnchor: 1.2 
+            });
             customOverlay.setMap(map);
         }
 
