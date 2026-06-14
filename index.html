@@ -38,7 +38,7 @@
                 <div class="btn-common" style="background-color: #0070c0;" onclick="toggleRecent()">최근 수정된 사이트 LIST ▼</div>
                 <ul id="recentList" class="data-list"></ul>
                 <div style="font-weight:700; margin-top:10px;">사이트 검색 ▼</div>
-                <input type="text" id="searchKeyword" style="width:100%; padding:14px; margin-top:5px; box-sizing:border-box; border:1px solid #e1e4e8; border-radius:12px;" placeholder="사이트명 입력...">
+                <input type="text" id="searchKeyword" style="width:100%; padding:14px; margin-top:5px; box-sizing:border-box; border:1px solid #e1e4e8; border-radius:12px;" placeholder="사이트/기번/코너명 입력...">
                 <ul id="resultList" class="data-list"></ul>
             </div>
             <div id="footer-area"><div>제작자 : 경남팀 박상문 | 기획 : 경남팀 김민우</div><div style="margin-top: 5px; color: #bbb;">© 2026. All Rights Reserved.</div></div>
@@ -125,7 +125,7 @@
         // 여기서는 데이터의 주소를 넘겨서 처리하는 방식을 권장합니다.
         return `<li onclick="findSiteByData('${i.address.replace(/'/g, "\\'")}')">
                     <div style="font-weight:700; font-size:14px;">${i.site}</div>
-                    <div style="font-size:12px; color:#555; margin-top:3px;">기번: ${i.MN || '-'} | 코드: ${i.BIN2 || '-'}</div>
+                    <div style="font-size:12px; color:#555; margin-top:3px;">기번: ${i.MN || '-'} | 코너명: ${i.BIN2 || '-'}</div>
                 </li>`;
     }).join('');
     
