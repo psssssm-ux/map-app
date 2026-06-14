@@ -86,7 +86,6 @@
             
             if (val.length === 0) { list.style.display = 'none'; popup.style.display = 'none'; return; }
 
-            // 검색 결과 리스트에 BIN2와 MN 정보를 포함하여 출력
             const listHTML = filtered.map(i => `
                 <li onclick="findSite(${sheetData.indexOf(i)}, ${window.innerWidth <= 768})" style="padding: 10px; border-bottom: 1px solid #eee;">
                     <div style="font-weight:bold; font-size:14px;">${i.site}</div>
@@ -109,18 +108,18 @@
                     infowindow.close();
                     const marker = new kakao.maps.Marker({ map: map, position: coords });
                     
+                    // 수정된 필드명 적용
                     const infoContent = `
                         <div class="info-win">
                             <div class="info-win-title">${item.site}</div>
-                            <div class="info-win-row"><b>코너:</b> ${item.BIN2 || '-'}</div>
                             <div class="info-win-row"><b>기번:</b> ${item.MN || '-'}</div>
-                            <div class="info-win-row"><b>담당자:</b> ${item.col9 || '-'}</div>
-                            <div class="info-win-row"><b>경비사:</b> ${item.col10 || '-'}</div>
-                            <div class="info-win-row"><b>연락처:</b> ${item.col11 || '-'}</div>
-                            <div class="info-win-row"><b>기타:</b> ${item.col12 || '-'}</div>
-                            <div class="info-win-row"><b>주차:</b> ${item.col13 || '-'}</div>
+                            <div class="info-win-row"><b>담당자:</b> ${item.TSE || '-'}</div>
+                            <div class="info-win-row"><b>경비사:</b> ${item.sec || '-'}</div>
+                            <div class="info-win-row"><b>연락처:</b> ${item.phone || '-'}</div>
+                            <div class="info-win-row"><b>기타:</b> ${item.etc || '-'}</div>
+                            <div class="info-win-row"><b>주차:</b> ${item.park || '-'}</div>
                             <div class="info-win-btns">
-                                <a href="tel:${item.col11}" style="color:#0070c0; font-weight:bold; text-decoration:none;">📞 전화</a>
+                                <a href="tel:${item.phone}" style="color:#0070c0; font-weight:bold; text-decoration:none;">📞 전화</a>
                                 <a href="https://map.kakao.com/link/to/${item.site},${res[0].y},${res[0].x}" target="_blank" style="color:#ff9f43; font-weight:bold; text-decoration:none;">📍 길찾기</a>
                             </div>
                         </div>`;
