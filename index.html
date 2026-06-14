@@ -9,21 +9,19 @@
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; font-family: 'Pretendard', sans-serif; overflow: hidden; background: #f4f7fa; }
         #app-container { display: flex; width: 100vw; height: 100vh; }
         
-        /* 사이드바 디자인: 이미지와 동일하게 400px 폭, 깔끔한 배경 */
         #sidebar { width: 400px; min-width: 400px; height: 100vh; background: #ffffff; border-right: 1px solid #e1e4e8; z-index: 10; display: flex; flex-direction: column; box-shadow: 5px 0 15px rgba(0,0,0,0.05); padding: 20px; box-sizing: border-box; overflow-y: auto; }
         #map { flex: 1; height: 100vh; position: relative; }
 
-        /* 버튼: 주황(현재위치), 보라(초기화), 파랑(리스트) 색상 완벽 복구 */
         .btn-common { width: 100%; padding: 15px; margin-bottom: 12px; border-radius: 8px; font-weight: 700; font-size: 14px; cursor: pointer; border: none; color: #fff; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
 
-        /* 마커 정보창: 둥근 모서리와 헤더 색상이 반영된 고급 카드 디자인 */
         .premium-card { background: white; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); width: 280px; overflow: hidden; border: 1px solid #ccc; }
         .premium-header { background: #0066cc; padding: 15px; color: white; font-size: 16px; font-weight: bold; }
         .premium-body { padding: 15px; font-size: 14px; line-height: 1.8; color: #333; }
         .premium-footer { display: flex; justify-content: space-between; padding: 10px 15px; border-top: 1px solid #eee; font-weight: bold; color: #4b0082; }
 
         .data-list { list-style: none; padding: 0; margin: 10px 0; display: none; background: #fff; border: 1px solid #ddd; border-radius: 8px; overflow: hidden; }
-        .data-list li { padding: 12px; border-bottom: 1px solid #eee; font-size: 14px; cursor: pointer; }
+        .data-list li { padding: 12px; border-bottom: 1px solid #eee; cursor: pointer; }
+        .data-list li:hover { background: #f9f9f9; }
     </style>
 </head>
 <body>
@@ -83,13 +81,25 @@
             customOverlay = new kakao.maps.CustomOverlay({ position: new kakao.maps.LatLng(pos.y, pos.x), content: content, yAnchor: 1.2 });
             customOverlay.setMap(map);
         }
+        // 수정된 검색 로직
         document.getElementById('searchKeyword').addEventListener('keyup', function() {
             const val = this.value.toLowerCase();
             const list = document.getElementById('resultList');
-            const filtered = sheetData.filter(i => (i.site||'').toLowerCase().includes(val) || (i.MN||'').toString().includes(val));
-            list.innerHTML = filtered.map(i => `<li onclick="findSite('${i.site}')"><strong>${i.site}</strong></li>`).join('');
+            const filtered = sheetData.filter(i => 
+                (i.site||'').toLowerCase().includes(val) || 
+                (i.BIN2||'').toString().toLowerCase().includes(val) || 
+                (i.MN||'').toString().toLowerCase().includes(val)
+            );
+            
+            list.innerHTML = filtered.map(i => `
+                <li onclick="findSite('${i.site}')">
+                    <div style="font-weight:bold;">${i.site}</div>
+                    <div style="font-size:12px; color:#666;">코너: ${i.BIN2 || '-'} / 기번: ${i.MN || '-'}</div>
+                </li>`).join('');
+            
             list.style.display = filtered.length > 0 ? 'block' : 'none';
         });
+
         function findSite(name) {
             const item = sheetData.find(i => i.site === name);
             geocoder.addressSearch(item.address, (res) => {
