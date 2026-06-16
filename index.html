@@ -276,22 +276,34 @@ async function loadData() {
     const CACHE_KEY = 'siteData_v1';
     
     try {
-        document.getElementById('progressBar').innerText = "데이터 서버 연결...";
+        document.getElementById('progressBar').innerText = "데이터 로딩 중...";
         const res = await fetch('https://script.google.com/macros/s/AKfycbwQNp3OGUMj9WN2h8A8wJoyoGKysrdRm1nFHzjeYqTpfPAhraX2hT803CBgN58Xr9B8gQ/exec');
-        const data = await res.json();
+        sheetData = await res.json();
         
-        // 데이터가 객체 배열인지 확인
-        sheetData = data; 
-        console.log("데이터 로드 완료:", sheetData.length);
+        console.log("데이터 로드 성공:", sheetData.length);
+        document.getElementById('progressBar').innerText = "지도에 마커 표시 중...";
+
+        // 좌표가 없는 데이터만 골라서 아주 빠르게 비동기 변환
+        const tasks = sheetData.map(async (item) => {
+            if (item.address && (!item.lat || item.lat === "")) {
+                const coords = await getCoords(item.address);
+                if (coords) {
+                    item.lat = coords.lat;
+                    item.lng = coords.lng;
+                }
+            }
+        });
+
+        // 모든 변환 작업이 끝날 때까지 대기
+        await Promise.all(tasks);
         
-        // 1. 이미 데이터에 lat, lng가 있다면 바로 drawMarkers 호출 (변환 작업 스킵)
-        // 2. 만약 lat이 없다면 그때만 변환 (20개씩만 처리하여 브라우저 멈춤 방지)
-        drawMarkers(); 
-        document.getElementById('progressBar').innerText = "데이터 로딩 완료!";
+        localStorage.setItem(CACHE_KEY, JSON.stringify(sheetData));
+        drawMarkers();
+        document.getElementById('progressBar').innerText = "로딩 완료!";
         
     } catch (e) {
-        console.error("데이터 로딩 에러:", e);
-        document.getElementById('progressBar').innerText = "서버 오류: 콘솔 확인";
+        console.error("로딩 에러:", e);
+        document.getElementById('progressBar').innerText = "로딩 실패";
     }
 }
     function getCoords(address) {
