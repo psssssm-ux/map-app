@@ -272,45 +272,45 @@ let map, geocoder, clusterer, infowindow, sheetData = [], myLocationMarker = nul
         loadData();
     });
 
-    async function loadData() {
-        const CACHE_KEY = 'siteData_v1';
-        const cachedData = localStorage.getItem(CACHE_KEY);
+async function loadData() {
+    const CACHE_KEY = 'siteData_v1';
+    
+    // 1. 서버에서 데이터 가져오기 시도
+    try {
+        document.getElementById('progressBar').innerText = "데이터 서버에서 가져오는 중...";
+        const res = await fetch('https://script.google.com/macros/s/AKfycbwQNp3OGUMj9WN2h8A8wJoyoGKysrdRm1nFHzjeYqTpfPAhraX2hT803CBgN58Xr9B8gQ/exec');
         
-        if (cachedData) {
-            sheetData = JSON.parse(cachedData);
-            // 데이터가 로드된 후 마커 생성
-            setTimeout(drawMarkers, 500); 
-            document.getElementById('progressBar').innerText = "데이터 로딩 완료 (캐시 사용)";
-            return;
-        }
+        if (!res.ok) throw new Error("서버 응답 오류");
+        
+        const data = await res.json();
+        console.log("받아온 데이터:", data); // F12 콘솔에서 데이터가 들어오는지 확인!
+        
+        sheetData = data.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
 
-        try {
-            document.getElementById('progressBar').innerText = "데이터 서버에서 가져오는 중...";
-            const res = await fetch('https://script.google.com/macros/s/AKfycbwQNp3OGUMj9WN2h8A8wJoyoGKysrdRm1nFHzjeYqTpfPAhraX2hT803CBgN58Xr9B8gQ/exec');
-            const data = await res.json();
-            sheetData = data.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
-
-            for (let i = 0; i < sheetData.length; i++) {
-                let item = sheetData[i];
-                if (item.address && (!item.lat || !item.lng)) {
-                    document.getElementById('progressBar').innerText = `주소 변환 중 (${i + 1}/${sheetData.length})`;
-                    const coords = await getCoords(item.address);
-                    if (coords) {
-                        item.lat = coords.lat;
-                        item.lng = coords.lng;
-                    }
-                    await new Promise(r => setTimeout(r, 250));
+        // 2. 주소 변환 작업
+        for (let i = 0; i < sheetData.length; i++) {
+            let item = sheetData[i];
+            if (item.address && (!item.lat || !item.lng)) {
+                document.getElementById('progressBar').innerText = `주소 변환 중 (${i + 1}/${sheetData.length})`;
+                const coords = await getCoords(item.address);
+                if (coords) {
+                    item.lat = coords.lat;
+                    item.lng = coords.lng;
                 }
+                await new Promise(r => setTimeout(r, 250));
             }
-
-            localStorage.setItem(CACHE_KEY, JSON.stringify(sheetData));
-            drawMarkers();
-            document.getElementById('progressBar').innerText = "데이터 로딩 완료!";
-        } catch (e) {
-            document.getElementById('progressBar').innerText = "로딩 실패";
         }
-    }
 
+        // 3. 로컬 스토리지에 저장
+        localStorage.setItem(CACHE_KEY, JSON.stringify(sheetData));
+        drawMarkers();
+        document.getElementById('progressBar').innerText = "데이터 로딩 완료!";
+        
+    } catch (e) {
+        console.error("데이터 로딩 에러:", e);
+        document.getElementById('progressBar').innerText = "데이터 로딩 실패 (콘솔 확인)";
+    }
+}
     function getCoords(address) {
         return new Promise((resolve) => {
             geocoder.addressSearch(address, (result, status) => {
