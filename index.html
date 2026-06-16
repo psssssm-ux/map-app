@@ -63,22 +63,24 @@
         flex-direction: column; 
     } 
     
-    /* 지도를 위로 올림 */
+    /* 1. 지도 영역: 상단 50% */
     #map { 
         height: 40% !important; 
         flex: none; 
-        order: -1; /* 사이드바보다 먼저(위) 배치 */
+        order: -1; 
     } 
     
-    /* 사이드바를 아래로 내림 */
+    /* 2. 사이드바 영역: 모바일에서 width를 100%로 재정의 */
     #sidebar { 
-        width: 100%; 
+        width: 100% !important;   /* 고정 450px을 100%로 덮어씀 */
+        min-width: 100% !important; 
         height: 60% !important; 
-        min-height: 50% !important; 
+        min-height: 60% !important; 
         border-right: none; 
-        border-bottom: 2px solid #e1e4e8; /* 구분선을 하단으로 이동 */
-        order: 1;  /* 사이드바를 나중(아래)에 배치 */
-    } 
+        border-top: 2px solid #e1e4e8; 
+        order: 1; 
+        box-sizing: border-box; /* 패딩 포함 */
+    }
 }
     </style>
 </head>
