@@ -309,7 +309,8 @@
             geocoder.addressSearch(item.address, (result, status) => {
 
                 if (status === kakao.maps.services.Status.OK) {
-
+item.lat = result[0].y;
+        item.lng = result[0].x;
                     const marker = new kakao.maps.Marker({ 
 
                         position: new kakao.maps.LatLng(result[0].y, result[0].x) 
@@ -483,33 +484,26 @@
 
 
 
-       function openMapRoute(address, lat, lng) {
+    function openMapRoute(address, lat, lng) {
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
     
     if (isMobile) {
-        if (lat && lng && lat !== 'undefined' && lng !== 'undefined') {
-            // 1. 앱 호출 스킴 시도
-            const appUrl = `kakaomap://route?ep=${lat},${lng}&by=CAR`;
+        // 좌표가 있는 경우에만 앱 호출 시도
+        if (lat && lat !== 'undefined') {
+            // ep(도착지) 좌표와 함께 길찾기 스킴 호출
+            // sp를 비워두면 카카오맵 앱이 현재 위치를 자동으로 출발지로 잡습니다.
+            window.location.href = `kakaomap://route?ep=${lat},${lng}&by=CAR`;
             
-            // 2. 웹 브라우저용 주소
-            const webUrl = `https://map.kakao.com/?eName=${encodeURIComponent(address)}`;
-
-            // 3. 앱 실행 시도
-            window.location.href = appUrl;
-
-            // 4. 앱이 설치되어 있지 않을 경우를 대비해 1초 뒤 웹으로 이동
-            // visibilitychange 이벤트를 사용하여 앱으로 전환되면 타이머를 멈추는 것이 가장 좋지만,
-            // 일단 기존 구조에서 가장 효과적인 방식은 다음과 같습니다.
+            // 앱이 없을 경우를 대비한 보험 (앱이 열리면 아래 코드는 무시됩니다)
             setTimeout(() => {
-                // 앱이 실행되었다면 이미 브라우저는 백그라운드로 갔으므로 
-                // 아래 코드가 동작해도 사용자 눈에는 변화가 없어야 합니다.
-                window.location.href = webUrl;
+                window.location.href = `https://map.kakao.com/?eName=${encodeURIComponent(address)}`;
             }, 1000);
-            
         } else {
+            // 좌표가 없을 경우 웹으로 이동
             window.location.href = `https://map.kakao.com/?eName=${encodeURIComponent(address)}`;
         }
     } else {
+        // PC는 그냥 웹
         window.open(`https://map.kakao.com/?eName=${encodeURIComponent(address)}`, '_blank');
     }
 }
