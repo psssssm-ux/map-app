@@ -275,38 +275,23 @@ let map, geocoder, clusterer, infowindow, sheetData = [], myLocationMarker = nul
 async function loadData() {
     const CACHE_KEY = 'siteData_v1';
     
-    // 1. 서버에서 데이터 가져오기
     try {
-        document.getElementById('progressBar').innerText = "데이터 서버에서 가져오는 중...";
+        document.getElementById('progressBar').innerText = "데이터 서버 연결...";
         const res = await fetch('https://script.google.com/macros/s/AKfycbwQNp3OGUMj9WN2h8A8wJoyoGKysrdRm1nFHzjeYqTpfPAhraX2hT803CBgN58Xr9B8gQ/exec');
-        sheetData = await res.json();
-
-        // 2. 좌표가 없는 경우 주소 검색을 통해 좌표 추가
-        let processCount = 0;
-        for (let item of sheetData) {
-            // lat이나 lng가 없으면 좌표 검색
-            if (item.address && (!item.lat || item.lat === "")) {
-                const coords = await getCoords(item.address);
-                if (coords) {
-                    item.lat = coords.lat;
-                    item.lng = coords.lng;
-                    processCount++;
-                }
-                // API 호출 제한 방지 (200ms 대기)
-                await new Promise(r => setTimeout(r, 200));
-            }
-        }
-
-        console.log("좌표가 보충된 데이터 개수:", processCount);
+        const data = await res.json();
         
-        // 3. 로컬 스토리지에 저장하고 마커 표시
-        localStorage.setItem(CACHE_KEY, JSON.stringify(sheetData));
-        drawMarkers();
+        // 데이터가 객체 배열인지 확인
+        sheetData = data; 
+        console.log("데이터 로드 완료:", sheetData.length);
+        
+        // 1. 이미 데이터에 lat, lng가 있다면 바로 drawMarkers 호출 (변환 작업 스킵)
+        // 2. 만약 lat이 없다면 그때만 변환 (20개씩만 처리하여 브라우저 멈춤 방지)
+        drawMarkers(); 
         document.getElementById('progressBar').innerText = "데이터 로딩 완료!";
         
     } catch (e) {
         console.error("데이터 로딩 에러:", e);
-        document.getElementById('progressBar').innerText = "로딩 실패";
+        document.getElementById('progressBar').innerText = "서버 오류: 콘솔 확인";
     }
 }
     function getCoords(address) {
