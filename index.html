@@ -333,15 +333,12 @@
         function drawMarkers() {
     sheetData.forEach(item => {
         if (!item.lat || !item.lng) return; // 좌표가 없으면 패스
-        
-        // 기존에 loadData 안에 있던 마커 생성 코드
-        const marker = new kakao.maps.Marker({ 
-            position: new kakao.maps.LatLng(item.lat, item.lng) 
-        });
+        const marker = new kakao.maps.Marker({ position: new kakao.maps.LatLng(item.lat, item.lng) });
         kakao.maps.event.addListener(marker, 'mouseover', () => displayInfowindow(marker, item));
         clusterer.addMarker(marker);
     });
-}
+        }
+
         function refreshData() {
     localStorage.removeItem('siteData_v1');
     location.reload(); // 새로고침하여 다시 로딩
