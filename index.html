@@ -244,20 +244,40 @@
             });
         }
 
-        function openMapRoute(address) {
-            const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-            if (isMobile) {
-                if (navigator.geolocation) {
-                    navigator.geolocation.getCurrentPosition((pos) => {
-                        window.location.href = `kakaomap://route?sp=${pos.coords.latitude},${pos.coords.longitude}&ep=${encodeURIComponent(address)}&by=CAR`;
-                        setTimeout(() => { window.location.href = `https://map.kakao.com/?eName=${encodeURIComponent(address)}`; }, 1000);
-                    }, () => { window.location.href = `https://map.kakao.com/?eName=${encodeURIComponent(address)}`; });
-                }
-            } else {
-                window.open(`https://map.kakao.com/?eName=${encodeURIComponent(address)}`, '_blank');
-            }
+       function openMapRoute(address) {
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    
+    // 도착지 주소를 한번 더 인코딩하여 안전하게 처리
+    const encodedAddress = encodeURIComponent(address);
+    
+    if (isMobile) {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition((pos) => {
+                const lat = pos.coords.latitude;
+                const lon = pos.coords.longitude;
+                
+                // 1. 카카오맵 앱 실행 (도착지 주소 직접 전달)
+                // 주소 전달 시 eName(도착지명)과 함께 ep(도착지 좌표 또는 주소)를 명확히 함
+                const kakaoScheme = `kakaomap://route?sp=${lat},${lon}&ep=${encodedAddress}&by=CAR`;
+                
+                window.location.href = kakaoScheme;
+                
+                // 2. 앱이 설치되지 않았을 경우를 대비한 딜레이 후 웹으로 이동
+                setTimeout(() => {
+                    window.location.href = `https://map.kakao.com/?sName=현위치&eName=${encodedAddress}`;
+                }, 1000);
+            }, () => { 
+                // 위치 정보 거부 시 웹으로 바로 이동
+                window.location.href = `https://map.kakao.com/?eName=${encodedAddress}`; 
+            });
+        } else {
+            window.location.href = `https://map.kakao.com/?eName=${encodedAddress}`;
         }
-
+    } else {
+        // PC일 경우
+        window.open(`https://map.kakao.com/?eName=${encodedAddress}`, '_blank');
+    }
+}
         function toggleRecent() {
             const list = document.getElementById('recentList');
             if(list.style.display === 'block') { list.style.display = 'none'; return; }
