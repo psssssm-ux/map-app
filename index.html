@@ -59,43 +59,38 @@
 
         async function loadData() {
     try {
-        // 카카오 API의 인증 헤더가 fetch 요청에 포함되지 않도록 mode를 'cors'로 설정하고 헤더를 재정의합니다.
-        const res = await fetch('https://script.google.com/macros/s/AKfycbwQNp3OGUMj9WN2h8A8wJoyoGKysrdRm1nFHzjeYqTpfPAhraX2hT803CBgN58Xr9B8gQ/exec', {
-            method: 'GET',
-            mode: 'cors',
-            headers: {
-                'Cache-Control': 'no-cache',
-                'Pragma': 'no-cache'
-            }
-        });
-
-        if (!res.ok) throw new Error("서버 응답 오류: " + res.status);
-        
+        const res = await fetch('https://script.google.com/macros/s/AKfycbwQNp3OGUMj9WN2h8A8wJoyoGKysrdRm1nFHzjeYqTpfPAhraX2hT803CBgN58Xr9B8gQ/exec');
         const data = await res.json();
         
-        // 날짜순(최신순) 정렬
-        sheetData = data.sort((a, b) => {
-            const dateA = a.date ? new Date(a.date).getTime() : 0;
-            const dateB = b.date ? new Date(b.date).getTime() : 0;
-            return dateB - dateA;
-        });
+        sheetData = data.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
         
-        console.log("데이터 로딩 성공:", sheetData);
+        document.getElementById('progressBar').innerText = "주소 변환 시작 (잠시만 기다려주세요)...";
 
-        sheetData.forEach((item) => {
-            if (!item.address) return; // 주소가 없는 경우 제외
+        // 순차적으로 주소 검색 수행 (429 에러 방지)
+        for (let i = 0; i < sheetData.length; i++) {
+            await new Promise(resolve => setTimeout(resolve, 250)); // 0.25초 간격으로 호출
+            
+            const item = sheetData[i];
+            if (!item.address) continue;
+
             geocoder.addressSearch(item.address, (result, status) => {
                 if (status === kakao.maps.services.Status.OK) {
-                    const marker = new kakao.maps.Marker({ position: new kakao.maps.LatLng(result[0].y, result[0].x) });
+                    const marker = new kakao.maps.Marker({ 
+                        position: new kakao.maps.LatLng(result[0].y, result[0].x) 
+                    });
                     kakao.maps.event.addListener(marker, 'mouseover', () => displayInfowindow(marker, item));
                     clusterer.addMarker(marker);
                 }
             });
-        });
-        document.getElementById('progressBar').innerText = "데이터 동기화 완료";
+            
+            // 진행률 표시
+            document.getElementById('progressBar').innerText = `데이터 처리 중: ${i + 1} / ${sheetData.length}`;
+        }
+        
+        document.getElementById('progressBar').innerText = "모든 데이터 로딩 완료!";
     } catch (e) { 
         console.error("데이터 로딩 에러:", e);
-        document.getElementById('progressBar').innerText = "데이터 로딩 실패 (콘솔 확인)"; 
+        document.getElementById('progressBar').innerText = "데이터 로딩 실패"; 
     }
 }
         function displayInfowindow(marker, item) {
