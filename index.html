@@ -360,7 +360,7 @@
 
                                     <a href="tel:${item.phone || '#'}" class="btn-tel">📞 전화</a>
 
-                                    <a onclick="openMapRoute('${item.address.replace(/'/g, "\\'")}')" class="btn-map">📍 길찾기</a>
+                                   <a onclick="openMapRoute('${item.address.replace(/'/g, "\\'")}', '${item.lat}', '${item.lng}')" class="btn-map">📍 길찾기</a>
 
                                 </div>
 
@@ -490,31 +490,30 @@
 
 
 
-        function openMapRoute(address) {
-
-            const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-
-            if (isMobile) {
-
-                if (navigator.geolocation) {
-
-                    navigator.geolocation.getCurrentPosition((pos) => {
-
-                        window.location.href = `kakaomap://route?sp=${pos.coords.latitude},${pos.coords.longitude}&ep=${encodeURIComponent(address)}&by=CAR`;
-
-                        setTimeout(() => { window.location.href = `https://map.kakao.com/?eName=${encodeURIComponent(address)}`; }, 1000);
-
-                    }, () => { window.location.href = `https://map.kakao.com/?eName=${encodeURIComponent(address)}`; });
-
-                }
-
-            } else {
-
-                window.open(`https://map.kakao.com/?eName=${encodeURIComponent(address)}`, '_blank');
-
-            }
-
+        function openMapRoute(address, lat, lng) {
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    const encodedAddress = encodeURIComponent(address);
+    
+    if (isMobile) {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition((pos) => {
+                // 출발지(sp)는 현재 위치, 도착지(ep)는 좌표로 설정
+                window.location.href = `kakaomap://route?sp=${pos.coords.latitude},${pos.coords.longitude}&ep=${lat},${lng}&by=CAR`;
+                
+                // 앱이 설치되지 않았을 경우를 대비한 대체 경로
+                setTimeout(() => { 
+                    window.location.href = `https://map.kakao.com/?eName=${encodedAddress}`; 
+                }, 1000);
+            }, () => { 
+                // 위치 권한 거부 시 주소 기반 웹 페이지로 이동
+                window.location.href = `https://map.kakao.com/?eName=${encodedAddress}`; 
+            });
         }
+    } else {
+        // PC 환경
+        window.open(`https://map.kakao.com/?eName=${encodedAddress}`, '_blank');
+    }
+}
 
 
 
