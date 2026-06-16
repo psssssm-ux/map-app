@@ -59,21 +59,31 @@
 
         async function loadData() {
     try {
-        const res = await fetch('https://script.google.com/macros/s/AKfycbwQNp3OGUMj9WN2h8A8wJoyoGKysrdRm1nFHzjeYqTpfPAhraX2hT803CBgN58Xr9B8gQ/exec');
+        // 카카오 API의 인증 헤더가 fetch 요청에 포함되지 않도록 mode를 'cors'로 설정하고 헤더를 재정의합니다.
+        const res = await fetch('https://script.google.com/macros/s/AKfycbwQNp3OGUMj9WN2h8A8wJoyoGKysrdRm1nFHzjeYqTpfPAhraX2hT803CBgN58Xr9B8gQ/exec', {
+            method: 'GET',
+            mode: 'cors',
+            headers: {
+                'Cache-Control': 'no-cache',
+                'Pragma': 'no-cache'
+            }
+        });
+
+        if (!res.ok) throw new Error("서버 응답 오류: " + res.status);
+        
         const data = await res.json();
         
-        // 날짜순(최신순) 정렬 보완
+        // 날짜순(최신순) 정렬
         sheetData = data.sort((a, b) => {
-            // 날짜 데이터가 없거나 형식이 이상할 경우를 대비해 0으로 처리
             const dateA = a.date ? new Date(a.date).getTime() : 0;
             const dateB = b.date ? new Date(b.date).getTime() : 0;
-            return dateB - dateA; // 큰 값(최신 날짜)이 앞으로 오도록 정렬
+            return dateB - dateA;
         });
         
-        // 정렬 확인용 로그 (콘솔에서 확인 가능)
-        console.log("정렬된 데이터:", sheetData);
+        console.log("데이터 로딩 성공:", sheetData);
 
         sheetData.forEach((item) => {
+            if (!item.address) return; // 주소가 없는 경우 제외
             geocoder.addressSearch(item.address, (result, status) => {
                 if (status === kakao.maps.services.Status.OK) {
                     const marker = new kakao.maps.Marker({ position: new kakao.maps.LatLng(result[0].y, result[0].x) });
@@ -85,10 +95,9 @@
         document.getElementById('progressBar').innerText = "데이터 동기화 완료";
     } catch (e) { 
         console.error("데이터 로딩 에러:", e);
-        document.getElementById('progressBar').innerText = "데이터 로딩 실패"; 
+        document.getElementById('progressBar').innerText = "데이터 로딩 실패 (콘솔 확인)"; 
     }
 }
-
         function displayInfowindow(marker, item) {
             const renderRow = (label, val) => (val && val !== '-' && val.toString().trim() !== '') ? `<div class="card-row"><b>${label}</b> <span>${val}</span></div>` : '';
             const content = `<div class="info-card" onmouseleave="infowindow.close()">
