@@ -347,24 +347,21 @@
 }
 
         function displayInfowindow(marker, item) {
-
-            const renderRow = (label, val) => (val && val !== '-' && val.toString().trim() !== '') ? `<div class="card-row"><b>${label}</b> <span>${val}</span></div>` : '';
-
-            const content = `<div class="info-card" onmouseleave="infowindow.close()">
-
-                                <div class="card-title">${item.site}</div>
-
-                                ${renderRow('주소', item.address)}${renderRow('기번', item.MN)}${renderRow('담당자', item.TSE)}${renderRow('경비사', item.sec)}${renderRow('연락처', item.phone)}${renderRow('기타', item.etc)}${renderRow('주차', item.park)}
-
-                                <div class="card-btns">
-
-                                    <a href="tel:${item.phone || '#'}" class="btn-tel">📞 전화</a>
-
-                                   <a onclick="openMapRoute('${item.address.replace(/'/g, "\\'")}', '${item.lat}', '${item.lng}')" class="btn-map">📍 길찾기</a>
-
-                                </div>
-
-                            </div>`;
+    const renderRow = (label, val) => (val && val !== '-' && val.toString().trim() !== '') ? `<div class="card-row"><b>${label}</b> <span>${val}</span></div>` : '';
+    
+    // 아래 a 태그 부분에서 lat, lng를 확실하게 전달합니다.
+    const content = `<div class="info-card" onmouseleave="infowindow.close()">
+        <div class="card-title">${item.site}</div>
+        ${renderRow('주소', item.address)}${renderRow('기번', item.MN)}${renderRow('담당자', item.TSE)}${renderRow('경비사', item.sec)}${renderRow('연락처', item.phone)}${renderRow('기타', item.etc)}${renderRow('주차', item.park)}
+        <div class="card-btns">
+            <a href="tel:${item.phone || '#'}" class="btn-tel">📞 전화</a>
+            <a onclick="openMapRoute('${item.address.replace(/'/g, "\\'")}', '${item.lat}', '${item.lng}')" class="btn-map">📍 길찾기</a>
+        </div>
+    </div>`;
+    
+    infowindow.setContent(content);
+    infowindow.open(map, marker);
+}
 
             infowindow.setContent(content);
 
@@ -490,28 +487,26 @@
 
 
 
-        function openMapRoute(address, lat, lng) {
+       function openMapRoute(address, lat, lng) {
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-    const encodedAddress = encodeURIComponent(address);
     
     if (isMobile) {
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition((pos) => {
-                // 출발지(sp)는 현재 위치, 도착지(ep)는 좌표로 설정
-                window.location.href = `kakaomap://route?sp=${pos.coords.latitude},${pos.coords.longitude}&ep=${lat},${lng}&by=CAR`;
-                
-                // 앱이 설치되지 않았을 경우를 대비한 대체 경로
-                setTimeout(() => { 
-                    window.location.href = `https://map.kakao.com/?eName=${encodedAddress}`; 
-                }, 1000);
-            }, () => { 
-                // 위치 권한 거부 시 주소 기반 웹 페이지로 이동
-                window.location.href = `https://map.kakao.com/?eName=${encodedAddress}`; 
-            });
+        // lat, lng가 undefined라면 주소 검색을 통해 카카오맵 웹으로 보냄
+        if (lat && lng && lat !== 'undefined' && lng !== 'undefined') {
+            // 카카오맵 앱 실행 (도착지 좌표(ep)를 사용)
+            window.location.href = `kakaomap://route?ep=${lat},${lng}&by=CAR`;
+            
+            // 1초 뒤 앱이 없으면 웹으로 이동
+            setTimeout(() => { 
+                window.location.href = `https://map.kakao.com/?eName=${encodeURIComponent(address)}`; 
+            }, 1000);
+        } else {
+            // 좌표가 없을 경우 웹 주소로만 이동
+            window.location.href = `https://map.kakao.com/?eName=${encodeURIComponent(address)}`;
         }
     } else {
-        // PC 환경
-        window.open(`https://map.kakao.com/?eName=${encodedAddress}`, '_blank');
+        // PC는 웹으로 이동
+        window.open(`https://map.kakao.com/?eName=${encodeURIComponent(address)}`, '_blank');
     }
 }
 
