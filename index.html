@@ -240,240 +240,134 @@
 
 
     <script>
-
         let map, geocoder, clusterer, infowindow, sheetData = [], myLocationMarker = null;
 
-
-
         kakao.maps.load(() => {
-
             map = new kakao.maps.Map(document.getElementById('map'), { center: new kakao.maps.LatLng(35.1517, 129.0305), level: 7 });
-
             geocoder = new kakao.maps.services.Geocoder();
-
             clusterer = new kakao.maps.MarkerClusterer({ map: map, gridSize: 35, averageCenter: true, minLevel: 7 });
-
             infowindow = new kakao.maps.InfoWindow({ zIndex: 1 });
-
             loadData();
-
         });
 
-
-
         async function loadData() {
-    try {
-        document.getElementById('progressBar').innerText = "데이터 로딩 중...";
-        const res = await fetch('https://script.google.com/macros/s/AKfycbwCpEcX9BTIe2Z1QFnpW6L5FaRjhiAL0w2i2j3Bs_qLCa_C88v1l5PCaDojeQ6RG-bv0g/exec');
-        sheetData = await res.json();
-        
-        // drawMarkersFromData(); // <-- 이 줄을 지우거나 주석 처리하세요.
-        
-        document.getElementById('progressBar').innerText = "데이터 로딩 완료. 검색하세요!";
-    } catch (e) {
-        document.getElementById('progressBar').innerText = "로딩 실패";
-    }
-}
-        let currentMarker = null; 
-
-function findSiteByData(address) {
-    const item = sheetData.find(i => i.address === address);
-    if (!item) return;
-
-    geocoder.addressSearch(item.address, (result, status) => {
-        if (status === kakao.maps.services.Status.OK) {
-            const lat = result[0].y;
-            const lng = result[0].x;
-            const coords = new kakao.maps.LatLng(lat, lng);
-
-            // 1. 지도 이동 및 마커 표시
-            map.setCenter(coords);
-            map.setLevel(3);
-            
-            if (currentMarker) currentMarker.setMap(null);
-            currentMarker = new kakao.maps.Marker({ map: map, position: coords });
-            
-            // 2. 정보창용 데이터에 좌표 저장
-            item.lat = lat;
-            item.lng = lng;
-            
-            // 3. 여기서 바로 openMapRoute를 실행하지 않고, 정보창만 띄웁니다.
-            displayInfowindow(currentMarker, item);
-
-            // 4. UI 정리
-            document.getElementById('resultList').style.display = 'none';
-            document.getElementById('searchKeyword').value = "";
-        } else {
-            alert("좌표를 찾을 수 없는 주소입니다.");
+            try {
+                document.getElementById('progressBar').innerText = "데이터 로딩 중...";
+                const res = await fetch('https://script.google.com/macros/s/AKfycbwCpEcX9BTIe2Z1QFnpW6L5FaRjhiAL0w2i2j3Bs_qLCa_C88v1l5PCaDojeQ6RG-bv0g/exec');
+                sheetData = await res.json();
+                document.getElementById('progressBar').innerText = "데이터 로딩 완료. 검색하세요!";
+            } catch (e) {
+                document.getElementById('progressBar').innerText = "로딩 실패";
+            }
         }
-    });
-}
+
+        let currentMarker = null;
+
+        function findSiteByData(address) {
+            const item = sheetData.find(i => i.address === address);
+            if (!item) return;
+
+            geocoder.addressSearch(item.address, (result, status) => {
+                if (status === kakao.maps.services.Status.OK) {
+                    const lat = result[0].y;
+                    const lng = result[0].x;
+                    const coords = new kakao.maps.LatLng(lat, lng);
+
+                    map.setCenter(coords);
+                    map.setLevel(3);
+                    
+                    if (currentMarker) currentMarker.setMap(null);
+                    currentMarker = new kakao.maps.Marker({ map: map, position: coords });
+                    
+                    item.lat = lat;
+                    item.lng = lng;
+                    
+                    displayInfowindow(currentMarker, item);
+
+                    document.getElementById('resultList').style.display = 'none';
+                    document.getElementById('searchKeyword').value = "";
+                } else {
+                    alert("좌표를 찾을 수 없는 주소입니다.");
+                }
+            });
+        }
+
         function requestTmap(address, lat, lng) {
-    // 만약 좌표가 없다면 에러 방지
-    if (!lat || !lng) {
-        alert("좌표 정보를 확인 중입니다. 잠시만 기다려주세요.");
-        return;
-    }
-    openMapRoute(address, lat, lng);
-}
-        function drawMarkersFromData() {
-    clusterer.clear();
-    const markers = sheetData.map(item => {
-        if (!item.lat || !item.lng) return null;
-        const marker = new kakao.maps.Marker({ position: new kakao.maps.LatLng(item.lat, item.lng) });
-        kakao.maps.event.addListener(marker, 'mouseover', () => displayInfowindow(marker, item));
-        return marker;
-    }).filter(m => m !== null);
-    clusterer.addMarkers(markers);
-}
+            if (!lat || !lng) {
+                alert("좌표 정보를 확인 중입니다. 잠시만 기다려주세요.");
+                return;
+            }
+            openMapRoute(address, lat, lng);
+        }
 
         function displayInfowindow(marker, item) {
-    const renderRow = (label, val) => (val && val !== '-' && val.toString().trim() !== '') ? `<div class="card-row"><b>${label}</b> <span>${val}</span></div>` : '';
-    
-    // 아래 a 태그 부분에서 lat, lng를 확실하게 전달합니다.
-    const content = `<div class="info-card" onmouseleave="infowindow.close()">
-        <div class="card-title">${item.site}</div>
-        ${renderRow('주소', item.address)}${renderRow('기번', item.MN)}${renderRow('담당자', item.TSE)}${renderRow('경비사', item.sec)}${renderRow('연락처', item.phone)}${renderRow('기타', item.etc)}${renderRow('주차', item.park)}
-        <div class="card-btns">
-            <a href="tel:${item.phone || '#'}" class="btn-tel">📞 전화</a>
-            <a onclick="requestTmap('${item.address.replace(/'/g, "\\'")}', '${item.lat}', '${item.lng}')" class="btn-map">📍 길찾기</a>
-        </div>
-    </div>`;
-    
-    infowindow.setContent(content);
-    infowindow.open(map, marker);
-}
-
-    
-
-
-
-      document.getElementById('searchKeyword').addEventListener('input', function() {
-
-    const val = this.value.toLowerCase();
-
-    const list = document.getElementById('resultList');
-
-    
-
-    if (val.length < 1) { 
-
-        list.style.display = 'none'; 
-
-        return; 
-
-    }
-
-
-
-    const filtered = sheetData.filter(i => {
-
-        const site = String(i.site || '').toLowerCase();
-
-        const mn = String(i.MN || '').toLowerCase();
-
-        const bin = String(i.BIN2 || '').toLowerCase();
-
-        
-
-        return site.includes(val) || mn.includes(val) || bin.includes(val);
-
-    });
-
-
-
-    list.innerHTML = filtered.map(i => {
-
-        // 수정: findSite에 인덱스 대신 사이트의 고유 식별자나 객체를 전달할 수 있도록 구성
-
-        // 여기서는 데이터의 주소를 넘겨서 처리하는 방식을 권장합니다.
-
-        return `<li onclick="findSiteByData('${i.address.replace(/'/g, "\\'")}')">
-
-                    <div style="font-weight:700; font-size:14px;">${i.site}</div>
-
-                    <div style="font-size:12px; color:#555; margin-top:3px;">기번: ${i.MN || '-'} | 코너명: ${i.BIN2 || '-'} | 담당자: ${i.TSE || '-'}</div>
-
-                </li>`;
-
-    }).join('');
-
-    
-
-    list.style.display = filtered.length > 0 ? 'block' : 'none';
-
-});
-        
-
-    function openMapRoute(address, lat, lng) 
-    
-    {
-    console.log("TMAP 호출 - 주소:", address, "위도:", lat, "경도:", lng);
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-    
-    if (isMobile) {
-        const latitude = parseFloat(lat);
-        const longitude = parseFloat(lng);
-        const isValid = !isNaN(latitude) && !isNaN(longitude);
-        
-        if (isValid) {
-            // TMAP 앱 실행
-            const tmapUrl = `tmap://route?name=${encodeURIComponent(address)}&goalx=${longitude.toFixed(6)}&goaly=${latitude.toFixed(6)}`;
+            const renderRow = (label, val) => (val && val !== '-' && val.toString().trim() !== '') ? `<div class="card-row"><b>${label}</b> <span>${val}</span></div>` : '';
             
-            // 1. TMAP 앱 실행 시도
-            window.location.href = tmapUrl;
-
-            // 2. TMAP이 없을 경우를 대비한 사용자 안내 (카카오맵으로 자동 연결하지 않음)
-            setTimeout(() => {
-                // TMAP 앱이 설치되어 있다면 브라우저가 앱으로 전환되면서 이 타이머는 무시되거나 지연됨
-                // 앱이 설치되어 있지 않다면 아래 경고창을 띄워 사용자에게 알림
-                if (document.visibilityState === 'visible') {
-                    alert("TMAP 앱이 설치되어 있지 않거나 실행할 수 없습니다.\nTMAP 앱을 먼저 설치해주세요.");
-                }
-            }, 1000);
+            const content = `<div class="info-card" onmouseleave="infowindow.close()">
+                <div class="card-title">${item.site}</div>
+                ${renderRow('주소', item.address)}${renderRow('기번', item.MN)}${renderRow('담당자', item.TSE)}${renderRow('경비사', item.sec)}${renderRow('연락처', item.phone)}${renderRow('기타', item.etc)}${renderRow('주차', item.park)}
+                <div class="card-btns">
+                    <a href="tel:${item.phone || '#'}" class="btn-tel">📞 전화</a>
+                    <a onclick="requestTmap('${item.address.replace(/'/g, "\\'")}', '${item.lat}', '${item.lng}')" class="btn-map">📍 길찾기</a>
+                </div>
+            </div>`;
             
-        } else {
-            alert("좌표 정보가 정확하지 않아 TMAP을 실행할 수 없습니다.");
+            infowindow.setContent(content);
+            infowindow.open(map, marker);
         }
-    } else {
-        // PC 환경에서는 TMAP 앱을 실행할 수 없으므로 알림
-        alert("모바일 환경에서만 TMAP 길찾기 이용이 가능합니다.");
-    }
-}
-        
 
+        document.getElementById('searchKeyword').addEventListener('input', function() {
+            const val = this.value.toLowerCase();
+            const list = document.getElementById('resultList');
+            if (val.length < 1) { list.style.display = 'none'; return; }
+            const filtered = sheetData.filter(i => {
+                const site = String(i.site || '').toLowerCase();
+                const mn = String(i.MN || '').toLowerCase();
+                const bin = String(i.BIN2 || '').toLowerCase();
+                return site.includes(val) || mn.includes(val) || bin.includes(val);
+            });
+            list.innerHTML = filtered.map(i => {
+                return `<li onclick="findSiteByData('${i.address.replace(/'/g, "\\'")}')">
+                            <div style="font-weight:700; font-size:14px;">${i.site}</div>
+                            <div style="font-size:12px; color:#555; margin-top:3px;">기번: ${i.MN || '-'} | 코너명: ${i.BIN2 || '-'} | 담당자: ${i.TSE || '-'}</div>
+                        </li>`;
+            }).join('');
+            list.style.display = filtered.length > 0 ? 'block' : 'none';
+        });
 
+        function openMapRoute(address, lat, lng) {
+            const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+            if (isMobile) {
+                const latitude = parseFloat(lat);
+                const longitude = parseFloat(lng);
+                if (!isNaN(latitude) && !isNaN(longitude)) {
+                    const tmapUrl = `tmap://route?name=${encodeURIComponent(address)}&goalx=${longitude.toFixed(6)}&goaly=${latitude.toFixed(6)}`;
+                    window.location.href = tmapUrl;
+                    setTimeout(() => {
+                        if (document.visibilityState === 'visible') {
+                            alert("TMAP 앱이 설치되어 있지 않거나 실행할 수 없습니다.");
+                        }
+                    }, 1000);
+                }
+            } else {
+                alert("모바일 환경에서만 TMAP 길찾기 이용이 가능합니다.");
+            }
+        }
 
         function moveToMyLocation() {
-
             if (navigator.geolocation) {
-
                 navigator.geolocation.getCurrentPosition(pos => {
-
                     const myPos = new kakao.maps.LatLng(pos.coords.latitude, pos.coords.longitude);
-
                     if (myLocationMarker) myLocationMarker.setMap(null);
-
-                    map.setCenter(myPos); map.setLevel(3);
-
+                    map.setCenter(myPos); 
+                    map.setLevel(3);
                     myLocationMarker = new kakao.maps.Marker({
-
                         map: map, position: myPos,
-
                         image: new kakao.maps.MarkerImage('https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/marker_red.png', new kakao.maps.Size(31, 35), { offset: new kakao.maps.Point(15, 35) })
-
                     });
-
                 }, () => alert("위치 정보를 가져올 수 없습니다."));
-
             } else { alert("위치 기능을 지원하지 않습니다."); }
-
         }
-
-
-
-        
-
     </script>
 
 </body>
