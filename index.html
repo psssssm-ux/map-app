@@ -301,20 +301,22 @@
             loadData();
         });
 
-        async function loadData(regionName = '경남') {
+ async function loadData(regionName = '경남') {
     try {
         document.getElementById('progressBar').innerText = `${regionName} 데이터 로딩 중...`;
         
-        // 시트 이름을 파라미터로 전달
+        // 1. 데이터를 새로 가져옵니다.
         const url = `https://script.google.com/macros/s/AKfycbycXTi4Vb65rhOZraKaIDcahZz2xiWA_2NvjjIniBKmTFp-AgmHG-dHeHP-Qa_sGYk2UQ/exec?sheetName=${encodeURIComponent(regionName)}`;
         const res = await fetch(url);
-        sheetData = await res.json();
+        sheetData = await res.json(); // <-- 여기서 sheetData가 경북 데이터로 갱신됩니다.
         
         document.getElementById('progressBar').innerText = `${regionName} 로딩 완료!`;
-        console.log(`${regionName} 데이터 로드 성공:`, sheetData.length, "건");
         
-        // 데이터 로딩 후 지도 초기화 또는 마커 표시 로직 실행
-        // drawMarkersFromData(); // 마커 표시 함수가 있다면 여기서 호출
+        // 2. 검색창에 입력된 값이 있다면, 새로 불러온 데이터로 다시 필터링을 시도합니다.
+        const currentSearchVal = document.getElementById('searchKeyword').value;
+        if (currentSearchVal.length > 0) {
+            triggerSearch(currentSearchVal); // 검색창을 다시 실행하는 함수 호출
+        }
         
     } catch (e) {
         document.getElementById('progressBar').innerText = "로딩 실패";
