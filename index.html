@@ -247,16 +247,17 @@
     <div id="scroll-area">
         <div id="progressBar" style="font-size:12px; font-weight:bold; margin-bottom:15px; color:#0070c0;">데이터 로딩 중...</div>
         
-        <div style="margin-bottom:15px;">
+       <div style="margin-bottom:20px;">
     <div style="font-weight:700; margin-bottom:10px; font-size:13px; color:#555;">담당 지역 선택</div>
-    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px;">
-        <button class="region-btn" onclick="changeRegion('경남')">경남</button>
-        <button class="region-btn" onclick="changeRegion('전라')">전라</button>
-        <button class="region-btn" onclick="changeRegion('경북')">경북</button>
-        <button class="region-btn" onclick="changeRegion('충청')">충청</button>
-        <button class="region-btn" onclick="changeRegion('강남')">강남</button>
-        <button class="region-btn" onclick="changeRegion('강북')">강북</button>
+    <div class="region-grid">
+        <button class="region-btn" onclick="changeRegion('경남', this)">경남</button>
+        <button class="region-btn" onclick="changeRegion('전라', this)">전라</button>
+        <button class="region-btn" onclick="changeRegion('경북', this)">경북</button>
+        <button class="region-btn" onclick="changeRegion('충청', this)">충청</button>
+        <button class="region-btn" onclick="changeRegion('강남', this)">강남</button>
+        <button class="region-btn" onclick="changeRegion('강북', this)">강북</button>
     </div>
+</div>
 
         <div class="btn-common" style="background-color: #ff4757;" onclick="moveToMyLocation()">📍 현재 위치로 이동</div>
         
