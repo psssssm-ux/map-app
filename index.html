@@ -209,6 +209,39 @@
         font-size: 10px !important;
 
     }
+           .region-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin: 15px 0;
+}
+
+/* 개별 버튼 디자인 */
+.region-btn {
+    padding: 10px 5px;
+    background: #ffffff;
+    border: 1px solid #dcdde1;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #57606f;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+/* 버튼 hover 및 활성화 효과 */
+.region-btn:hover {
+    border-color: #0070c0;
+    color: #0070c0;
+    background: #f1f8ff;
+}
+
+.region-btn.active {
+    background: #0070c0;
+    color: #ffffff;
+    border-color: #0070c0;
+    box-shadow: 0 4px 6px rgba(0, 112, 192, 0.2);
+}
 
 }
 
@@ -222,14 +255,26 @@
 
       <div id="sidebar">
     <div id="scroll-area">
-        <div id="progressBar" style="font-size:12px; font-weight:bold; margin-bottom:15px; color:#0070c0;">데이터 로딩 중...</div>
-        
-        <div class="btn-common" style="background-color: #ff4757;" onclick="moveToMyLocation()">📍 현재 위치로 이동</div>
-        
-        <div style="font-weight:700; margin-top:20px;">사이트 검색 ▼</div>
-        <input type="text" id="searchKeyword" style="width:100%; padding:14px; margin-top:5px; box-sizing:border-box; border:1px solid #e1e4e8; border-radius:12px;" placeholder="사이트/기번/코너명 입력...">
-        <ul id="resultList" class="data-list"></ul>
+    <div id="progressBar" style="font-size:12px; font-weight:bold; margin-bottom:15px; color:#0070c0;">데이터 로딩 중...</div>
+    
+    <div class="btn-common" style="background-color: #ff4757;" onclick="moveToMyLocation()">📍 현재 위치로 이동</div>
+
+    <div style="margin-top:20px;">
+        <div style="font-weight:700; font-size:13px; color:#333; margin-bottom:5px;">담당 지역 선택</div>
+        <div class="region-grid">
+            <button class="region-btn" onclick="selectRegion(this, '경남')">경남</button>
+            <button class="region-btn" onclick="selectRegion(this, '경북')">경북</button>
+            <button class="region-btn" onclick="selectRegion(this, '전라')">전라</button>
+            <button class="region-btn" onclick="selectRegion(this, '충청')">충청</button>
+            <button class="region-btn" onclick="selectRegion(this, '강남')">강남</button>
+            <button class="region-btn" onclick="selectRegion(this, '강북')">강북</button>
+        </div>
     </div>
+    
+    <div style="font-weight:700; margin-top:20px;">사이트 검색 ▼</div>
+    <input type="text" id="searchKeyword" style="width:100%; padding:14px; margin-top:5px; box-sizing:border-box; border:1px solid #e1e4e8; border-radius:12px;" placeholder="사이트/기번/코너명 입력...">
+    <ul id="resultList" class="data-list"></ul>
+</div>
     <div id="footer-area"><div>제작 : 경남팀</div><div>항상 안전운전 하세요</div><div style="margin-top: 5px; color: #bbb;">© 2026. All Rights Reserved.</div></div>
 </div>
 
