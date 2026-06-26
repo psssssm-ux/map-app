@@ -336,7 +336,7 @@ function findSiteByData(address) {
         ${renderRow('주소', item.address)}${renderRow('기번', item.MN)}${renderRow('담당자', item.TSE)}${renderRow('경비사', item.sec)}${renderRow('연락처', item.phone)}${renderRow('기타', item.etc)}${renderRow('주차', item.park)}
         <div class="card-btns">
             <a href="tel:${item.phone || '#'}" class="btn-tel">📞 전화</a>
-            <a onclick="openMapRoute('${item.address.replace(/'/g, "\\'")}', '${item.lat}', '${item.lng}')" class="btn-map">📍 길찾기</a>
+            <a onclick="findSiteByData('${item.address.replace(/'/g, "\\'")}', true)" class="btn-map">📍 길찾기</a>
         </div>
     </div>`;
     
@@ -404,38 +404,38 @@ function findSiteByData(address) {
 
 });
 
-        function findSiteByData(address) {
-
+        function findSiteByData(address, isFromInfoCard = false) {
     const item = sheetData.find(i => i.address === address);
-
     if (!item) return;
 
-
-
-    geocoder.addressSearch(item.address, (res, status) => {
-
+    geocoder.addressSearch(item.address, (result, status) => {
         if (status === kakao.maps.services.Status.OK) {
+            const lat = result[0].y;
+            const lng = result[0].x;
 
-            const coords = new kakao.maps.LatLng(res[0].y, res[0].x);
-
-            map.setCenter(coords); 
-
+            // TMAP 실행
+            openMapRoute(item.address, lat, lng);
+            
+            // 지도 이동 및 마커 표시
+            const coords = new kakao.maps.LatLng(lat, lng);
+            map.setCenter(coords);
             map.setLevel(3);
-
-            const marker = new kakao.maps.Marker({ map: map, position: coords });
-
-            displayInfowindow(marker, item);
+            
+            if (currentMarker) currentMarker.setMap(null);
+            currentMarker = new kakao.maps.Marker({ map: map, position: coords });
+            
+            // 정보창 닫기 (검색 리스트에서 클릭한 게 아닐 경우에만)
+            if (isFromInfoCard) {
+                infowindow.close();
+            }
 
             document.getElementById('resultList').style.display = 'none';
-
             document.getElementById('searchKeyword').value = "";
-
+        } else {
+            alert("좌표를 찾을 수 없는 주소입니다.");
         }
-
     });
-
 }
-
         function findSite(index) {
 
             const item = sheetData[index];
@@ -467,7 +467,7 @@ function findSiteByData(address) {
     function openMapRoute(address, lat, lng) 
     
     {
-    console.log("받은 좌표:", lat, lng);    
+    console.log("TMAP 호출 - 주소:", address, "위도:", lat, "경도:", lng);
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
     
     if (isMobile) {
