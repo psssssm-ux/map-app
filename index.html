@@ -209,21 +209,30 @@
         font-size: 10px !important;
 
     }
-
-           .region-btn {
-        padding: 8px 0;
+.region-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+        margin-bottom: 20px;
+    }
+        .region-btn {
+        padding: 10px 0;
         border: 1px solid #e1e4e8;
-        background: #fff;
-        border-radius: 8px;
-        font-size: 12px;
+        background: #f8f9fa;
+        border-radius: 10px;
+        font-size: 13px;
         font-weight: 600;
         cursor: pointer;
-        transition: all 0.2s; /* 클릭 시 부드러운 반응 추가 */
+        transition: all 0.2s;
+        color: #4a5568;
     }
-    .region-btn:hover { background: #f0f7ff; border-color: #0070c0; }
-    
-    /* 선택된 버튼을 표시하기 위한 클래스 (추가로 넣어두세요) */
-    .region-btn.active { background: #0070c0; color: #fff; border-color: #0070c0; }
+    .region-btn:hover { background: #edf2f7; border-color: #cbd5e0; }
+    .region-btn.active { 
+        background: #0070c0 !important; 
+        color: #fff !important; 
+        border-color: #0070c0 !important;
+        box-shadow: 0 4px 6px rgba(0,112,192,0.2);
+    }
 }
 
     </style>
@@ -270,12 +279,8 @@
 
 
     kakao.maps.load(() => {
-    // 1. 기본 위치 (부산시청 근처) 설정
-    const defaultCenter = new kakao.maps.LatLng(35.1517, 129.0305);
-    
-    // 2. 지도 생성
     map = new kakao.maps.Map(document.getElementById('map'), { 
-        center: defaultCenter, 
+        center: new kakao.maps.LatLng(35.1517, 129.0305), 
         level: 7 
     });
 
@@ -283,31 +288,24 @@
     clusterer = new kakao.maps.MarkerClusterer({ map: map, gridSize: 35, averageCenter: true, minLevel: 7 });
     infowindow = new kakao.maps.InfoWindow({ zIndex: 1 });
 
-    // 3. 현재 위치를 확인하여 마커 표시 및 이동
+    // 위치 추적 실행
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition((pos) => {
             const currentPos = new kakao.maps.LatLng(pos.coords.latitude, pos.coords.longitude);
-            
-            // 지도 중심 이동 및 확대
             map.setCenter(currentPos);
-            map.setLevel(3);
-
-            // 현재 위치 마커 표시 (파란색 점 모양 사용)
+            map.setLevel(4);
+            // 현재 위치 마커 추가
             myLocationMarker = new kakao.maps.Marker({
                 map: map,
                 position: currentPos,
-                // 카카오에서 제공하는 기본 위치 마커 이미지 사용 (혹은 다른 이미지를 URL로 대체 가능)
-                image: new kakao.maps.MarkerImage(
-                    'https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/marker_red.png', // 더 눈에 띄는 빨간 마커 (필요시 수정)
-                    new kakao.maps.Size(31, 35),
-                    { offset: new kakao.maps.Point(15, 35) }
-                )
+                image: new kakao.maps.MarkerImage('https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/marker_red.png', new kakao.maps.Size(31, 35))
             });
-        }, () => {
-            console.log("위치 정보를 가져올 수 없어 기본 위치로 표시합니다.");
         });
     }
-
+    
+    // 데이터 불러오기 (기본값 경남)
+    changeRegion('경남', document.querySelector('.region-btn')); 
+});
     loadData();
 });
 function changeRegion(region, btnElement) {
