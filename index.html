@@ -461,18 +461,30 @@ function findSiteByData(address) {
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
     
     if (isMobile) {
-        if (lat && lng) {
-            // TMAP 앱 스킴: goalx(경도), goaly(위도) 순서
-            window.location.href = `tmap://route?name=${encodeURIComponent(address)}&goalx=${lng}&goaly=${lat}`;
+        // lat, lng이 유효한 숫자인지 확인 (문자열인 경우 숫자로 변환)
+        const latitude = parseFloat(lat);
+        const longitude = parseFloat(lng);
+        const isValid = !isNaN(latitude) && !isNaN(longitude);
+        
+        if (isValid) {
+            // TMAP 앱 실행
+            // goalx(경도), goaly(위도) 순서가 매우 중요합니다.
+            // 이름(name)을 인코딩하여 깨짐 방지
+            const tmapUrl = `tmap://route?name=${encodeURIComponent(address)}&goalx=${longitude.toFixed(6)}&goaly=${latitude.toFixed(6)}`;
             
-            // 1초 뒤에도 앱이 안 켜지면 카카오맵 웹 이동
+            window.location.href = tmapUrl;
+            
+            // 보험: 1.5초 후에도 앱이 안 켜지면 카카오맵 웹으로 이동
             setTimeout(() => {
                 window.location.href = `https://map.kakao.com/?eName=${encodeURIComponent(address)}`;
-            }, 1000);
+            }, 1500);
+            
         } else {
+            // 좌표 오류 시 카카오맵 웹으로 이동
             window.location.href = `https://map.kakao.com/?eName=${encodeURIComponent(address)}`;
         }
     } else {
+        // PC
         window.open(`https://map.kakao.com/?eName=${encodeURIComponent(address)}`, '_blank');
     }
 }
