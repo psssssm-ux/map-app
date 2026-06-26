@@ -372,15 +372,18 @@ function selectRegion(btnElement, regionName) {
         function displayInfowindow(marker, item) {
     const renderRow = (label, val) => (val && val !== '-' && val.toString().trim() !== '') ? `<div class="card-row"><b>${label}</b> <span>${val}</span></div>` : '';
     
-    // 주소가 있는지 확인
-    const hasAddress = item.address && item.address.trim() !== '';
+    // 주소 정보 확인 (주소가 있고 '-'가 아닌 경우)
+    const hasAddress = item.address && item.address.trim() !== '' && item.address !== '-';
     
     const content = `<div class="info-card" onmouseleave="infowindow.close()">
         <div class="card-title">${item.site}</div>
         ${renderRow('주소', item.address)}${renderRow('기번', item.MN)}${renderRow('담당자', item.TSE)}${renderRow('경비사', item.sec)}${renderRow('연락처', item.phone)}${renderRow('기타', item.etc)}${renderRow('주차', item.park)}
         <div class="card-btns">
             <a href="tel:${item.phone || '#'}" class="btn-tel">📞 전화</a>
-            ${hasAddress ? `<a onclick="requestTmap('${item.address.replace(/'/g, "\\'")}', '${item.lat}', '${item.lng}')" class="btn-map">📍 길찾기</a>` : `<span class="btn-map" style="background:#eee; color:#aaa; border:1px solid #ccc; cursor:default;">📍 불가</span>`}
+            ${hasAddress 
+                ? `<a onclick="requestTmap('${item.address.replace(/'/g, "\\'")}', '${item.lat}', '${item.lng}')" class="btn-map">📍 길찾기</a>` 
+                : `<a class="btn-map" style="background:#f0f0f0; border-color:#ddd; color:#aaa; cursor:default; pointer-events:none;">📍 불가</a>`
+            }
         </div>
     </div>`;
     
