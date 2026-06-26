@@ -328,16 +328,16 @@ function selectRegion(btnElement, regionName) {
     const item = sheetData.find(i => i.address === address);
     if (!item) return;
 
-    // 주소가 비어있는 경우 바로 인포윈도우만 띄움
+    // 1. 주소값이 아예 없는 경우
     if (!item.address || item.address.trim() === '') {
-        alert("이 사이트는 등록된 주소 정보가 없습니다.");
-        // 현위치가 아닌 사이트 위치를 찾을 수 없으므로, 현재 보고 있는 중심좌표 혹은 특정 안내 필요
+        alert("등록된 주소 정보가 없습니다. 지도 중심에 정보를 표시합니다.");
+        displayInfowindowAtCenter(item);
         return;
     }
 
     geocoder.addressSearch(item.address, (result, status) => {
-        // 좌표를 찾은 경우
         if (status === kakao.maps.services.Status.OK) {
+            // 좌표를 찾은 경우 (정상 로직)
             const lat = result[0].y;
             const lng = result[0].x;
             const coords = new kakao.maps.LatLng(lat, lng);
@@ -350,19 +350,17 @@ function selectRegion(btnElement, regionName) {
             
             item.lat = lat;
             item.lng = lng;
-            
             displayInfowindow(currentMarker, item);
         } else {
-            // 주소는 있으나 좌표를 못 찾은 경우에도 인포카드는 띄워주기
-            alert("주소는 있으나 정확한 좌표를 찾을 수 없습니다.");
-            displayInfowindow(currentMarker, item); // 마커 없이 혹은 현재 위치에 띄움
+            // 2. 주소는 있지만 좌표를 찾을 수 없는 경우
+            alert("정확한 위치를 찾을 수 없습니다. 지도 중심에 정보를 표시합니다.");
+            displayInfowindowAtCenter(item);
         }
         
         document.getElementById('resultList').style.display = 'none';
         document.getElementById('searchKeyword').value = "";
     });
 }
-
         function requestTmap(address, lat, lng) {
             if (!lat || !lng) {
                 alert("좌표 정보를 확인 중입니다. 잠시만 기다려주세요.");
@@ -442,6 +440,19 @@ function selectRegion(btnElement, regionName) {
                 }, () => alert("위치 정보를 가져올 수 없습니다."));
             } else { alert("위치 기능을 지원하지 않습니다."); }
         }
+        function displayInfowindowAtCenter(item) {
+    const center = map.getCenter(); // 현재 지도 중심 좌표
+    
+    // 임시로 중심에 마커 표시 (또는 마커 없이 띄우려면 이 줄을 삭제)
+    if (currentMarker) currentMarker.setMap(null);
+    currentMarker = new kakao.maps.Marker({ map: map, position: center });
+    
+    // 데이터에 좌표 임시 저장
+    item.lat = center.getLat();
+    item.lng = center.getLng();
+    
+    displayInfowindow(currentMarker, item);
+}
     </script>
 
 </body>
