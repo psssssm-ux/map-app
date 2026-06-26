@@ -304,19 +304,14 @@
  async function loadData(regionName = '경남') {
     try {
         document.getElementById('progressBar').innerText = `${regionName} 데이터 로딩 중...`;
-        
-        // 1. 데이터를 새로 가져옵니다.
         const url = `https://script.google.com/macros/s/AKfycbycXTi4Vb65rhOZraKaIDcahZz2xiWA_2NvjjIniBKmTFp-AgmHG-dHeHP-Qa_sGYk2UQ/exec?sheetName=${encodeURIComponent(regionName)}`;
         const res = await fetch(url);
-        sheetData = await res.json(); // <-- 여기서 sheetData가 경북 데이터로 갱신됩니다.
+        sheetData = await res.json();
         
         document.getElementById('progressBar').innerText = `${regionName} 로딩 완료!`;
         
-        // 2. 검색창에 입력된 값이 있다면, 새로 불러온 데이터로 다시 필터링을 시도합니다.
-        const currentSearchVal = document.getElementById('searchKeyword').value;
-        if (currentSearchVal.length > 0) {
-            triggerSearch(currentSearchVal); // 검색창을 다시 실행하는 함수 호출
-        }
+        // 데이터가 새로 로드되었을 때, 검색창에 글자가 써져 있다면 즉시 재검색!
+        triggerSearch(document.getElementById('searchKeyword').value);
         
     } catch (e) {
         document.getElementById('progressBar').innerText = "로딩 실패";
@@ -409,24 +404,37 @@ function selectRegion(btnElement, regionName) {
     infowindow.open(map, marker);
 }
 
-        document.getElementById('searchKeyword').addEventListener('input', function() {
-            const val = this.value.toLowerCase();
-            const list = document.getElementById('resultList');
-            if (val.length < 1) { list.style.display = 'none'; return; }
-            const filtered = sheetData.filter(i => {
-                const site = String(i.site || '').toLowerCase();
-                const mn = String(i.MN || '').toLowerCase();
-                const bin = String(i.BIN2 || '').toLowerCase();
-                return site.includes(val) || mn.includes(val) || bin.includes(val);
-            });
-            list.innerHTML = filtered.map(i => {
-                return `<li onclick="findSiteByData('${i.address.replace(/'/g, "\\'")}')">
-                            <div style="font-weight:700; font-size:14px;">${i.site}</div>
-                            <div style="font-size:12px; color:#555; margin-top:3px;">기번: ${i.MN || '-'} | 코너명: ${i.BIN2 || '-'} | 담당자: ${i.TSE || '-'}</div>
-                        </li>`;
-            }).join('');
-            list.style.display = filtered.length > 0 ? 'block' : 'none';
-        });
+ function triggerSearch(val) {
+    const list = document.getElementById('resultList');
+    val = val.toLowerCase();
+    
+    if (val.length < 1) { 
+        list.style.display = 'none'; 
+        return; 
+    }
+
+    // sheetData는 현재 선택된 지역의 데이터로 이미 갱신되어 있음
+    const filtered = sheetData.filter(i => {
+        const site = String(i.site || '').toLowerCase();
+        const mn = String(i.MN || '').toLowerCase();
+        const bin = String(i.BIN2 || '').toLowerCase();
+        return site.includes(val) || mn.includes(val) || bin.includes(val);
+    });
+
+    list.innerHTML = filtered.map(i => {
+        return `<li onclick="findSiteByData('${i.address.replace(/'/g, "\\'")}')">
+                    <div style="font-weight:700; font-size:14px;">${i.site}</div>
+                    <div style="font-size:12px; color:#555; margin-top:3px;">기번: ${i.MN || '-'} | 코너명: ${i.BIN2 || '-'} | 담당자: ${i.TSE || '-'}</div>
+                </li>`;
+    }).join('');
+    
+    list.style.display = filtered.length > 0 ? 'block' : 'none';
+}
+
+// 2. 검색창 입력 시 위 함수 실행
+document.getElementById('searchKeyword').addEventListener('input', function() {
+    triggerSearch(this.value);
+});
 
         function openMapRoute(address, lat, lng) {
             const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
