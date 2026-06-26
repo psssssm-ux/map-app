@@ -324,34 +324,44 @@ function selectRegion(btnElement, regionName) {
     // 선택 확인용 로그
     console.log("선택된 지역:", regionName);
 }
-        function findSiteByData(address) {
-            const item = sheetData.find(i => i.address === address);
-            if (!item) return;
+       function findSiteByData(address) {
+    const item = sheetData.find(i => i.address === address);
+    if (!item) return;
 
-            geocoder.addressSearch(item.address, (result, status) => {
-                if (status === kakao.maps.services.Status.OK) {
-                    const lat = result[0].y;
-                    const lng = result[0].x;
-                    const coords = new kakao.maps.LatLng(lat, lng);
+    // 주소가 비어있는 경우 바로 인포윈도우만 띄움
+    if (!item.address || item.address.trim() === '') {
+        alert("이 사이트는 등록된 주소 정보가 없습니다.");
+        // 현위치가 아닌 사이트 위치를 찾을 수 없으므로, 현재 보고 있는 중심좌표 혹은 특정 안내 필요
+        return;
+    }
 
-                    map.setCenter(coords);
-                    map.setLevel(3);
-                    
-                    if (currentMarker) currentMarker.setMap(null);
-                    currentMarker = new kakao.maps.Marker({ map: map, position: coords });
-                    
-                    item.lat = lat;
-                    item.lng = lng;
-                    
-                    displayInfowindow(currentMarker, item);
+    geocoder.addressSearch(item.address, (result, status) => {
+        // 좌표를 찾은 경우
+        if (status === kakao.maps.services.Status.OK) {
+            const lat = result[0].y;
+            const lng = result[0].x;
+            const coords = new kakao.maps.LatLng(lat, lng);
 
-                    document.getElementById('resultList').style.display = 'none';
-                    document.getElementById('searchKeyword').value = "";
-                } else {
-                    alert("좌표를 찾을 수 없는 주소입니다.");
-                }
-            });
+            map.setCenter(coords);
+            map.setLevel(3);
+            
+            if (currentMarker) currentMarker.setMap(null);
+            currentMarker = new kakao.maps.Marker({ map: map, position: coords });
+            
+            item.lat = lat;
+            item.lng = lng;
+            
+            displayInfowindow(currentMarker, item);
+        } else {
+            // 주소는 있으나 좌표를 못 찾은 경우에도 인포카드는 띄워주기
+            alert("주소는 있으나 정확한 좌표를 찾을 수 없습니다.");
+            displayInfowindow(currentMarker, item); // 마커 없이 혹은 현재 위치에 띄움
         }
+        
+        document.getElementById('resultList').style.display = 'none';
+        document.getElementById('searchKeyword').value = "";
+    });
+}
 
         function requestTmap(address, lat, lng) {
             if (!lat || !lng) {
@@ -362,20 +372,23 @@ function selectRegion(btnElement, regionName) {
         }
 
         function displayInfowindow(marker, item) {
-            const renderRow = (label, val) => (val && val !== '-' && val.toString().trim() !== '') ? `<div class="card-row"><b>${label}</b> <span>${val}</span></div>` : '';
-            
-            const content = `<div class="info-card" onmouseleave="infowindow.close()">
-                <div class="card-title">${item.site}</div>
-                ${renderRow('주소', item.address)}${renderRow('기번', item.MN)}${renderRow('담당자', item.TSE)}${renderRow('경비사', item.sec)}${renderRow('연락처', item.phone)}${renderRow('기타', item.etc)}${renderRow('주차', item.park)}
-                <div class="card-btns">
-                    <a href="tel:${item.phone || '#'}" class="btn-tel">📞 전화</a>
-                    <a onclick="requestTmap('${item.address.replace(/'/g, "\\'")}', '${item.lat}', '${item.lng}')" class="btn-map">📍 길찾기</a>
-                </div>
-            </div>`;
-            
-            infowindow.setContent(content);
-            infowindow.open(map, marker);
-        }
+    const renderRow = (label, val) => (val && val !== '-' && val.toString().trim() !== '') ? `<div class="card-row"><b>${label}</b> <span>${val}</span></div>` : '';
+    
+    // 주소가 있는지 확인
+    const hasAddress = item.address && item.address.trim() !== '';
+    
+    const content = `<div class="info-card" onmouseleave="infowindow.close()">
+        <div class="card-title">${item.site}</div>
+        ${renderRow('주소', item.address)}${renderRow('기번', item.MN)}${renderRow('담당자', item.TSE)}${renderRow('경비사', item.sec)}${renderRow('연락처', item.phone)}${renderRow('기타', item.etc)}${renderRow('주차', item.park)}
+        <div class="card-btns">
+            <a href="tel:${item.phone || '#'}" class="btn-tel">📞 전화</a>
+            ${hasAddress ? `<a onclick="requestTmap('${item.address.replace(/'/g, "\\'")}', '${item.lat}', '${item.lng}')" class="btn-map">📍 길찾기</a>` : `<span class="btn-map" style="background:#eee; color:#aaa; border:1px solid #ccc; cursor:default;">📍 불가</span>`}
+        </div>
+    </div>`;
+    
+    infowindow.setContent(content);
+    infowindow.open(map, marker);
+}
 
         document.getElementById('searchKeyword').addEventListener('input', function() {
             const val = this.value.toLowerCase();
