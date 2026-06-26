@@ -209,30 +209,7 @@
         font-size: 10px !important;
 
     }
-.region-grid {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 8px;
-        margin-bottom: 20px;
-    }
-        .region-btn {
-        padding: 10px 0;
-        border: 1px solid #e1e4e8;
-        background: #f8f9fa;
-        border-radius: 10px;
-        font-size: 13px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.2s;
-        color: #4a5568;
-    }
-    .region-btn:hover { background: #edf2f7; border-color: #cbd5e0; }
-    .region-btn.active { 
-        background: #0070c0 !important; 
-        color: #fff !important; 
-        border-color: #0070c0 !important;
-        box-shadow: 0 4px 6px rgba(0,112,192,0.2);
-    }
+
 }
 
     </style>
@@ -243,30 +220,32 @@
 
     <div id="app-container">
 
-      <div id="sidebar">
-    <div id="scroll-area">
-        <div id="progressBar" style="font-size:12px; font-weight:bold; margin-bottom:15px; color:#0070c0;">데이터 로딩 중...</div>
-        
-       <div style="margin-bottom:20px;">
-    <div style="font-weight:700; margin-bottom:10px; font-size:13px; color:#555;">담당 지역 선택</div>
-    <div class="region-grid">
-        <button class="region-btn" onclick="changeRegion('경남', this)">경남</button>
-        <button class="region-btn" onclick="changeRegion('전라', this)">전라</button>
-        <button class="region-btn" onclick="changeRegion('경북', this)">경북</button>
-        <button class="region-btn" onclick="changeRegion('충청', this)">충청</button>
-        <button class="region-btn" onclick="changeRegion('강남', this)">강남</button>
-        <button class="region-btn" onclick="changeRegion('강북', this)">강북</button>
-    </div>
-</div>
+        <div id="sidebar">
 
-        <div class="btn-common" style="background-color: #ff4757;" onclick="moveToMyLocation()">📍 현재 위치로 이동</div>
-        
-        <div style="font-weight:700; margin-top:20px;">사이트 검색 ▼</div>
-        <input type="text" id="searchKeyword" style="width:100%; padding:14px; margin-top:5px; box-sizing:border-box; border:1px solid #e1e4e8; border-radius:12px;" placeholder="사이트/기번/코너명 입력...">
-        <ul id="resultList" class="data-list"></ul>
-    </div>
-    <div id="footer-area"><div>경남팀 제작</div><div>안전운전 하세요</div><div style="margin-top: 5px; color: #bbb;">© 2026. All Rights Reserved.</div></div>
-</div>
+            <div id="scroll-area">
+
+                <div id="progressBar" style="font-size:12px; font-weight:bold; margin-bottom:10px; color:#0070c0;">데이터 로딩 중...</div>
+
+                <div class="btn-common" style="background-color: #ff4757;" onclick="moveToMyLocation()">📍 현재 위치로 이동</div>
+
+                <div class="btn-common" style="background-color: #667eea;" onclick="resetMap()">지도 위치 초기화 🔄</div>
+
+                <div class="btn-common" style="background-color: #0070c0;" onclick="toggleRecent()">최근 수정된 사이트 LIST ▼</div>
+
+                <ul id="recentList" class="data-list"></ul>
+
+                <div style="font-weight:700; margin-top:10px;">사이트 검색 ▼</div>
+
+                <input type="text" id="searchKeyword" style="width:100%; padding:14px; margin-top:5px; box-sizing:border-box; border:1px solid #e1e4e8; border-radius:12px;" placeholder="사이트/기번/코너명 입력...">
+
+                <ul id="resultList" class="data-list"></ul>
+
+            </div>
+
+            <div id="footer-area"><div>제작자 : 경남팀 박상문 | 기획 : 경남팀 김민우</div><div style="margin-top: 5px; color: #bbb;">© 2026. All Rights Reserved.</div></div>
+
+        </div>
+
         <div id="map"></div>
 
     </div>
@@ -279,45 +258,20 @@
 
 
 
-    kakao.maps.load(() => {
-    map = new kakao.maps.Map(document.getElementById('map'), { 
-        center: new kakao.maps.LatLng(35.1517, 129.0305), 
-        level: 7 
-    });
+        kakao.maps.load(() => {
 
-    geocoder = new kakao.maps.services.Geocoder();
-    clusterer = new kakao.maps.MarkerClusterer({ map: map, gridSize: 35, averageCenter: true, minLevel: 7 });
-    infowindow = new kakao.maps.InfoWindow({ zIndex: 1 });
+            map = new kakao.maps.Map(document.getElementById('map'), { center: new kakao.maps.LatLng(35.1517, 129.0305), level: 7 });
 
-    // 위치 추적 실행
-    if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition((pos) => {
-            const currentPos = new kakao.maps.LatLng(pos.coords.latitude, pos.coords.longitude);
-            map.setCenter(currentPos);
-            map.setLevel(4);
-            // 현재 위치 마커 추가
-            myLocationMarker = new kakao.maps.Marker({
-                map: map,
-                position: currentPos,
-                image: new kakao.maps.MarkerImage('https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/marker_red.png', new kakao.maps.Size(31, 35))
-            });
+            geocoder = new kakao.maps.services.Geocoder();
+
+            clusterer = new kakao.maps.MarkerClusterer({ map: map, gridSize: 35, averageCenter: true, minLevel: 7 });
+
+            infowindow = new kakao.maps.InfoWindow({ zIndex: 1 });
+
+            loadData();
+
         });
-    }
-    
-    // 데이터 불러오기 (기본값 경남)
-    changeRegion('경남', document.querySelector('.region-btn')); 
-});
-    loadData();
-});
-function changeRegion(region, btnElement) {
-    // 1. 모든 버튼에서 'active' 클래스 제거
-    document.querySelectorAll('.region-btn').forEach(btn => btn.classList.remove('active'));
-    // 2. 클릭한 버튼에만 'active' 클래스 추가
-    btnElement.classList.add('active');
-    
-    // 이후 데이터 로딩 로직 실행...
-    console.log(region + " 지역 로딩 시작");
-}
+
 
 
         async function loadData() {
@@ -335,7 +289,33 @@ function changeRegion(region, btnElement) {
 }
         let currentMarker = null; 
 
+function findSiteByData(address) {
+    const item = sheetData.find(i => i.address === address);
+    if (!item) return;
 
+    geocoder.addressSearch(item.address, (result, status) => {
+        if (status === kakao.maps.services.Status.OK) {
+            const lat = result[0].y;
+            const lng = result[0].x;
+            const coords = new kakao.maps.LatLng(lat, lng);
+
+            map.setCenter(coords);
+            map.setLevel(3);
+            if (currentMarker) currentMarker.setMap(null);
+            currentMarker = new kakao.maps.Marker({ map: map, position: coords });
+            
+            item.lat = lat; // 버튼에서 쓸 좌표 저장
+            item.lng = lng; // 버튼에서 쓸 좌표 저장
+            displayInfowindow(currentMarker, item);
+
+            document.getElementById('resultList').style.display = 'none';
+            document.getElementById('searchKeyword').value = "";
+            // openMapRoute 호출 줄 삭제됨 (중요!)
+        } else {
+            alert("좌표를 찾을 수 없는 주소입니다.");
+        }
+    });
+}
         function requestTmap(address, lat, lng) {
     // 만약 좌표가 없다면 에러 방지
     if (!lat || !lng) {
@@ -432,7 +412,7 @@ function changeRegion(region, btnElement) {
 
 });
 
-        function findSiteByData(address) {
+        function findSiteByData(address, isFromInfoCard = false) {
     const item = sheetData.find(i => i.address === address);
     if (!item) return;
 
@@ -440,20 +420,22 @@ function changeRegion(region, btnElement) {
         if (status === kakao.maps.services.Status.OK) {
             const lat = result[0].y;
             const lng = result[0].x;
-            const coords = new kakao.maps.LatLng(lat, lng);
 
+            // TMAP 실행
+            openMapRoute(item.address, lat, lng);
+            
             // 지도 이동 및 마커 표시
+            const coords = new kakao.maps.LatLng(lat, lng);
             map.setCenter(coords);
             map.setLevel(3);
+            
             if (currentMarker) currentMarker.setMap(null);
             currentMarker = new kakao.maps.Marker({ map: map, position: coords });
             
-            // 정보창용 데이터 저장
-            item.lat = lat;
-            item.lng = lng;
-            
-            // 정보창 띄우기 (TMAP 실행 코드 없음!)
-            displayInfowindow(currentMarker, item);
+            // 정보창 닫기 (검색 리스트에서 클릭한 게 아닐 경우에만)
+            if (isFromInfoCard) {
+                infowindow.close();
+            }
 
             document.getElementById('resultList').style.display = 'none';
             document.getElementById('searchKeyword').value = "";
@@ -461,7 +443,35 @@ function changeRegion(region, btnElement) {
             alert("좌표를 찾을 수 없는 주소입니다.");
         }
     });
+}
+        function findSite(index) {
+
+            const item = sheetData[index];
+
+            geocoder.addressSearch(item.address, (res, status) => {
+
+                if (status === kakao.maps.services.Status.OK) {
+
+                    const coords = new kakao.maps.LatLng(res[0].y, res[0].x);
+
+                    map.setCenter(coords); map.setLevel(3);
+
+                    const marker = new kakao.maps.Marker({ map: map, position: coords });
+
+                    displayInfowindow(marker, item);
+
+                    document.getElementById('resultList').style.display = 'none';
+
+                    document.getElementById('searchKeyword').value = "";
+
+                }
+
+            });
+
         }
+
+
+
     function openMapRoute(address, lat, lng) 
     
     {
@@ -497,7 +507,17 @@ function changeRegion(region, btnElement) {
         alert("모바일 환경에서만 TMAP 길찾기 이용이 가능합니다.");
     }
 }
-        
+        function toggleRecent() {
+
+            const list = document.getElementById('recentList');
+
+            if(list.style.display === 'block') { list.style.display = 'none'; return; }
+
+            list.innerHTML = sheetData.slice(0, 5).map(i => `<li onclick="findSite(${sheetData.indexOf(i)}); document.getElementById('recentList').style.display='none'"><div style="font-weight:700;">${i.site}</div><div style="font-size:11px; color:#888;">${i.date || ''}</div></li>`).join('');
+
+            list.style.display = 'block';
+
+        }
 
 
 
@@ -529,7 +549,7 @@ function changeRegion(region, btnElement) {
 
 
 
-       
+        function resetMap() { map.setCenter(new kakao.maps.LatLng(35.1517, 129.0305)); map.setLevel(7); }
 
     </script>
 
