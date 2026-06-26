@@ -277,7 +277,7 @@
         async function loadData() {
     try {
         document.getElementById('progressBar').innerText = "데이터 로딩 중...";
-        const res = await fetch('https://script.google.com/macros/s/AKfycbyGaxI35pWHQUekHpz0TyBFOFf2UiN538r5aoFy4295Fo6htiHs_P6FzlCtIzPAizbNaQ/exec');
+        const res = await fetch('https://script.google.com/macros/s/AKfycbwCpEcX9BTIe2Z1QFnpW6L5FaRjhiAL0w2i2j3Bs_qLCa_C88v1l5PCaDojeQ6RG-bv0g/exec');
         sheetData = await res.json();
         
         // drawMarkersFromData(); // <-- 이 줄을 지우거나 주석 처리하세요.
