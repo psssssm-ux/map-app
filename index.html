@@ -293,28 +293,37 @@ function findSiteByData(address) {
     const item = sheetData.find(i => i.address === address);
     if (!item) return;
 
-    // 카카오 지오코더를 사용하여 딱 한 개만 변환
     geocoder.addressSearch(item.address, (result, status) => {
         if (status === kakao.maps.services.Status.OK) {
             const lat = result[0].y;
             const lng = result[0].x;
-
-            // 좌표를 찾았으니 TMAP 길찾기 실행
-            openMapRoute(item.address, lat, lng);
-            
-            // 지도 이동 및 마커 표시
             const coords = new kakao.maps.LatLng(lat, lng);
+
+            // 지도 이동 및 마커 표시
             map.setCenter(coords);
             map.setLevel(3);
             if (currentMarker) currentMarker.setMap(null);
             currentMarker = new kakao.maps.Marker({ map: map, position: coords });
             
+            // 정보창 띄우기 (여기서 아이템에 lat, lng 저장)
+            item.lat = lat;
+            item.lng = lng;
+            displayInfowindow(currentMarker, item);
+
             document.getElementById('resultList').style.display = 'none';
             document.getElementById('searchKeyword').value = "";
         } else {
             alert("좌표를 찾을 수 없는 주소입니다.");
         }
     });
+}
+        function requestTmap(address, lat, lng) {
+    // 만약 좌표가 없다면 에러 방지
+    if (!lat || !lng) {
+        alert("좌표 정보를 확인 중입니다. 잠시만 기다려주세요.");
+        return;
+    }
+    openMapRoute(address, lat, lng);
 }
         function drawMarkersFromData() {
     clusterer.clear();
@@ -336,7 +345,7 @@ function findSiteByData(address) {
         ${renderRow('주소', item.address)}${renderRow('기번', item.MN)}${renderRow('담당자', item.TSE)}${renderRow('경비사', item.sec)}${renderRow('연락처', item.phone)}${renderRow('기타', item.etc)}${renderRow('주차', item.park)}
         <div class="card-btns">
             <a href="tel:${item.phone || '#'}" class="btn-tel">📞 전화</a>
-            <a onclick="findSiteByData('${item.address.replace(/'/g, "\\'")}', true)" class="btn-map">📍 길찾기</a>
+            <a onclick="requestTmap('${item.address.replace(/'/g, "\\'")}', '${item.lat}', '${item.lng}')" class="btn-map">📍 길찾기</a>
         </div>
     </div>`;
     
