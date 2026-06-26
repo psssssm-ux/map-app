@@ -286,18 +286,23 @@ function findSiteByData(address) {
             const lng = result[0].x;
             const coords = new kakao.maps.LatLng(lat, lng);
 
+            // 1. 지도 이동 및 마커 표시
             map.setCenter(coords);
             map.setLevel(3);
+            
             if (currentMarker) currentMarker.setMap(null);
             currentMarker = new kakao.maps.Marker({ map: map, position: coords });
             
-            item.lat = lat; // 버튼에서 쓸 좌표 저장
-            item.lng = lng; // 버튼에서 쓸 좌표 저장
+            // 2. 정보창용 데이터에 좌표 저장
+            item.lat = lat;
+            item.lng = lng;
+            
+            // 3. 여기서 바로 openMapRoute를 실행하지 않고, 정보창만 띄웁니다.
             displayInfowindow(currentMarker, item);
 
+            // 4. UI 정리
             document.getElementById('resultList').style.display = 'none';
             document.getElementById('searchKeyword').value = "";
-            // openMapRoute 호출 줄 삭제됨 (중요!)
         } else {
             alert("좌표를 찾을 수 없는 주소입니다.");
         }
@@ -398,40 +403,7 @@ function findSiteByData(address) {
     list.style.display = filtered.length > 0 ? 'block' : 'none';
 
 });
-
-        function findSiteByData(address, isFromInfoCard = false) {
-    const item = sheetData.find(i => i.address === address);
-    if (!item) return;
-
-    geocoder.addressSearch(item.address, (result, status) => {
-        if (status === kakao.maps.services.Status.OK) {
-            const lat = result[0].y;
-            const lng = result[0].x;
-
-            // TMAP 실행
-            openMapRoute(item.address, lat, lng);
-            
-            // 지도 이동 및 마커 표시
-            const coords = new kakao.maps.LatLng(lat, lng);
-            map.setCenter(coords);
-            map.setLevel(3);
-            
-            if (currentMarker) currentMarker.setMap(null);
-            currentMarker = new kakao.maps.Marker({ map: map, position: coords });
-            
-            // 정보창 닫기 (검색 리스트에서 클릭한 게 아닐 경우에만)
-            if (isFromInfoCard) {
-                infowindow.close();
-            }
-
-            document.getElementById('resultList').style.display = 'none';
-            document.getElementById('searchKeyword').value = "";
-        } else {
-            alert("좌표를 찾을 수 없는 주소입니다.");
         }
-    });
-}
-        
 
     function openMapRoute(address, lat, lng) 
     
