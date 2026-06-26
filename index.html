@@ -289,32 +289,31 @@
 }
         let currentMarker = null; 
 
-function findSiteByData(address) {
-    const item = sheetData.find(i => i.address === address);
-    if (!item) return;
-
-    geocoder.addressSearch(item.address, (result, status) => {
+function findSite(index) {
+    const item = sheetData[index];
+    
+    // 카카오 지오코더를 호출하여 좌표 구하기
+    geocoder.addressSearch(item.address, (res, status) => {
         if (status === kakao.maps.services.Status.OK) {
-            const lat = result[0].y;
-            const lng = result[0].x;
+            const lat = res[0].y;
+            const lng = res[0].x;
             const coords = new kakao.maps.LatLng(lat, lng);
-
-            // 1. 지도 이동 및 마커 표시
+            
+            // 지도 이동 및 마커 표시
             map.setCenter(coords);
             map.setLevel(3);
             if (currentMarker) currentMarker.setMap(null);
             currentMarker = new kakao.maps.Marker({ map: map, position: coords });
             
-            // 2. 정보창에 넣을 데이터에 좌표 저장
+            // 아이템에 좌표 저장 (길찾기 버튼용)
             item.lat = lat;
             item.lng = lng;
             
-            // 3. 정보창 띄우기 (TMAP 실행 코드 없음)
+            // 정보창 띄우기 (TMAP 자동 실행 없음)
             displayInfowindow(currentMarker, item);
-
-            // 4. 검색창 정리
-            document.getElementById('resultList').style.display = 'none';
-            document.getElementById('searchKeyword').value = "";
+            
+            // 리스트 닫기
+            document.getElementById('recentList').style.display = 'none';
         } else {
             alert("좌표를 찾을 수 없는 주소입니다.");
         }
