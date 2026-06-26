@@ -304,7 +304,7 @@
  async function loadData(regionName = '경남') {
     try {
         document.getElementById('progressBar').innerText = `${regionName} 데이터 로딩 중...`;
-        const url = `https://script.google.com/macros/s/AKfycbycXTi4Vb65rhOZraKaIDcahZz2xiWA_2NvjjIniBKmTFp-AgmHG-dHeHP-Qa_sGYk2UQ/exec?sheetName=${encodeURIComponent(regionName)}`;
+        const url = `https://script.google.com/macros/s/AKfycbwT3hpGl0OXnp2BIBQziLVNeTXy-UnoQyfx0Vf2u3QeR86tD1Wa3deXGDkqVMlw39WYrQ/exec?sheetName=${encodeURIComponent(regionName)}`;
         const res = await fetch(url);
         sheetData = await res.json();
         
