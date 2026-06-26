@@ -221,28 +221,19 @@
     <div id="app-container">
 
         <div id="sidebar">
+    <div id="scroll-area">
+        <div id="progressBar" style="font-size:12px; font-weight:bold; margin-bottom:10px; color:#0070c0;">데이터 로딩 중...</div>
+        
+        <div class="btn-common" style="background-color: #ff4757;" onclick="moveToMyLocation()">📍 현재 위치로 이동</div>
+        
+        <div style="font-weight:700; margin-top:10px;">사이트 검색 ▼</div>
+        <input type="text" id="searchKeyword" style="width:100%; padding:14px; margin-top:5px; box-sizing:border-box; border:1px solid #e1e4e8; border-radius:12px;" placeholder="사이트/기번/코너명 입력...">
+        <ul id="resultList" class="data-list"></ul>
+    </div>
+    <div id="footer-area"><div>경남팀 제작</div><div>안전운전 하세요</div><div style="margin-top: 5px; color: #bbb;">© 2026. All Rights Reserved.</div></div>
+</div>
 
-            <div id="scroll-area">
-
-                <div id="progressBar" style="font-size:12px; font-weight:bold; margin-bottom:10px; color:#0070c0;">데이터 로딩 중...</div>
-
-                <div class="btn-common" style="background-color: #ff4757;" onclick="moveToMyLocation()">📍 현재 위치로 이동</div>
-
-                <div class="btn-common" style="background-color: #667eea;" onclick="resetMap()">지도 위치 초기화 🔄</div>
-
-                <div class="btn-common" style="background-color: #0070c0;" onclick="toggleRecent()">최근 수정된 사이트 LIST ▼</div>
-
-                <ul id="recentList" class="data-list"></ul>
-
-                <div style="font-weight:700; margin-top:10px;">사이트 검색 ▼</div>
-
-                <input type="text" id="searchKeyword" style="width:100%; padding:14px; margin-top:5px; box-sizing:border-box; border:1px solid #e1e4e8; border-radius:12px;" placeholder="사이트/기번/코너명 입력...">
-
-                <ul id="resultList" class="data-list"></ul>
-
-            </div>
-
-            <div id="footer-area"><div>제작자 : 경남팀 박상문 | 기획 : 경남팀 김민우</div><div style="margin-top: 5px; color: #bbb;">© 2026. All Rights Reserved.</div></div>
+            <div id="footer-area"><div>제작자 : 경남팀 제작</div><div style="margin-top: 5px; color: #bbb;">© 2026. All Rights Reserved.</div></div>
 
         </div>
 
@@ -414,29 +405,8 @@
         } else {
             alert("좌표를 찾을 수 없는 주소입니다.");
         }
-    });
-}
-       function findSite(index) {
-    const item = sheetData[index];
-    geocoder.addressSearch(item.address, (res, status) => {
-        if (status === kakao.maps.services.Status.OK) {
-            const lat = res[0].y;
-            const lng = res[0].x;
-            const coords = new kakao.maps.LatLng(lat, lng);
-            
-            map.setCenter(coords);
-            map.setLevel(3);
-            if (currentMarker) currentMarker.setMap(null);
-            currentMarker = new kakao.maps.Marker({ map: map, position: coords });
-            
-            item.lat = lat;
-            item.lng = lng;
-            
-            displayInfowindow(currentMarker, item);
-            document.getElementById('recentList').style.display = 'none';
-        }
-    });
-}
+    })
+
     function openMapRoute(address, lat, lng) 
     
     {
@@ -472,17 +442,7 @@
         alert("모바일 환경에서만 TMAP 길찾기 이용이 가능합니다.");
     }
 }
-        function toggleRecent() {
-
-            const list = document.getElementById('recentList');
-
-            if(list.style.display === 'block') { list.style.display = 'none'; return; }
-
-            list.innerHTML = sheetData.slice(0, 5).map(i => `<li onclick="findSite(${sheetData.indexOf(i)}); document.getElementById('recentList').style.display='none'"><div style="font-weight:700;">${i.site}</div><div style="font-size:11px; color:#888;">${i.date || ''}</div></li>`).join('');
-
-            list.style.display = 'block';
-
-        }
+        
 
 
 
@@ -514,7 +474,7 @@
 
 
 
-        function resetMap() { map.setCenter(new kakao.maps.LatLng(35.1517, 129.0305)); map.setLevel(7); }
+       
 
     </script>
 
