@@ -302,22 +302,33 @@
         });
 
 async function loadData(regionName = '경남') {
+    const progressBar = document.getElementById('progressBar');
     try {
-        document.getElementById('progressBar').innerText = `${regionName} 로딩 중...`;
+        progressBar.innerText = `${regionName} 데이터 요청 중...`;
         
-        const url = `https://script.google.com/macros/s/AKfycbwT3hpGl0OXnp2BIBQziLVNeTXy-UnoQyfx0Vf2u3QeR86tD1Wa3deXGDkqVMlw39WYrQ/exec?sheetName=${encodeURIComponent(regionName)}`;
+        // 1. URL 구성 확인
+        const baseUrl = 'https://script.google.com/macros/s/AKfycbwCpEcX9BTIe2Z1QFnpW6L5FaRjhiAL0w2i2j3Bs_qLCa_C88v1l5PCaDojeQ6RG-bv0g/exec';
+        const url = `${baseUrl}?sheetName=${encodeURIComponent(regionName)}`;
+        console.log("요청 URL:", url); // URL이 맞는지 콘솔 확인
+        
+        // 2. 서버 통신
         const res = await fetch(url);
-        const data = await res.json(); // 데이터를 일단 변수에 받아서
         
-        console.log(regionName + " 서버 응답 데이터:", data); // <--- 이 줄을 꼭 추가하세요!
+        // 3. 응답 상태 확인
+        if (!res.ok) {
+            throw new Error(`서버 응답 오류: ${res.status}`);
+        }
+        
+        const data = await res.json();
+        console.log(`${regionName} 로드 완료, 데이터 개수:`, data.length);
         
         sheetData = data;
-        document.getElementById('progressBar').innerText = `${regionName} 로딩 완료!`;
-        
+        progressBar.innerText = `${regionName} 로딩 완료!`;
         triggerSearch(document.getElementById('searchKeyword').value);
+        
     } catch (e) {
-        console.error("에러 발생:", e);
-        document.getElementById('progressBar').innerText = "로딩 실패";
+        console.error("데이터 로딩 에러 상세:", e);
+        progressBar.innerText = "로딩 실패: " + e.message;
     }
 }
 function selectRegion(btnElement, regionName) {
