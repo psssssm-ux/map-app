@@ -313,7 +313,17 @@
         }
 
         let currentMarker = null;
-
+function selectRegion(btnElement, regionName) {
+    // 1. 모든 버튼에서 'active' 클래스 제거
+    const allButtons = document.querySelectorAll('.region-btn');
+    allButtons.forEach(btn => btn.classList.remove('active'));
+    
+    // 2. 클릭한 버튼에만 'active' 클래스 추가
+    btnElement.classList.add('active');
+    
+    // 선택 확인용 로그
+    console.log("선택된 지역:", regionName);
+}
         function findSiteByData(address) {
             const item = sheetData.find(i => i.address === address);
             if (!item) return;
