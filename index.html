@@ -217,30 +217,40 @@
 }
 
 /* 개별 버튼 디자인 */
+.region-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr); /* 한 줄에 3개씩 */
+    gap: 10px;
+    margin: 15px 0;
+}
+
+/* 지역 버튼 기본 디자인 */
 .region-btn {
-    padding: 10px 5px;
+    padding: 10px 0;
     background: #ffffff;
-    border: 1px solid #dcdde1;
-    border-radius: 8px;
+    border: 1px solid #e1e4e8;
+    border-radius: 10px; /* 둥근 모서리 */
     font-size: 13px;
     font-weight: 600;
-    color: #57606f;
+    color: #4a5568;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.25s ease; /* 부드러운 효과 */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
 }
 
-/* 버튼 hover 및 활성화 효과 */
+/* 호버 시 은은한 효과 */
 .region-btn:hover {
-    border-color: #0070c0;
-    color: #0070c0;
-    background: #f1f8ff;
+    border-color: #cbd5e0;
+    background-color: #f7fafc;
+    color: #2d3748;
 }
 
+/* 선택되었을 때의 강조 스타일 */
 .region-btn.active {
-    background: #0070c0;
+    background: #2d3748; /* 세련된 다크 그레이/네이비 톤 */
     color: #ffffff;
-    border-color: #0070c0;
-    box-shadow: 0 4px 6px rgba(0, 112, 192, 0.2);
+    border-color: #2d3748;
+    box-shadow: 0 4px 10px rgba(45, 55, 72, 0.3); /* 깊이감 있는 그림자 */
 }
 
 }
