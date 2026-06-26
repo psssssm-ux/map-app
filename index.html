@@ -307,7 +307,7 @@ async function loadData(regionName = '경남') {
         progressBar.innerText = `${regionName} 데이터 요청 중...`;
         
         // 1. URL 구성 확인
-        const baseUrl = 'https://script.google.com/macros/s/AKfycbwCpEcX9BTIe2Z1QFnpW6L5FaRjhiAL0w2i2j3Bs_qLCa_C88v1l5PCaDojeQ6RG-bv0g/exec';
+        const baseUrl = 'https://script.google.com/macros/s/AKfycbwT3hpGl0OXnp2BIBQziLVNeTXy-UnoQyfx0Vf2u3QeR86tD1Wa3deXGDkqVMlw39WYrQ/exec';
         const url = `${baseUrl}?sheetName=${encodeURIComponent(regionName)}`;
         console.log("요청 URL:", url); // URL이 맞는지 콘솔 확인
         
