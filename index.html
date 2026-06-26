@@ -244,19 +244,34 @@
 
 
 
-        kakao.maps.load(() => {
+     kakao.maps.load(() => {
+    // 1. 기본 위치 (부산시청 근처) 설정
+    const defaultCenter = new kakao.maps.LatLng(35.1517, 129.0305);
+    
+    // 2. 지도 생성 (일단 기본 좌표로)
+    map = new kakao.maps.Map(document.getElementById('map'), { 
+        center: defaultCenter, 
+        level: 7 
+    });
 
-            map = new kakao.maps.Map(document.getElementById('map'), { center: new kakao.maps.LatLng(35.1517, 129.0305), level: 7 });
-
-            geocoder = new kakao.maps.services.Geocoder();
-
-            clusterer = new kakao.maps.MarkerClusterer({ map: map, gridSize: 35, averageCenter: true, minLevel: 7 });
-
-            infowindow = new kakao.maps.InfoWindow({ zIndex: 1 });
-
-            loadData();
-
+    geocoder = new kakao.maps.services.Geocoder();
+    clusterer = new kakao.maps.MarkerClusterer({ map: map, gridSize: 35, averageCenter: true, minLevel: 7 });
+    infowindow = new kakao.maps.InfoWindow({ zIndex: 1 });
+    
+    // 3. 현재 위치 시도
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition((pos) => {
+            const currentPos = new kakao.maps.LatLng(pos.coords.latitude, pos.coords.longitude);
+            map.setCenter(currentPos); // 현재 위치로 중심 이동
+            map.setLevel(4);           // 레벨 조정
+        }, () => {
+            // 위치 정보를 가져올 수 없는 경우 기본 위치 유지
+            console.log("현재 위치를 가져올 수 없어 기본 위치로 표시합니다.");
         });
+    }
+
+    loadData();
+});
 
 
 
