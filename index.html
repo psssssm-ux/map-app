@@ -340,16 +340,17 @@ function selectRegion(btnElement, regionName) {
     loadData(regionName);
 }
         let currentMarker = null;
-function selectRegion(btnElement, regionName) {
+async function selectRegion(btnElement, regionName) {
     // 1. 모든 버튼에서 'active' 클래스 제거
-    const allButtons = document.querySelectorAll('.region-btn');
-    allButtons.forEach(btn => btn.classList.remove('active'));
-    
-    // 2. 클릭한 버튼에만 'active' 클래스 추가
+    document.querySelectorAll('.region-btn').forEach(btn => btn.classList.remove('active'));
+    // 2. 클릭한 버튼에 'active' 클래스 추가
     btnElement.classList.add('active');
     
-    // 선택 확인용 로그
+    // 3. 로그 출력 (현재 선택한 지역 확인)
     console.log("선택된 지역:", regionName);
+    
+    // 4. [핵심] 해당 지역 데이터를 서버에서 새로 로드!
+    await loadData(regionName);
 }
        function findSiteByData(address) {
     const item = sheetData.find(i => i.address === address);
