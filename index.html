@@ -310,7 +310,15 @@
 
     loadData();
 });
-
+function changeRegion(region, btnElement) {
+    // 1. 모든 버튼에서 'active' 클래스 제거
+    document.querySelectorAll('.region-btn').forEach(btn => btn.classList.remove('active'));
+    // 2. 클릭한 버튼에만 'active' 클래스 추가
+    btnElement.classList.add('active');
+    
+    // 이후 데이터 로딩 로직 실행...
+    console.log(region + " 지역 로딩 시작");
+}
 
 
         async function loadData() {
