@@ -283,9 +283,10 @@
         // 바로 마커 그리기 (주소 변환 과정을 삭제)
         drawMarkersFromData(); 
         document.getElementById('progressBar').innerText = "로딩 완료!";
-    } catch (e) {
-        document.getElementById('progressBar').innerText = "로딩 실패";
-    }
+    } catch (e) { 
+    console.error("상세 에러 내용:", e); // 핵심! 구체적인 에러 위치가 나옵니다.
+    document.getElementById('progressBar').innerText = "로딩 실패: " + e.message; 
+}
 }
         function drawMarkersFromData() {
     clusterer.clear();
