@@ -219,40 +219,36 @@
 /* 개별 버튼 디자인 */
 .region-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr); /* 한 줄에 3개씩 */
-    gap: 10px;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
     margin: 15px 0;
 }
 
-/* 지역 버튼 기본 디자인 */
 .region-btn {
-    padding: 10px 0;
+    padding: 10px 5px;
     background: #ffffff;
-    border: 1px solid #e1e4e8;
-    border-radius: 10px; /* 둥근 모서리 */
+    border: 1px solid #dcdde1;
+    border-radius: 8px;
     font-size: 13px;
     font-weight: 600;
-    color: #4a5568;
+    color: #57606f;
     cursor: pointer;
-    transition: all 0.25s ease; /* 부드러운 효과 */
-    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    transition: all 0.2s ease;
 }
 
-/* 호버 시 은은한 효과 */
+/* 마우스 올렸을 때 */
 .region-btn:hover {
-    border-color: #cbd5e0;
-    background-color: #f7fafc;
-    color: #2d3748;
+    border-color: #0070c0;
+    color: #0070c0;
 }
 
-/* 선택되었을 때의 강조 스타일 */
+/* 핵심: 선택되었을 때 표시 - !important를 넣어 CSS 우선순위 강제 */
 .region-btn.active {
-    background: #2d3748; /* 세련된 다크 그레이/네이비 톤 */
-    color: #ffffff;
-    border-color: #2d3748;
-    box-shadow: 0 4px 10px rgba(45, 55, 72, 0.3); /* 깊이감 있는 그림자 */
+    background-color: #0070c0 !important;
+    color: #ffffff !important;
+    border-color: #0070c0 !important;
+    box-shadow: 0 4px 6px rgba(0, 112, 192, 0.2);
 }
-
 }
 
     </style>
