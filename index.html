@@ -298,6 +298,7 @@
 
     <script>
        let map, geocoder, clusterer, infowindow, sheetData = [], myLocationMarker = null, currentMarker = null;
+let currentRegion = '경남'; // 현재 선택된 지역을 저장할 변수 추가
 
     kakao.maps.load(() => {
         map = new kakao.maps.Map(document.getElementById('map'), { center: new kakao.maps.LatLng(35.1517, 129.0305), level: 7 });
@@ -327,7 +328,9 @@
     });
 
     async function loadData(regionName = '경남') {
+        currentRegion = regionName;
         const progressBar = document.getElementById('progressBar');
+        
         try {
             progressBar.innerText = `${regionName} 데이터 요청 중...`;
             const baseUrl = 'https://script.google.com/macros/s/AKfycbyCiSiDnP39ydJL7TDoCXMgTBCvJvO2VNKI1HImTrovO0rKXz0cPO4F-i1YKj9ydzqOzA/exec';
@@ -346,6 +349,7 @@
     async function selectRegion(btnElement, regionName) {
         document.querySelectorAll('.region-btn').forEach(btn => btn.classList.remove('active'));
         btnElement.classList.add('active');
+        currentRegion = regionName;
         await loadData(regionName);
     }
 
@@ -453,18 +457,15 @@
     }
 function saveMemo(siteName) {
     const memo = document.getElementById('memoArea').value;
-    const regionName = document.querySelector('.region-btn.active').innerText;
-    const url = '여기에_배포된_스크립트_URL'; // 중요: 배포 URL이 정확해야 합니다.
+    const regionName = currentRegion;
+    const url = 'https://script.google.com/macros/s/AKfycbyCiSiDnP39ydJL7TDoCXMgTBCvJvO2VNKI1HImTrovO0rKXz0cPO4F-i1YKj9ydzqOzA/exec'; // 중요: 배포 URL이 정확해야 합니다.
 
     fetch(`${url}?sheetName=${encodeURIComponent(regionName)}`, {
         method: 'POST',
         body: new URLSearchParams({ siteName: siteName, memo: memo })
     })
     .then(res => res.text())
-    .then(data => {
-        alert("메모가 저장되었습니다!");
-        // 필요하다면 여기서 다시 데이터를 불러와서 메모 내용을 갱신할 수 있습니다.
-    })
+    .then(data => alert("메모가 저장되었습니다!"))
     .catch(err => alert("저장 실패: " + err));
 }
     function moveToMyLocation() {
