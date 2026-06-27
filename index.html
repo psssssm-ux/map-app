@@ -451,7 +451,22 @@
             setTimeout(() => { if (document.visibilityState === 'visible') alert("TMAP 앱이 설치되어 있지 않거나 실행할 수 없습니다."); }, 1000);
         } else { alert("모바일 환경에서만 TMAP 길찾기 이용이 가능합니다."); }
     }
+function saveMemo(siteName) {
+    const memo = document.getElementById('memoArea').value;
+    const regionName = document.querySelector('.region-btn.active').innerText;
+    const url = '여기에_배포된_스크립트_URL'; // 중요: 배포 URL이 정확해야 합니다.
 
+    fetch(`${url}?sheetName=${encodeURIComponent(regionName)}`, {
+        method: 'POST',
+        body: new URLSearchParams({ siteName: siteName, memo: memo })
+    })
+    .then(res => res.text())
+    .then(data => {
+        alert("메모가 저장되었습니다!");
+        // 필요하다면 여기서 다시 데이터를 불러와서 메모 내용을 갱신할 수 있습니다.
+    })
+    .catch(err => alert("저장 실패: " + err));
+}
     function moveToMyLocation() {
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(pos => {
