@@ -429,12 +429,10 @@ async function selectRegion(btnElement, regionName) {
             openMapRoute(address, lat, lng);
         }
 
-        function displayInfowindow(marker, item) {
+function displayInfowindow(marker, item) {
     const renderRow = (label, val) => (val && val !== '-' && val.toString().trim() !== '') ? `<div class="card-row"><b>${label}</b> <span>${val}</span></div>` : '';
     
-    // [수정] 길찾기 버튼 활성화 조건:
-    // 1. 주소가 존재하고
-    // 2. lat과 lng 좌표값이 모두 존재해야 함
+    // 길찾기 버튼 활성화 조건
     const hasAddress = item.address && item.address.trim() !== '' && item.address !== '-';
     const hasCoords = item.lat && item.lng; 
     
@@ -447,12 +445,6 @@ async function selectRegion(btnElement, regionName) {
                 ? `<a onclick="requestTmap('${item.address.replace(/'/g, "\\'")}', '${item.lat}', '${item.lng}')" class="btn-map">📍 길찾기</a>` 
                 : `<a class="btn-map" style="background:#f0f0f0; border-color:#ddd; color:#aaa; cursor:default; pointer-events:none;">📍 불가</a>`
             }
-        </div>
-    </div>`;
-    
-    infowindow.setContent(content);
-    infowindow.open(map, marker);
-}
         </div>
     </div>`;
     
