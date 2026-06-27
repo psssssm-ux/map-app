@@ -334,7 +334,7 @@ let currentRegion = '경남'; // 현재 선택된 지역을 저장할 변수 추
     
     try {
         progressBar.innerText = `${regionName} 데이터 요청 중...`;
-        const baseUrl = 'https://script.google.com/macros/s/AKfycbyCiSiDnP39ydJL7TDoCXMgTBCvJvO2VNKI1HImTrovO0rKXz0cPO4F-i1YKj9ydzqOzA/exec';
+        const baseUrl = 'https://script.google.com/macros/s/AKfycbwdOgFOqr36Ts1mJv_nX7JnOpoFj1mGRlQN_S0vgzraPZw-TMTmZpaT0FnkY1MBUSX6vg/exec';
         const url = `${baseUrl}?sheetName=${encodeURIComponent(regionName)}`;
         
         const res = await fetch(url);
@@ -502,7 +502,7 @@ function saveMemoAndAlert(siteName, tseName) {
     const memo = document.getElementById('memoArea').value;
     const regionName = currentRegion;
     const phone = contactList[tseName.trim()]; // 공백 제거 후 다시 시도
-    const url = 'https://script.google.com/macros/s/AKfycbyCiSiDnP39ydJL7TDoCXMgTBCvJvO2VNKI1HImTrovO0rKXz0cPO4F-i1YKj9ydzqOzA/exec';
+    const url = 'https://script.google.com/macros/s/AKfycbwdOgFOqr36Ts1mJv_nX7JnOpoFj1mGRlQN_S0vgzraPZw-TMTmZpaT0FnkY1MBUSX6vg/exec';
 
     // 1. 먼저 구글 시트에 메모 저장 (POST 요청)
     fetch(`${url}?sheetName=${encodeURIComponent(regionName)}`, {
