@@ -406,22 +406,22 @@ let currentRegion = '경남'; // 현재 선택된 지역을 저장할 변수 추
         });
     }
 
-  function displayInfowindow(marker, item) {
+ function displayInfowindow(marker, item) {
     const renderRow = (label, val) => (val && val !== '-' && val.toString().trim() !== '') ? `<div class="card-row"><b>${label}</b> <span>${val}</span></div>` : '';
     const hasAddress = item.address && item.address.trim() !== '' && item.address !== '-';
     const hasCoords = item.lat && item.lng; 
-    
-    // 메모 내용을 가져옵니다 (시트의 14번째 열을 'memo'로 받아온다고 가정)
     const memoValue = item.memo || '';
 
     const content = `<div class="info-card">
         <div class="card-title">${item.site}</div>
         ${renderRow('주소', item.address)}${renderRow('기번', item.MN)}${renderRow('담당자', item.TSE)}${renderRow('경비사', item.sec)}${renderRow('연락처', item.phone)}${renderRow('기타', item.etc)}${renderRow('주차', item.park)}
         
-        <!-- 메모 영역 -->
         <div style="margin-top:15px; border-top:1px solid #eee; padding-top:10px;">
-            <textarea id="memoArea" style="width:100%; height:50px; font-size:12px; border:1px solid #ccc; border-radius:5px; padding:5px; box-sizing:border-box;" placeholder="코너 특이사항 입력...">${memoValue}</textarea>
-            <button onclick="saveMemoAndAlert('${item.site.replace(/'/g, "\\'")}', '${item.TSE}')" ... >메모 저장 및 알림</button>
+            <textarea id="memoArea" style="width:100%; height:60px; font-size:12px; border:1px solid #cbd5e0; border-radius:8px; padding:8px; box-sizing:border-box; background:#f7fafc; resize:none; margin-bottom:5px;" placeholder="특이사항을 입력하세요...">${memoValue}</textarea>
+            <button onclick="saveMemoAndAlert('${item.site.replace(/'/g, "\\'")}', '${item.TSE}')" 
+                    style="width:100%; padding:10px; background:#4a5568; color:white; border:none; border-radius:8px; font-weight:700; font-size:13px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:5px; transition:0.2s;">
+                <span>💾</span> 메모 저장 및 알림
+            </button>
         </div>
 
         <div class="card-btns">
