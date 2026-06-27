@@ -293,33 +293,36 @@
     <script>
         let map, geocoder, clusterer, infowindow, sheetData = [], myLocationMarker = null;
 
-        kakao.maps.load(() => {
-    // 1. 초기 지도 생성 (일단 부산을 기준으로 생성)
-    map = new kakao.maps.Map(document.getElementById('map'), { 
-        center: new kakao.maps.LatLng(35.1517, 129.0305), 
-        level: 7 
-    });
-    
+       kakao.maps.load(() => {
+    map = new kakao.maps.Map(document.getElementById('map'), { center: new kakao.maps.LatLng(35.1517, 129.0305), level: 7 });
     geocoder = new kakao.maps.services.Geocoder();
     clusterer = new kakao.maps.MarkerClusterer({ map: map, gridSize: 35, averageCenter: true, minLevel: 7 });
     infowindow = new kakao.maps.InfoWindow({ zIndex: 1 });
 
-    // 2. [추가] 페이지 로드 시 현재 위치 파악 시도
+    // 현재 위치 마커 설정
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
             (pos) => {
-                const lat = pos.coords.latitude;
-                const lng = pos.coords.longitude;
-                const myPos = new kakao.maps.LatLng(lat, lng);
-                map.setCenter(myPos); // 현재 위치로 중심 이동
-                map.setLevel(5);      // 상세 수준으로 레벨 조정
+                const myPos = new kakao.maps.LatLng(pos.coords.latitude, pos.coords.longitude);
+                map.setCenter(myPos);
+                map.setLevel(5);
+
+                // 예쁜 현재 위치 마커 생성
+                if (myLocationMarker) myLocationMarker.setMap(null);
+                myLocationMarker = new kakao.maps.Marker({
+                    map: map,
+                    position: myPos,
+                    // 파란색 원형 느낌의 마커 이미지 (카카오 기본 제공 예쁜 아이콘)
+                    image: new kakao.maps.MarkerImage(
+                        'https://t1.daumcdn.net/mapjsapi/images/2x/marker.png', 
+                        new kakao.maps.Size(30, 40), 
+                        { offset: new kakao.maps.Point(15, 35) }
+                    )
+                });
             },
-            () => {
-                console.warn("현재 위치를 사용할 수 없어 기본 위치로 설정합니다.");
-            }
+            () => console.warn("현재 위치 사용 불가")
         );
     }
-
     loadData();
 });
 
