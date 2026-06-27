@@ -299,6 +299,7 @@
     <script>
        let map, geocoder, clusterer, infowindow, sheetData = [], myLocationMarker = null, currentMarker = null;
 let currentRegion = '경남'; // 현재 선택된 지역을 저장할 변수 추가
+        let contactList = {};
 
     kakao.maps.load(() => {
         map = new kakao.maps.Map(document.getElementById('map'), { center: new kakao.maps.LatLng(35.1517, 129.0305), level: 7 });
@@ -328,23 +329,33 @@ let currentRegion = '경남'; // 현재 선택된 지역을 저장할 변수 추
     });
 
     async function loadData(regionName = '경남') {
-        currentRegion = regionName;
-        const progressBar = document.getElementById('progressBar');
+    currentRegion = regionName;
+    const progressBar = document.getElementById('progressBar');
+    
+    try {
+        progressBar.innerText = `${regionName} 데이터 요청 중...`;
+        // 배포 URL은 그대로 유지하세요
+        const baseUrl = 'https://script.google.com/macros/s/AKfycbyCiSiDnP39ydJL7TDoCXMgTBCvJvO2VNKI1HImTrovO0rKXz0cPO4F-i1YKj9ydzqOzA/exec';
+        const url = `${baseUrl}?sheetName=${encodeURIComponent(regionName)}`;
         
-        try {
-            progressBar.innerText = `${regionName} 데이터 요청 중...`;
-            const baseUrl = 'https://script.google.com/macros/s/AKfycbyCiSiDnP39ydJL7TDoCXMgTBCvJvO2VNKI1HImTrovO0rKXz0cPO4F-i1YKj9ydzqOzA/exec';
-            const url = `${baseUrl}?sheetName=${encodeURIComponent(regionName)}`;
-            const res = await fetch(url);
-            if (!res.ok) throw new Error(`서버 응답 오류: ${res.status}`);
-            sheetData = await res.json();
-            progressBar.innerText = `${regionName} 로딩 완료!`;
-            triggerSearch(document.getElementById('searchKeyword').value);
-        } catch (e) {
-            console.error("데이터 로딩 에러:", e);
-            progressBar.innerText = "로딩 실패: " + e.message;
-        }
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`서버 응답 오류: ${res.status}`);
+        
+        // 서버에서 받아온 데이터를 result 변수에 저장
+        const result = await res.json();
+        
+        // result 객체에서 데이터를 분리하여 전역 변수에 저장
+        sheetData = result.sites;      // 사이트 목록
+        contactList = result.contacts; // 담당자 전화번호 매핑 (이 변수가 전역에 있어야 합니다)
+        
+        progressBar.innerText = `${regionName} 로딩 완료!`;
+        triggerSearch(document.getElementById('searchKeyword').value);
+        
+    } catch (e) {
+        console.error("데이터 로딩 에러:", e);
+        progressBar.innerText = "로딩 실패: " + e.message;
     }
+}
 
     async function selectRegion(btnElement, regionName) {
         document.querySelectorAll('.region-btn').forEach(btn => btn.classList.remove('active'));
@@ -403,7 +414,7 @@ let currentRegion = '경남'; // 현재 선택된 지역을 저장할 변수 추
         <!-- 메모 영역 -->
         <div style="margin-top:15px; border-top:1px solid #eee; padding-top:10px;">
             <textarea id="memoArea" style="width:100%; height:50px; font-size:12px; border:1px solid #ccc; border-radius:5px; padding:5px; box-sizing:border-box;" placeholder="코너 특이사항 입력...">${memoValue}</textarea>
-            <button onclick="saveMemo('${item.site.replace(/'/g, "\\'")}')" style="width:100%; margin-top:5px; background:#0070c0; color:#fff; border:none; padding:8px; border-radius:5px; cursor:pointer; font-weight:bold; font-size:12px;">메모 저장</button>
+            <button onclick="saveMemoAndAlert('${item.site.replace(/'/g, "\\'")}', '${item.TSE}')" ... >메모 저장 및 알림</button>
         </div>
 
         <div class="card-btns">
@@ -455,18 +466,34 @@ let currentRegion = '경남'; // 현재 선택된 지역을 저장할 변수 추
             setTimeout(() => { if (document.visibilityState === 'visible') alert("TMAP 앱이 설치되어 있지 않거나 실행할 수 없습니다."); }, 1000);
         } else { alert("모바일 환경에서만 TMAP 길찾기 이용이 가능합니다."); }
     }
-function saveMemo(siteName) {
+function saveMemoAndAlert(siteName, tseName) {
     const memo = document.getElementById('memoArea').value;
     const regionName = currentRegion;
-    const url = 'https://script.google.com/macros/s/AKfycbyCiSiDnP39ydJL7TDoCXMgTBCvJvO2VNKI1HImTrovO0rKXz0cPO4F-i1YKj9ydzqOzA/exec'; // 중요: 배포 URL이 정확해야 합니다.
+    const url = 'https://script.google.com/macros/s/AKfycbyCiSiDnP39ydJL7TDoCXMgTBCvJvO2VNKI1HImTrovO0rKXz0cPO4F-i1YKj9ydzqOzA/exec';
 
+    // 1. 먼저 구글 시트에 메모 저장 (POST 요청)
     fetch(`${url}?sheetName=${encodeURIComponent(regionName)}`, {
         method: 'POST',
         body: new URLSearchParams({ siteName: siteName, memo: memo })
     })
     .then(res => res.text())
-    .then(data => alert("메모가 저장되었습니다!"))
-    .catch(err => alert("저장 실패: " + err));
+    .then(data => {
+        // 2. 저장 성공 후, 담당자 번호 확인 및 메시지 발송
+        const phone = contactList[tseName] || null;
+        
+        if (phone) {
+            const message = `[현장 메모 알림] ${siteName} 사이트에 메모가 추가되었습니다.\n내용: ${memo}`;
+            // 문자 앱 실행
+            window.location.href = `sms:${phone}?body=${encodeURIComponent(message)}`;
+        } else {
+            // 번호가 없을 때만 성공 알림 표시
+            alert("메모가 저장되었습니다! (담당자 번호를 찾을 수 없어 알림은 발송되지 않았습니다.)");
+        }
+    })
+    .catch(err => {
+        console.error(err);
+        alert("저장 실패: " + err.message);
+    });
 }
     function moveToMyLocation() {
         if (navigator.geolocation) {
