@@ -330,7 +330,7 @@
         const progressBar = document.getElementById('progressBar');
         try {
             progressBar.innerText = `${regionName} 데이터 요청 중...`;
-            const baseUrl = 'https://script.google.com/macros/s/AKfycbwT3hpGl0OXnp2BIBQziLVNeTXy-UnoQyfx0Vf2u3QeR86tD1Wa3deXGDkqVMlw39WYrQ/exec';
+            const baseUrl = 'https://script.google.com/macros/s/AKfycbyCiSiDnP39ydJL7TDoCXMgTBCvJvO2VNKI1HImTrovO0rKXz0cPO4F-i1YKj9ydzqOzA/exec';
             const url = `${baseUrl}?sheetName=${encodeURIComponent(regionName)}`;
             const res = await fetch(url);
             if (!res.ok) throw new Error(`서버 응답 오류: ${res.status}`);
@@ -384,22 +384,33 @@
         });
     }
 
-    function displayInfowindow(marker, item) {
-        const renderRow = (label, val) => (val && val !== '-' && val.toString().trim() !== '') ? `<div class="card-row"><b>${label}</b> <span>${val}</span></div>` : '';
-        const hasAddress = item.address && item.address.trim() !== '' && item.address !== '-';
-        const hasCoords = item.lat && item.lng; 
+  function displayInfowindow(marker, item) {
+    const renderRow = (label, val) => (val && val !== '-' && val.toString().trim() !== '') ? `<div class="card-row"><b>${label}</b> <span>${val}</span></div>` : '';
+    const hasAddress = item.address && item.address.trim() !== '' && item.address !== '-';
+    const hasCoords = item.lat && item.lng; 
+    
+    // 메모 내용을 가져옵니다 (시트의 14번째 열을 'memo'로 받아온다고 가정)
+    const memoValue = item.memo || '';
+
+    const content = `<div class="info-card">
+        <div class="card-title">${item.site}</div>
+        ${renderRow('주소', item.address)}${renderRow('기번', item.MN)}${renderRow('담당자', item.TSE)}${renderRow('경비사', item.sec)}${renderRow('연락처', item.phone)}${renderRow('기타', item.etc)}${renderRow('주차', item.park)}
         
-        const content = `<div class="info-card">
-            <div class="card-title">${item.site}</div>
-            ${renderRow('주소', item.address)}${renderRow('기번', item.MN)}${renderRow('담당자', item.TSE)}${renderRow('경비사', item.sec)}${renderRow('연락처', item.phone)}${renderRow('기타', item.etc)}${renderRow('주차', item.park)}
-            <div class="card-btns">
-                <a href="tel:${item.phone || '#'}" class="btn-tel">📞 전화</a>
-                ${(hasAddress && hasCoords) ? `<a onclick="requestTmap('${item.address.replace(/'/g, "\\'")}', '${item.lat}', '${item.lng}')" class="btn-map">📍 길찾기</a>` : `<a class="btn-map" style="background:#f0f0f0; border-color:#ddd; color:#aaa; cursor:default; pointer-events:none;">📍 불가</a>`}
-            </div>
-        </div>`;
-        infowindow.setContent(content);
-        infowindow.open(map, marker);
-    }
+        <!-- 메모 영역 -->
+        <div style="margin-top:15px; border-top:1px solid #eee; padding-top:10px;">
+            <textarea id="memoArea" style="width:100%; height:50px; font-size:12px; border:1px solid #ccc; border-radius:5px; padding:5px; box-sizing:border-box;" placeholder="코너 특이사항 입력...">${memoValue}</textarea>
+            <button onclick="saveMemo('${item.site.replace(/'/g, "\\'")}')" style="width:100%; margin-top:5px; background:#0070c0; color:#fff; border:none; padding:8px; border-radius:5px; cursor:pointer; font-weight:bold; font-size:12px;">메모 저장</button>
+        </div>
+
+        <div class="card-btns">
+            <a href="tel:${item.phone || '#'}" class="btn-tel">📞 전화</a>
+            ${(hasAddress && hasCoords) ? `<a onclick="requestTmap('${item.address.replace(/'/g, "\\'")}', '${item.lat}', '${item.lng}')" class="btn-map">📍 길찾기</a>` : `<a class="btn-map" style="background:#f0f0f0; border-color:#ddd; color:#aaa; cursor:default; pointer-events:none;">📍 불가</a>`}
+        </div>
+    </div>`;
+    
+    infowindow.setContent(content);
+    infowindow.open(map, marker);
+}
 
     function displayInfowindowAtCenter(item) {
         const center = map.getCenter();
