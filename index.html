@@ -425,7 +425,7 @@ let currentRegion = '경남'; // 현재 선택된 지역을 저장할 변수 추
         </div>
 
         <div class="card-btns">
-            <a href="tel:${item.phone || '#'}" class="btn-tel">📞 전화</a>
+            <a href="tel:${item.phone || '#'}" class="btn-tel">📞 경비사전화</a>
             ${(hasAddress && hasCoords) ? `<a onclick="requestTmap('${item.address.replace(/'/g, "\\'")}', '${item.lat}', '${item.lng}')" class="btn-map">📍 길찾기</a>` : `<a class="btn-map" style="background:#f0f0f0; border-color:#ddd; color:#aaa; cursor:default; pointer-events:none;">📍 불가</a>`}
         </div>
     </div>`;
