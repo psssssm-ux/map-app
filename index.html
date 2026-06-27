@@ -411,7 +411,8 @@ async function selectRegion(btnElement, regionName) {
     const renderRow = (label, val) => (val && val !== '-' && val.toString().trim() !== '') ? `<div class="card-row"><b>${label}</b> <span>${val}</span></div>` : '';
     
     // 주소 정보 확인 (주소가 있고 '-'가 아닌 경우)
-    const hasAddress = item.address && item.address.trim() !== '' && item.address !== '-';
+    const hasAddress = item.address && item.address.trim() !== '' && item.address !== '-' 
+                   && item.lat && item.lng;
     
     const content = `<div class="info-card" onmouseleave="infowindow.close()">
         <div class="card-title">${item.site}</div>
