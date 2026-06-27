@@ -497,8 +497,11 @@ let currentRegion = '경남'; // 현재 선택된 지역을 저장할 변수 추
         } else { alert("모바일 환경에서만 TMAP 길찾기 이용이 가능합니다."); }
     }
 function saveMemoAndAlert(siteName, tseName) {
+    console.log("찾으려는 담당자 이름:", tseName); // 이름이 어떻게 들어오는지 확인
+    console.log("현재 연락처 리스트:", contactList); // 전체 리스트 확인
     const memo = document.getElementById('memoArea').value;
     const regionName = currentRegion;
+    const phone = contactList[tseName.trim()]; // 공백 제거 후 다시 시도
     const url = 'https://script.google.com/macros/s/AKfycbyCiSiDnP39ydJL7TDoCXMgTBCvJvO2VNKI1HImTrovO0rKXz0cPO4F-i1YKj9ydzqOzA/exec';
 
     // 1. 먼저 구글 시트에 메모 저장 (POST 요청)
