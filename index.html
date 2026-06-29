@@ -169,31 +169,20 @@
         box-sizing: border-box; /* 패딩 포함 */
 
     }.info-card {
-
-        width: 196px !important;  /* 280px의 약 70% */
-
-        padding: 15px !important; /* 22px의 약 70% */
-
-        border-radius: 14px !important;
-
+        width: 260px !important;  /* 모바일 기기 평균 너비에 맞게 조정 */
+        max-width: 85vw !important; /* 화면 가로폭의 85%를 넘지 않도록 제한 */
+        padding: 16px !important;
+        border-radius: 16px !important;
     }
 
     .card-title {
-
-        font-size: 13px !important;
-
-        margin-bottom: 10px !important;
-
-        padding-bottom: 8px !important;
-
+        font-size: 15px !important; /* 가독성을 위해 살짝 키움 */
+        margin-bottom: 12px !important;
     }
 
     .card-row {
-
-        font-size: 10px !important; /* 글자 크기 축소 */
-
+        font-size: 12px !important; /* 너무 작으면 안 보이므로 12px 추천 */
     }
-
     .card-row b {
 
         width: 45px !important; /* b 태그 너비 조정 */
