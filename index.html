@@ -169,40 +169,36 @@
         box-sizing: border-box; /* 패딩 포함 */
 
     }.info-card {
-        width: 260px !important;  /* 모바일 기기 평균 너비에 맞게 조정 */
-        max-width: 85vw !important; /* 화면 가로폭의 85%를 넘지 않도록 제한 */
-        padding: 16px !important;
-        border-radius: 16px !important;
+        width: 220px !important;  /* 기존 260px에서 더 줄임 */
+        max-width: 80vw !important; 
+        padding: 12px !important; /* 내부 여백을 줄여 전체 크기 축소 */
+        border-radius: 12px !important;
     }
 
     .card-title {
-        font-size: 15px !important; /* 가독성을 위해 살짝 키움 */
-        margin-bottom: 12px !important;
+        font-size: 13px !important; /* 제목 크기 축소 */
+        margin-bottom: 8px !important;
+        padding-bottom: 6px !important;
     }
 
     .card-row {
-        font-size: 12px !important; /* 너무 작으면 안 보이므로 12px 추천 */
+        font-size: 11px !important; /* 본문 폰트 크기 축소 */
+        margin-bottom: 4px !important;
     }
+    
     .card-row b {
-
-        width: 45px !important; /* b 태그 너비 조정 */
-
+        width: 40px !important; /* 레이블 너비 줄임 */
     }
 
     .card-btns {
-
-        margin-top: 12px !important;
-
-        gap: 6px !important;
-
+        margin-top: 10px !important;
+        gap: 4px !important;
     }
-
-    .card-btns a {
-
-        padding: 8px !important;
-
-        font-size: 10px !important;
-
+    
+    /* 메모 영역도 같이 줄여야 전체 카드가 작아 보입니다 */
+    #memoArea {
+        height: 45px !important;
+        font-size: 11px !important;
     }
            .region-grid {
     display: grid;
